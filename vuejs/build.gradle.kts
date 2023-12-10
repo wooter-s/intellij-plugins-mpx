@@ -11,9 +11,9 @@ val targetVersion = rootProject.extensions["targetVersion"]
 val iuVersion = rootProject.extensions["iuVersion"]
 
 intellij {
-  version.set(iuVersion.toString())
+  version.set("233.11799.241")
   type.set("IU")
-  pluginName.set("Vue.js")
+  pluginName.set("mpxjs")
   downloadSources.set(true)
   plugins.set(listOf("JavaScript", "JSIntentionPowerPack", "JavaScriptDebugger", "com.intellij.css", "HtmlTools",
                      "org.jetbrains.plugins.sass", "org.jetbrains.plugins.less", "intellij.webpack",
