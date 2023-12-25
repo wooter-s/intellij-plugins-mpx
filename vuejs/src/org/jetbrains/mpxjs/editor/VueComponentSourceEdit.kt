@@ -195,11 +195,11 @@ class VueComponentSourceEdit private constructor(private val component: Pointer<
     when {
       classComponentLibrary != null -> {
         if (classComponentLibrary == VUE_CLASS_COMPONENT) {
-          insertImportIfNotThere("Vue", true, VUE_MODULE, scriptScope)
+          insertImportIfNotThere("Mpx", true, VUE_MODULE, scriptScope)
           insertImportIfNotThere(componentDecoratorName, true, classComponentLibrary, scriptScope)
         }
         else {
-          insertImportIfNotThere("Vue", false, classComponentLibrary, scriptScope)
+          insertImportIfNotThere("Mpx", false, classComponentLibrary, scriptScope)
           insertImportIfNotThere(componentDecoratorName, false, classComponentLibrary, scriptScope)
         }
       }
@@ -208,7 +208,7 @@ class VueComponentSourceEdit private constructor(private val component: Pointer<
         insertImportIfNotThere(DEFINE_COMPONENT_FUN, false, VUE_MODULE, scriptScope)
       }
       useVueExtend -> {
-        insertImportIfNotThere("Vue", true, VUE_MODULE, scriptScope)
+        insertImportIfNotThere("Mpx", true, VUE_MODULE, scriptScope)
       }
     }
     val prevSibling = addedExport.prevSibling

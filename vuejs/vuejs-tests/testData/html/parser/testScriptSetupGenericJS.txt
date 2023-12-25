@@ -6,10 +6,10 @@ HtmlFile:test.vue
       XmlToken:XML_START_TAG_START('<')
       XmlToken:XML_NAME('script')
       PsiWhiteSpace(' ')
-      PsiElement(VUE:STUBBED_ATTRIBUTE)
+      PsiElement(MPX:STUBBED_ATTRIBUTE)
         XmlToken:XML_NAME('setup')
       PsiWhiteSpace(' ')
-      PsiElement(VUE:STUBBED_ATTRIBUTE)
+      PsiElement(MPX:STUBBED_ATTRIBUTE)
         XmlToken:XML_NAME('generic')
         XmlToken:XML_EQ('=')
         PsiElement(XML_ATTRIBUTE_VALUE)
@@ -24,7 +24,7 @@ HtmlFile:test.vue
                 PsiElement(JS:IDENTIFIER)('boolean')
           XmlToken:XML_ATTRIBUTE_VALUE_END_DELIMITER('"')
       XmlToken:XML_TAG_END('>')
-      VueScriptSetupEmbeddedContent:VUE:SCRIPT_SETUP_JS_EMBEDDED_CONTENT
+      VueScriptSetupEmbeddedContent:MPX:SCRIPT_SETUP_JS_EMBEDDED_CONTENT
         PsiWhiteSpace('\n')
       XmlToken:XML_END_TAG_START('</')
       XmlToken:XML_NAME('script')

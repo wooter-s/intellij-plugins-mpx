@@ -22,6 +22,7 @@ class VueFileType private constructor() : WebFrameworkHtmlFileType(VueLanguage.I
     fun isVueFileName(name: String) = isVueFileName(name as CharSequence)
 
     private fun isVueFileName(name: CharSequence): Boolean =
+      // Woo tag 这两个方法都是判断文件名是否以 .mpx 结尾，这似乎有些重复
       name.endsWith(VUE_FILE_EXTENSION) ||
       FileTypeManager.getInstance().getAssociations(INSTANCE)
         .any { it.acceptsCharSequence(name) }

@@ -1,7 +1,7 @@
 {
   "$schema": "../../../../community/platform/webSymbols/web-types-gen/resources/web-types.json",
-  "framework": "vue",
-  "name": "vue",
+  "framework": "mpx",
+  "name": "mpx",
   "version": "3.0.0",
   "js-types-syntax": "typescript",
   "description-markup": "markdown",
@@ -9,14 +9,13 @@
   "framework-config": {
     "enable-when": {
       "node-packages": [
-        "vue",
-        "@vue/cli"
+        "@mpxjs/core"
       ],
       "file-extensions": [
-        "vue"
+        "mpx"
       ],
       "ide-libraries": [
-        "vue"
+        "mpx"
       ]
     }
   },

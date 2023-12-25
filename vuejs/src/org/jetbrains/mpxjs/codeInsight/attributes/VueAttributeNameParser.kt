@@ -12,16 +12,20 @@ import org.jetbrains.mpxjs.model.SLOT_TAG_NAME
 import java.util.*
 
 class VueAttributeNameParser private constructor() {
+  //  在 Kotlin 中，companion object 是一个关联到类的对象，它的成员可以通过类名来访问，而不需要创建类的实例。你可以把它看作是 Java 中的静态成员（static member）的替代品。  companion object 的主要用途是：
+  //  存储类的静态字段和静态方法。
+  //  实现工厂方法和工厂模式。
+  //  实现单例模式。
   companion object {
     fun parse(attributeName: CharSequence, context: String? = null, isTopLevel: Boolean = false): VueAttributeInfo {
-      return parse(attributeName) { it.isValidIn(context, isTopLevel) }
+      return parse(attributeName, context) { it.isValidIn(context, isTopLevel) }
     }
 
     fun parse(attributeName: CharSequence, context: XmlTag): VueAttributeInfo {
-      return parse(attributeName) { it.isValidIn(context) }
+      return parse(attributeName, context.name) { it.isValidIn(context) }
     }
 
-    private fun parse(attributeName: CharSequence, isValid: (VueAttributeKind) -> Boolean): VueAttributeInfo {
+    private fun parse(attributeName: CharSequence, context: String? = null, isValid: (VueAttributeKind) -> Boolean): VueAttributeInfo {
       if (attributeName.length == 0) {
         return VueAttributeInfo("", VueAttributeKind.PLAIN)
       }
@@ -42,12 +46,28 @@ class VueAttributeNameParser private constructor() {
         paramsPos = 0
         isShorthand = true
       }
+      //else if (attributeName.startsWith(ATTR_EVENT_PREFIX) || attributeName.startsWith("catch")) {
+      //  name = "bind"
+      //  kind = VueDirectiveKind.BIND
+      //  paramsPos = 3
+      //  isShorthand = true
+      //}
       else if (attributeName.startsWith(ATTR_SLOT_SHORTHAND)) {
         name = "slot"
         kind = VueDirectiveKind.SLOT
         paramsPos = 0
         isShorthand = true
       }
+      //else if (attributeName.startsWith(ATTR_DIRECTIVE_PREFIX) && attributeName.length > 3) {
+      //  //var nameEnd = attributeName.indexOfFirst { it == ATTR_MODIFIER_PREFIX || it == ATTR_ARGUMENT_PREFIX }
+      //  //if (nameEnd < 0) {
+      //  //  nameEnd = attributeName.length
+      //  //}
+      //  val nameEnd = attributeName.length
+      //  name = attributeName.substring(3, nameEnd)
+      //  kind = directiveKindMap[name] ?: VueDirectiveKind.CUSTOM
+      //  paramsPos = nameEnd
+      //}
       else if (attributeName.startsWith(ATTR_DIRECTIVE_PREFIX) && attributeName.length > 2) {
         var nameEnd = attributeName.indexOfFirst { it == ATTR_MODIFIER_PREFIX || it == ATTR_ARGUMENT_PREFIX }
         if (nameEnd < 0) {
@@ -66,15 +86,42 @@ class VueAttributeNameParser private constructor() {
         val attributeKind = attributeKindMap.get(name).find(isValid) ?: VueAttributeKind.PLAIN
         return VueAttributeInfo(name, attributeKind, parseModifiers(attributeName, nameEnd))
       }
+      //else {
+      //  // 在mpx中，所有属性都是支持自定义属性的，所以这里的nameEnd = attributeName.length
+      //  // OPTIMISE mpx中没有这样的修饰符
+      //  var nameEnd = attributeName.indexOf(ATTR_MODIFIER_PREFIX)
+      //  if (nameEnd < 0) {
+      //    nameEnd = attributeName.length
+      //  }
+      //  name = attributeName.substring(0, nameEnd)
+      //  val attributeKind = attributeKindMap.get(name).find(isValid) ?: VueAttributeKind.PLAIN
+      //  val arguments = attributeName.substring(0)
+      //  paramsPos = attributeName.length
+      //
+      //  if (context != "script") {
+      //    return VueDirectiveInfo(name, VueDirectiveKind.BIND, arguments, isShorthand = true, parseModifiers(attributeName, paramsPos))
+      //  }
+      //  return VueAttributeInfo(name, attributeKind, parseModifiers(attributeName, nameEnd))
+      //}
+
+      if (kind == VueDirectiveKind.CUSTOM) {
+        if (name == "ref") {
+            return VueAttributeInfo(name, VueAttributeKind.PLAIN)
+        }
+      }
+
       if (paramsPos >= attributeName.length
           || (attributeName[paramsPos] != ATTR_EVENT_SHORTHAND
               && attributeName[paramsPos] != ATTR_ARGUMENT_PREFIX
               && attributeName[paramsPos] != ATTR_SLOT_SHORTHAND
-              && attributeName[paramsPos] != ATTR_MODIFIER_PREFIX)) {
+              && attributeName[paramsPos] != ATTR_MODIFIER_PREFIX
+              && !attributeName.startsWith(ATTR_EVENT_PREFIX))
+        ) {
         return VueDirectiveInfo(name, kind, isShorthand = isShorthand)
       }
 
       val arguments: String?
+      // OPTIMISE 不处理修饰符
       if (attributeName[paramsPos] == ATTR_MODIFIER_PREFIX) {
         return VueDirectiveInfo(name, kind, null, isShorthand, parseModifiers(attributeName, paramsPos))
       }
@@ -122,13 +169,15 @@ class VueAttributeNameParser private constructor() {
     }
 
     private val attributeKindMap: MultiMap<String, VueAttributeKind> = MultiMap()
-
+    // * 扩展操作符， 和JavaScript里的... 一样
     private val directiveKindMap = StreamEx.of(*VueDirectiveKind.values())
       .mapToEntry({ it.directiveName }, { it })
       .nonNullKeys()
       .toMap()
 
     init {
+      // NOTICE 枚举这个枚举类中的所有值。 这里 PLAIN和DIRECTIVE是同一个值 null，前面的会被后面的覆盖；
+      // 后面attributeName == null的过滤掉了
       VueAttributeKind.values().asSequence()
         .filter { it.attributeName != null }
         .forEach {
@@ -149,6 +198,7 @@ class VueAttributeNameParser private constructor() {
       if (this === other) return true
       if (javaClass != other?.javaClass) return false
 
+      // Woo tag 强制类型转换
       other as VueAttributeInfo
 
       return name == other.name

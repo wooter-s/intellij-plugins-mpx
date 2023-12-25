@@ -32,7 +32,7 @@ class VueXmlExtension : WebSymbolsXmlExtension() {
     val fromAssetName = fromAsset(attrName)
 
     return tag?.attributes?.find { attr ->
-      if (attr.name == "v-bind") {
+      if (attr.name == "bind:") {
         return@find attr.valueElement
           ?.findJSExpression<JSExpression>()
           ?.let { JSResolveUtil.getElementJSType(it) }

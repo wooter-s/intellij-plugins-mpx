@@ -47,7 +47,7 @@ interface VueContainerInfoProvider : EntityContainerInfoProvider<VueContainerInf
   }
 
   companion object {
-    private val EP_NAME = ExtensionPointName.create<VueContainerInfoProvider>("com.intellij.vuejs.containerInfoProvider")
+    private val EP_NAME = ExtensionPointName.create<VueContainerInfoProvider>("com.intellij.mpxjs.containerInfoProvider")
 
     fun getProviders(): List<VueContainerInfoProvider> = EP_NAME.extensionList
   }

@@ -24,7 +24,7 @@ import org.jetbrains.mpxjs.lang.html.parser.VueParsing
 import org.jetbrains.mpxjs.lang.html.parser.VueStubElementTypes
 import org.jetbrains.mpxjs.lang.html.stub.impl.VueFileStubImpl
 
-class VueFileElementType : IStubFileElementType<VueFileStubImpl>("vue", VueLanguage.INSTANCE) {
+class VueFileElementType : IStubFileElementType<VueFileStubImpl>("mpx", VueLanguage.INSTANCE) {
   companion object {
     @JvmStatic
     val INSTANCE: VueFileElementType = VueFileElementType()
@@ -67,6 +67,31 @@ class VueFileElementType : IStubFileElementType<VueFileStubImpl>("vue", VueLangu
     return VueFileStubImpl(LangMode.fromAttrValue(dataStream.readNameString()!!))
   }
 
+  /**
+   * `HTML_COMPAT_MODE`是一个键，用于在解析Vue.js文件时设置HTML兼容模式。当`HTML_COMPAT_MODE`为`true`时，插件会尽可能地兼容HTML的语法和特性。例如，它会允许自闭合的标签，如`<br />`。当`HTML_COMPAT_MODE`为`false`时，插件会严格按照Vue.js的语法规则来解析文件。
+   *
+   * 在`VueFileElementType.kt`文件中，`HTML_COMPAT_MODE`被用于设置`PsiBuilder`的用户数据。`PsiBuilder`是用于构建PSI树的类，用户数据是一种可以附加到`PsiBuilder`上的额外信息。
+   *
+   * 以下是一个Vue.js代码的示例，展示了`HTML_COMPAT_MODE`的用途：
+   *
+   * ```vue
+   * <template>
+   *   <br />
+   * </template>
+   *
+   * <script>
+   * export default {
+   *   data() {
+   *     return {
+   *       message: 'Hello, Vue!'
+   *     }
+   *   }
+   * }
+   * </script>
+   * ```
+   *
+   * 在这个示例中，`<br />`是一个自闭合的标签。如果`HTML_COMPAT_MODE`为`true`，那么这个标签就会被正确地解析；如果`HTML_COMPAT_MODE`为`false`，那么这个标签就可能会导致解析错误。
+   */
   override fun doParseContents(chameleon: ASTNode, psi: PsiElement): ASTNode {
     val delimiters = readDelimiters(SharedImplUtil.getContainingFile(chameleon).name)
     val languageForParser = getLanguageForParser(psi)

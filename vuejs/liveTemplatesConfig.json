@@ -1,5 +1,5 @@
 {
-  "templateSetName": "Vue",
+  "templateSetName": "Mpx",
   "contextMapping": {
     "vue-script-vuex": "VUE_COMPONENT_DESCRIPTOR",
     "vue-script-router": "VUE_SCRIPT",
@@ -12,7 +12,7 @@
       "description": "Vue transition component with JavaScript hooks"
     },
     "vanimhook-js": {
-      "descriptionPrefix": "Vue",
+      "descriptionPrefix": "Mpx",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
@@ -40,7 +40,7 @@
       ]
     },
     "vel-props": {
-      "descriptionPrefix": "Vue"
+      "descriptionPrefix": "Mpx"
     },
     "vfilter": {
       "context": [
@@ -70,13 +70,13 @@
       ]
     },
     "vmodel": {
-      "descriptionPrefix": "Vue"
+      "descriptionPrefix": "Mpx"
     },
     "vmodel-num": {
-      "descriptionPrefix": "Vue"
+      "descriptionPrefix": "Mpx"
     },
     "von": {
-      "descriptionPrefix": "Vue",
+      "descriptionPrefix": "Mpx",
       "context": [
         "VUE_INSIDE_TAG"
       ]
@@ -97,7 +97,7 @@
       ]
     },
     "vsrc": {
-      "descriptionPrefix": "Vue"
+      "descriptionPrefix": "Mpx"
     },
     "vstore": {
       "context": [

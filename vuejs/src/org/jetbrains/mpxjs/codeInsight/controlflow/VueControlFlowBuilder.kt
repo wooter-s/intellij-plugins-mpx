@@ -24,9 +24,9 @@ import org.jetbrains.mpxjs.lang.expr.psi.VueJSEmbeddedExpressionContent
  */
 class VueControlFlowBuilder : JSControlFlowBuilder() {
   companion object {
-    private const val V_IF = "v-if"
-    private const val V_ELSE_IF = "v-else-if"
-    private const val V_ELSE = "v-else"
+    private const val V_IF = "wx:if"
+    private const val V_ELSE_IF = "wx:elif"
+    private const val V_ELSE = "wx:else"
 
     // v-for is not included because Vue template has no break/continue/return/throw etc.
     private val controlFlowRelevantDirectives = setOf(V_IF, V_ELSE_IF, V_ELSE)
@@ -38,6 +38,8 @@ class VueControlFlowBuilder : JSControlFlowBuilder() {
 
   private val visitingModeOverrides = mutableMapOf<PsiElement, HtmlTagVisitingMode>()
 
+  // 对PsiElement的visitingMode进行代理，设置更新visitingModeOverrides
+  // 这是kotlin的扩展函数，java没有这种语法
   private var PsiElement.visitingMode: HtmlTagVisitingMode
     set(value) = Unit.also { visitingModeOverrides[this] = value }
     get() = visitingModeOverrides[this] ?: HtmlTagVisitingMode.Default

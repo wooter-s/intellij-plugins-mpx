@@ -18,6 +18,15 @@ import com.intellij.psi.xml.XmlTag
 import com.intellij.webSymbols.completion.WebSymbolCodeCompletionItem
 import org.jetbrains.mpxjs.inspections.quickfixes.VueImportComponentQuickFix
 
+//`VueInsertHandler` 是一个 Kotlin 类，它继承自 `XmlTagInsertHandler` 类。这个类主要用于处理在 Vue 文件中插入 XML 标签的操作。
+//
+//当你在 Vue 文件中插入一个 XML 标签时，`VueInsertHandler` 会被用来处理这个操作。它会根据插入的上下文和标签的信息，执行相应的操作。
+//
+//这个类重写了 `XmlTagInsertHandler` 的 `handleInsert` 方法，这个方法在每次插入标签时都会被调用。在这个方法中，它首先检查是否应该处理 XML 插入，如果是，那么就调用父类的 `handleInsert` 方法。然后，它会获取插入的元素，如果这个元素在当前文件中已经被导入，那么就不做任何事情。否则，它会查找这个元素的定义，如果这个定义在一个 Node 模块中，那么就会跳过这个模块。最后，它会提交文档的更改，并在一个写操作中添加相应的导入语句。
+//
+//此外，这个类还定义了一些辅助方法，如 `reformatElement`、`shouldHandleXmlInsert`、`isSkippedModule` 等，这些方法用于格式化元素、检查是否应该处理 XML 插入、检查是否应该跳过某个模块等。
+//
+//总的来说，`VueInsertHandler` 类是用来处理在 Vue 文件中插入 XML 标签的操作的。
 class VueInsertHandler : XmlTagInsertHandler() {
 
   override fun handleInsert(context: InsertionContext, item: LookupElement) {

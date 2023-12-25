@@ -6,7 +6,7 @@ HtmlFile:StubbedAttribute.vue
       XmlToken:XML_START_TAG_START('<')
       XmlToken:XML_NAME('script')
       PsiWhiteSpace(' ')
-      PsiElement(VUE:SRC_ATTRIBUTE)
+      PsiElement(MPX:SRC_ATTRIBUTE)
         XmlToken:XML_NAME('src')
         XmlToken:XML_EQ('=')
         PsiElement(XML_ATTRIBUTE_VALUE)

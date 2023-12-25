@@ -1,7 +1,7 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.mpxjs.model.source
 
-const val VUE_NAMESPACE: String = "Vue"
+const val VUE_NAMESPACE: String = "Mpx"
 
 const val EXTEND_FUN: String = "extend"
 const val COMPONENT_FUN: String = "component"
@@ -45,7 +45,7 @@ const val MODEL_EVENT_PROP = "event"
 const val MODEL_LOCAL_PROP = "local"
 const val MODEL_VALUE_PROP = "modelValue"
 const val DELIMITERS_PROP = "delimiters"
-const val PROPS_PROP = "props"
+const val PROPS_PROP = "properties"
 const val PROPS_TYPE_PROP = "type"
 const val PROPS_REQUIRED_PROP = "required"
 const val PROPS_DEFAULT_PROP = "default"
@@ -54,7 +54,7 @@ const val EL_PROP = "el"
 const val INSTANCE_PROPS_PROP = "\$props"
 const val INSTANCE_REFS_PROP = "\$refs"
 const val INSTANCE_SLOTS_PROP = "\$slots"
-const val INSTANCE_EMIT_METHOD = "\$emit"
+const val INSTANCE_EMIT_METHOD = "\$triggerEvent"
 const val INSTANCE_DATA_PROP = "\$data"
 const val INSTANCE_OPTIONS_PROP = "\$options"
 

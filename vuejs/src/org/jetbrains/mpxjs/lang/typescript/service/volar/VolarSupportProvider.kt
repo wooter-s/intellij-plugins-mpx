@@ -29,7 +29,7 @@ class VolarSupportProvider : LspServerSupportProvider {
   }
 }
 
-class VolarServerDescriptor(project: Project) : JSFrameworkLspServerDescriptor(project, VolarExecutableDownloader, "Vue") {
+class VolarServerDescriptor(project: Project) : JSFrameworkLspServerDescriptor(project, VolarExecutableDownloader, "Mpx") {
   override fun isSupportedFile(file: VirtualFile): Boolean = isVolarFileTypeAcceptable(file)
 }
 

@@ -76,7 +76,7 @@ class VueDocumentationProvider : DocumentationProvider {
     item.description?.let { result.append(CONTENT_START).append(it).append(CONTENT_END) }
 
     val details = LinkedHashMap(item.customSections)
-    item.library?.let { details[VueBundle.message("vue.documentation.section.library")] = "<p>${if (it == "vue") "Vue" else it}" }
+    item.library?.let { details[VueBundle.message("vue.documentation.section.library")] = "<p>${if (it == "vue") "Mpx" else it}" }
 
     if (details.isNotEmpty()) {
       result.append(SECTIONS_START)

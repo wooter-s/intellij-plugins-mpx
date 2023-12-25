@@ -36,7 +36,7 @@ HtmlFile:test.vue
             XmlToken:XML_ATTRIBUTE_VALUE_TOKEN('text/x-template')
             XmlToken:XML_ATTRIBUTE_VALUE_END_DELIMITER('"')
         PsiWhiteSpace(' ')
-        PsiElement(VUE:SCRIPT_ID_ATTRIBUTE)
+        PsiElement(MPX:SCRIPT_ID_ATTRIBUTE)
           XmlToken:XML_NAME('id')
           XmlToken:XML_EQ('=')
           PsiElement(XML_ATTRIBUTE_VALUE)

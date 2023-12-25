@@ -8,6 +8,7 @@ import com.intellij.psi.tree.IElementType
 import org.jetbrains.mpxjs.lang.LangMode
 import org.jetbrains.mpxjs.lang.html.parser.VueParsing
 
+//VueParsingLexer类中的start方法和advance方法是实现插值表达式解析的关键部分。  在start方法中，首先设置了additionalState为BASE_LEXING，然后调用checkPendingLangMode方法。在checkPendingLangMode方法中，如果parentLangMode为null（表示不是嵌套的词法分析器），并且词法分析器已经完成了词法分析（即baseToken为null），那么就将additionalState设置为ADDITIONAL_TOKEN_LEXING，这表示将要开始解析插值表达式。  在advance方法中，如果additionalState为ADDITIONAL_TOKEN_LEXING，那么就将additionalState设置为ADDITIONAL_TOKEN_LEXED，这表示已经完成了插值表达式的解析。如果additionalState为BASE_LEXING，那么就调用super.advance()方法进行正常的词法分析，并在完成后调用checkPendingLangMode方法检查是否需要开始解析插值表达式。  在getTokenType方法中，如果additionalState为ADDITIONAL_TOKEN_LEXING，那么就返回插值表达式的词素类型，这是通过调用delegateLexer.lexedLangMode.astMarkerToken来实现的。  总的来说，VueParsingLexer类通过在词法分析的过程中检查和设置additionalState的状态，来实现插值表达式的解析。
 /**
  * Emits zero-length [VueLangModeMarkerElementType] as a last element of the token stream
  * to be used by [VueParsing] unless [parentLangMode] is not null.

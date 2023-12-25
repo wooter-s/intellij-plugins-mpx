@@ -7,7 +7,7 @@ import com.intellij.psi.stubs.StubIndexKey
 class VueIdIndex : VueIndexBase<PsiElement>(KEY) {
   companion object {
     val KEY: StubIndexKey<String, PsiElement> =
-      StubIndexKey.createIndexKey("vue.id.index")
+      StubIndexKey.createIndexKey("mpx.id.index")
 
     val JS_KEY: String = createJSKey(KEY)
   }

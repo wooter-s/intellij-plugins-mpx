@@ -87,6 +87,8 @@ class VueLexer(val languageLevel: JSLanguageLevel,
         else
           XML_DATA_CHARACTERS
       }
+      // 合并了一些 token，比如 XML_WHITE_SPACE、XML_REAL_WHITE_SPACE、XML_ATTRIBUTE_VALUE_TOKEN、XML_DATA_CHARACTERS、XML_TAG_CHARACTERS，
+      // case: 一个变量的值是viriablename，那么这个变量的值就是一个 token，而不是多个 token,但是获取到的 tokenType 是多个 token，所以需要合并
       if (TOKENS_TO_MERGE.contains(tokenType)) {
         while (true) {
           val nextTokenType = originalLexer.tokenType
@@ -103,6 +105,15 @@ class VueLexer(val languageLevel: JSLanguageLevel,
         if (originalLexer.tokenType === XML_ATTRIBUTE_VALUE_TOKEN) {
           return XML_ATTRIBUTE_VALUE_TOKEN
         }
+      }
+
+      // 添加一个新的条件，当遇到funcConfigDisplay这种情况时，返回正确的标记类型
+      if (this.tokenText == "funcConfigDisplay") {
+        return XML_ATTRIBUTE_VALUE_TOKEN
+      }
+
+      if (highlightMode && tokenType === XML_DATA_CHARACTERS) {
+        return INTERPOLATION_EXPR
       }
       return tokenType
     }

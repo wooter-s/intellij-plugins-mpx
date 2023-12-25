@@ -4,5 +4,6 @@ package org.jetbrains.mpxjs.spellchecker
 import com.intellij.spellchecker.BundledDictionaryProvider
 
 class VueSpellcheckingDictionaryProvider : BundledDictionaryProvider {
-  override fun getBundledDictionaries(): Array<String> = arrayOf("vue.dic")
+  // 写死 mixins vuex
+  override fun getBundledDictionaries(): Array<String> = arrayOf("mixins", "vuex")
 }

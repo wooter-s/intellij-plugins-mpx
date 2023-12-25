@@ -12,6 +12,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.mpxjs.lang.html.VueFile
 import org.jetbrains.mpxjs.lang.html.VueFileType
 
+//在这段代码中，`VueElementResolveScopeProvider` 类只定义了 `tsProvider`，这是一个 `TypeScriptResolveScopeProvider` 的实例，用于处理 TypeScript 元素的解析范围。这是因为 Vue 文件中的 JavaScript 元素的解析范围可以由父类 `JSElementResolveScopeProvider` 提供，因此不需要额外定义一个 `jsProvider`。
 class VueElementResolveScopeProvider : JSElementResolveScopeProvider {
   private val tsProvider = object : TypeScriptResolveScopeProvider() {
     override fun isApplicable(file: VirtualFile): Boolean = true

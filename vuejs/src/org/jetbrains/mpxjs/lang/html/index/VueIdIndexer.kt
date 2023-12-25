@@ -6,6 +6,7 @@ import com.intellij.psi.impl.cache.impl.id.IdIndexEntry
 import com.intellij.psi.impl.cache.impl.id.LexingIdIndexer
 import com.intellij.util.indexing.FileContent
 
+//总的来说，VueIdIndexer类的主要作用是为Vue.js项目中的文件内容创建索引，以便于后续的代码分析和处理。
 class VueIdIndexer : LexingIdIndexer {
   override fun map(inputData: FileContent): Map<IdIndexEntry, Int> =
     BaseFilterLexerUtil.calcIdEntries(inputData) { consumer ->

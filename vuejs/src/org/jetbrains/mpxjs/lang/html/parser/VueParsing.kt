@@ -121,14 +121,19 @@ class VueParsing(builder: PsiBuilder) : HtmlParsing(builder) {
     else if (attributeInfo.kind == SCRIPT_SETUP) {
       (peekTagInfo() as VueHtmlTagInfo).hasScriptSetup = true
     }
+    //XML_EQ 是一个 IElementType 实例，代表 XML 中的等号（"="）。在 XML 中，等号用于分隔属性名和属性值。例如，在 <tag attribute="value"> 中，attribute 和 value 之间的等号就是 XML_EQ 所代表的。
     if (token() === XmlTokenType.XML_EQ) {
       advance()
       parseAttributeValue()
     }
     if (tagName.lowercase(Locale.US) == SLOT_TAG_NAME) {
       attr.done(VueStubElementTypes.STUBBED_ATTRIBUTE)
-    }
-    else
+    } else {
+      //val contentText = attr.toString()
+      //if (contentText.contains("{{") && contentText.contains("}}")) {
+      //  attr.done(VueJSEmbeddedExprTokenType.createInterpolationExpression(langMode, builder.project))
+      //  return
+      //}
       when (attributeInfo.kind) {
         TEMPLATE_SRC, SCRIPT_SRC, STYLE_SRC -> attr.done(VueStubElementTypes.SRC_ATTRIBUTE)
         SCRIPT_ID -> attr.done(VueStubElementTypes.SCRIPT_ID_ATTRIBUTE)
@@ -136,6 +141,7 @@ class VueParsing(builder: PsiBuilder) : HtmlParsing(builder) {
         REF -> attr.done(VueStubElementTypes.REF_ATTRIBUTE)
         else -> attr.done(XmlElementType.XML_ATTRIBUTE)
       }
+    }
   }
 
   override fun getHtmlTagElementType(info: HtmlTagInfo, tagLevel: Int): IElementType {

@@ -20,6 +20,17 @@ import org.jetbrains.mpxjs.model.VueFilter
 import org.jetbrains.mpxjs.model.VueModelManager
 import org.jetbrains.mpxjs.model.VueModelVisitor
 
+//`VueExprCompletionProvider` 是一个 Kotlin 类，它继承自 `CompletionProvider<CompletionParameters>` 类。这个类主要用于提供 Vue 表达式的自动完成建议。
+//
+//这个类重写了 `CompletionProvider` 的 `addCompletions` 方法，这个方法在每次获取自动完成建议时都会被调用。在这个方法中，它首先获取当前位置的引用，然后根据引用的类型选择不同的处理方式：
+//
+//- 如果引用是 `VueJSFilterReferenceExpression`，那么它会从全局的 Vue 模型中获取所有的过滤器，并将这些过滤器作为自动完成建议添加到结果中。
+//
+//- 如果引用是 `JSReferenceExpressionImpl`，并且引用的限定符是 `JSThisExpression` 或者 `null`，那么它会使用 `VueTemplateScopesResolver` 来获取当前作用域中的所有元素，并将这些元素作为自动完成建议添加到结果中。
+//
+//此外，这个类还定义了一个 `getJSLookupPriorityOf` 方法，这个方法用于获取给定的近似度对应的查找优先级。这个优先级用于在自动完成建议中对结果进行排序。
+//
+//总的来说，`VueExprCompletionProvider` 类是用来提供 Vue 表达式的自动完成建议的。
 class VueExprCompletionProvider : CompletionProvider<CompletionParameters>() {
 
   companion object {

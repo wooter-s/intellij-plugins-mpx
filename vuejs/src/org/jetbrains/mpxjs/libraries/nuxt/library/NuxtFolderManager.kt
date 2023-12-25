@@ -26,7 +26,7 @@ import com.intellij.workspaceModel.ide.getInstance
 import org.jetbrains.mpxjs.libraries.nuxt.NUXT_OUTPUT_FOLDER
 
 @Service(Service.Level.PROJECT)
-@State(name = "DotNuxtFolderManager", storages = [Storage(StoragePathMacros.CACHE_FILE)])
+@State(name = "MpxDotNuxtFolderManager", storages = [Storage(StoragePathMacros.CACHE_FILE)])
 class NuxtFolderManager(private val project: Project) : PersistentStateComponent<NuxtFolderManagerState>, Disposable {
   private val folders = ContainerUtil.newConcurrentSet<VirtualFile>()
   val nuxtFolders: List<VirtualFile>

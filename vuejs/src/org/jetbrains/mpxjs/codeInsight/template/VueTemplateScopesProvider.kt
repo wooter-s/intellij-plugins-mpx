@@ -13,6 +13,6 @@ abstract class VueTemplateScopesProvider {
                          hostElement: PsiElement?): List<VueTemplateScope>
 
   companion object {
-    internal val EP_NAME = ExtensionPointName.create<VueTemplateScopesProvider>("com.intellij.vuejs.templateScopesProvider")
+    internal val EP_NAME = ExtensionPointName.create<VueTemplateScopesProvider>("com.intellij.mpxjs.templateScopesProvider")
   }
 }

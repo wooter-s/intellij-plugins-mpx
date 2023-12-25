@@ -23,6 +23,17 @@ import org.jetbrains.mpxjs.model.VueRegularComponent
 import org.jetbrains.mpxjs.model.source.COMPUTED_PROP
 import org.jetbrains.mpxjs.model.source.METHODS_PROP
 
+//`VueAddImportExecutor` 是一个 Kotlin 类，它继承自 `ES6AddImportExecutor` 类。这个类主要用于处理在 Vue 文件中添加导入语句的操作。
+//
+//当你在 Vue 文件中引用了一个未导入的元素时，`VueAddImportExecutor` 会被用来添加相应的导入语句。
+//
+//这个类重写了 `ES6AddImportExecutor` 的 `prepareScopeToAdd` 和 `postProcessScope` 方法：
+//
+//- `prepareScopeToAdd` 方法用于准备添加导入语句的范围。这个方法首先检查当前的位置是否在一个 HTML 标签的嵌入内容中，如果是，那么就返回这个位置；否则，它会查找包含当前位置的 Vue 组件，并创建这个组件的源代码编辑器（`VueComponentSourceEdit`）。然后，它会在一个写操作中获取或创建这个组件的脚本范围。
+//
+//- `postProcessScope` 方法用于在添加导入语句后进行后处理。这个方法首先查找包含当前位置的 Vue 组件，并创建这个组件的源代码编辑器（`VueComponentSourceEdit`）。然后，它会根据导入的元素的类型，添加相应的属性引用或函数到组件的 `methods` 或 `computed` 属性中。如果需要，它还会移动光标到新添加的函数的返回值位置。
+//
+//总的来说，`VueAddImportExecutor` 类是用来处理在 Vue 文件中添加导入语句的操作的。
 class VueAddImportExecutor(place: PsiElement) : ES6AddImportExecutor(place) {
 
   override fun prepareScopeToAdd(place: PsiElement, fromExternalModule: Boolean): PsiElement? {

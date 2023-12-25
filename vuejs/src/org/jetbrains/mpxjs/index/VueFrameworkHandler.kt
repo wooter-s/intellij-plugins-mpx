@@ -108,7 +108,7 @@ class VueFrameworkHandler : FrameworkIndexingHandler() {
       WITH_DEFAULTS_FUN, DEFINE_MODEL_FUN, INJECT_FUN, PROVIDE_FUN, DEFINE_OPTIONS_FUN
     )
 
-    private const val METHOD_NAME_USER_STRING = "vmn"
+    private const val METHOD_NAME_USER_STRING = "mpx_vmn"
 
     fun getFunctionNameFromVueIndex(call: JSCallExpression): String? {
       // todo consider first using AST if loaded

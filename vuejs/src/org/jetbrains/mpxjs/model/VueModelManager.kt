@@ -271,6 +271,37 @@ class VueModelManager {
       return result
     }
 
+    /**
+     * `getDescriptorFromVueModule`函数的主要功能是从Vue模块中获取一个`VueSourceEntityDescriptor`。这个函数接收一个`PsiElement`作为参数，然后尝试从这个元素所在的Vue模块中获取一个`VueSourceEntityDescriptor`。
+     *
+     * 具体来说，这个函数首先检查传入的元素是否是一个Vue文件。如果是，那么它会尝试从这个文件中找到一个JavaScript模块，然后从这个模块中获取一个`VueSourceEntityDescriptor`。如果找到了，那么就返回这个`VueSourceEntityDescriptor`。如果没有找到，那么就返回`null`。
+     *
+     * 以下是一个Vue.js代码的示例，可以展示`getDescriptorFromVueModule`函数的用途：
+     *
+     * ```vue
+     * <template>
+     *   <div>{{ message }}</div>
+     * </template>
+     *
+     * <script>
+     * export default {
+     *   data() {
+     *     return {
+     *       message: 'Hello Vue!'
+     *     }
+     *   }
+     * }
+     * </script>
+     *
+     * <style scoped>
+     * h1 {
+     *   color: #42b983;
+     * }
+     * </style>
+     * ```
+     *
+     * 在这个示例中，`<script>`标签中的`export default`语句定义了一个Vue模块。这个模块包含一个`data`函数，这个函数返回一个对象，这个对象包含一个`message`属性。如果你在IDE中点击或者将鼠标悬停在`message`上，`getDescriptorFromVueModule`函数就会被调用，来从这个Vue模块中获取一个`VueSourceEntityDescriptor`。这个`VueSourceEntityDescriptor`包含了`message`这个属性的定义和引用。
+     */
     private fun getDescriptorFromVueModule(element: PsiElement): VueSourceEntityDescriptor? {
       val file = element.containingFile?.originalFile
                    ?.asSafely<VueFile>()

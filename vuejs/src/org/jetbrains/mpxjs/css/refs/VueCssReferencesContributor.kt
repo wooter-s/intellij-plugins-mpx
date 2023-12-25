@@ -46,7 +46,7 @@ class VueCssReferencesContributor : PsiReferenceContributor() {
       }
       val function = termList.parent as? CssFunction ?: return PsiReference.EMPTY_ARRAY
 
-      return if (function.name == "v-bind")
+      return if (function.name == "bind:")
         arrayOf(VBindIdentifierReference(element))
       else PsiReference.EMPTY_ARRAY
     }

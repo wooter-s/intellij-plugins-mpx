@@ -101,6 +101,23 @@ class VueComponents {
         ?.find(::isComponentDecorator)
     }
 
+    /**
+     * <template>
+     *   <my-component></my-component>
+     * </template>
+     *
+     * <script>
+     * import MyComponent from './MyComponent.vue'
+     *
+     * export default {
+     *   components: {
+     *     MyComponent
+     *   }
+     * }
+     * </script>
+     * 像上面这样声明组件引入的方式，会在`<script>`标签中的`components`属性中声明组件。
+     * TODO mpxjs要改成从application/json里解析
+     */
     fun getComponentDescriptor(element: PsiElement?): VueEntityDescriptor? =
       VueTypedEntitiesProvider.getComponentDescriptor(element)
       ?: getSourceComponentDescriptor(element)
@@ -160,6 +177,7 @@ class VueComponents {
 
     @StubSafe
     fun isComponentDefiningCall(callExpression: JSCallExpression): Boolean =
+      //  callExpression的JSReferenceExpression 内容是createPage或者createComponent
       VueFrameworkHandler.getFunctionNameFromVueIndex(callExpression).let {
         it == DEFINE_COMPONENT_FUN || it == DEFINE_NUXT_COMPONENT_FUN || it == EXTEND_FUN || it == DEFINE_OPTIONS_FUN || it == CREATE_PAGE_FUN
       }
@@ -183,6 +201,41 @@ interface VueEntityDescriptor {
   val source: PsiElement
 }
 
+/**
+ * `VueSourceEntityDescriptor`是一个Kotlin类，它在JetBrains的Vue.js插件中被用来表示一个Vue组件的描述符。这个类包含了一个Vue组件的初始化器（`initializer`）和类定义（`clazz`），以及这个组件的源元素（`source`）。
+ *
+ * `initializer`是一个`JSElement`，它可以是一个`JSObjectLiteralExpression`或者一个`PsiFile`。这个元素表示Vue组件的定义，它可以是一个对象字面量（用于定义组件的选项），或者是一个`.vue`文件。
+ *
+ * `clazz`是一个`JSClass`，它表示Vue组件的类定义。这个元素在使用`Vue.extend`或者`@Component`装饰器定义Vue组件时会被使用。
+ *
+ * `source`是一个`PsiElement`，它表示这个Vue组件的源元素。这个元素可以是一个`.vue`文件，或者是一个JavaScript或TypeScript文件。
+ *
+ * 以下是一个Vue.js代码的示例，可以展示`VueSourceEntityDescriptor`的用途：
+ *
+ * ```vue
+ * <template>
+ *   <div>{{ message }}</div>
+ * </template>
+ *
+ * <script>
+ * export default {
+ *   data() {
+ *     return {
+ *       message: 'Hello Vue!'
+ *     }
+ *   }
+ * }
+ * </script>
+ *
+ * <style scoped>
+ * h1 {
+ *   color: #42b983;
+ * }
+ * </style>
+ * ```
+ *
+ * 在这个示例中，`<script>`标签中的`export default`语句定义了一个Vue组件。这个组件包含一个`data`函数，这个函数返回一个对象，这个对象包含一个`message`属性。在JetBrains的Vue.js插件中，这个组件的定义会被表示为一个`VueSourceEntityDescriptor`对象。这个对象的`initializer`属性会是一个`JSObjectLiteralExpression`，表示这个组件的定义。这个对象的`source`属性会是这个`.vue`文件。
+ */
 class VueSourceEntityDescriptor(val initializer: JSElement? /* JSObjectLiteralExpression | PsiFile */ = null,
                                 val clazz: JSClass? = null,
                                 override val source: PsiElement = clazz ?: initializer!!) : VueEntityDescriptor {

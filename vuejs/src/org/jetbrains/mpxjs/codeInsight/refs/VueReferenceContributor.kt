@@ -2,6 +2,7 @@
 package org.jetbrains.mpxjs.codeInsight.refs
 
 import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.paths.PathReferenceManager
 import com.intellij.openapi.paths.StaticPathReferenceProvider
 import com.intellij.patterns.XmlAttributeValuePattern
 import com.intellij.patterns.XmlPatterns
@@ -20,9 +21,9 @@ import org.jetbrains.mpxjs.lang.html.psi.VueRefAttribute
 class VueReferenceContributor : PsiReferenceContributor() {
 
   override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
-    registrar.registerReferenceProvider(STYLE_PATTERN, STYLE_REF_PROVIDER)
+    registrar.registerReferenceProvider(createSrcAttrValuePattern(STYLE_TAG_NAME), STYLE_REF_PROVIDER)
 
-    registrar.registerReferenceProvider(createSrcAttrValuePattern(TEMPLATE_TAG_NAME), STATIC_FILE_REF_PROVIDER)
+    registrar.registerReferenceProvider(createSrcAttrValuePattern(TEMPLATE_TAG_NAME), BASIC_REF_PROVIDER)
     registrar.registerReferenceProvider(
       XmlPatterns.xmlAttributeValue().withParent(VueRefAttribute::class.java),
       REF_ATTRIBUTE_REF_PROVIDER
@@ -32,6 +33,11 @@ class VueReferenceContributor : PsiReferenceContributor() {
   companion object {
 
     val STYLE_PATTERN = createSrcAttrValuePattern(STYLE_TAG_NAME)
+
+    val BASIC_REF_PROVIDER = object : PsiReferenceProvider() {
+      override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> =
+        PathReferenceManager.getInstance().createReferences(element, false, false, true)
+    }
 
     private val STYLE_REF_PROVIDER = object : PsiReferenceProvider() {
       override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {

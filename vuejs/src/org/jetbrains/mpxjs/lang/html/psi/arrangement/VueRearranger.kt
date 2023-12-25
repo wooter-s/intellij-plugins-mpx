@@ -31,13 +31,13 @@ class VueRearranger : HtmlRearranger() {
   }
 
   enum class VueAttributeKind(val pattern: String) {
-    DEFINITION("(v-bind:|:|v-)?is"),
-    LIST_RENDERING("v-for"),
-    CONDITIONALS("v-(if|else-if|else|show|cloak)"),
+    DEFINITION("(v-bind:|:|wx:)?is"),
+    LIST_RENDERING("wx:for"),
+    CONDITIONALS("wx:(if|else-if|else|show|cloak)"),
     RENDER_MODIFIERS("v-(pre|once)"),
     GLOBAL("(v-bind:|:)?id"),
     UNIQUE("(v-bind:|:)?(ref|key|slot|slot-scope)|v-slot"),
-    TWO_WAY_BINDING("v-model"),
+    TWO_WAY_BINDING("wx:model"),
     OTHER_DIRECTIVES("v-(?!on:|bind:|(html|text|bind|on)$).+"),
     OTHER_ATTR("(?!v-on:|@|v-on$|v-html$|v-text$).+"),
     EVENTS("((v-on:|@)\\w+)|v-on$"),

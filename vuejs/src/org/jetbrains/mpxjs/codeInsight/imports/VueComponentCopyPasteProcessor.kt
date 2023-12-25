@@ -46,6 +46,14 @@ import java.awt.datatransfer.DataFlavor
 import kotlin.Pair
 import com.intellij.openapi.util.Pair as OpenApiPair
 
+//`VueComponentCopyPasteProcessor` 是一个 Kotlin 类，它继承自 `ES6CopyPasteProcessorBase`。这个类主要用于处理在 Vue 文件中复制和粘贴代码时的导入语句。
+//
+//当你在 Vue 文件中复制了一段包含未导入的元素的代码，然后在另一个地方粘贴这段代码时，`VueComponentCopyPasteProcessor` 会被用来收集和处理这些未导入的元素。它会收集复制的代码中的所有未导入的元素，然后在粘贴的地方添加相应的导入语句。
+//
+//这个类重写了 `ES6CopyPasteProcessorBase` 的几个方法，包括 `isAcceptableCopyContext`、`isAcceptablePasteContext`、`hasUnsupportedContentInCopyContext`、`getExportScope`、`collectTransferableData`、`createTransferableData`、`processTransferableData` 和 `insertRequiredImports`。这些方法用于检查复制和粘贴的上下文，收集和处理未导入的元素，以及插入导入语句。
+//
+//总的来说，`VueComponentCopyPasteProcessor` 类是用来处理在 Vue 文件中复制和粘贴代码时的导入语句的。
+// TODO 组件导入导出逻辑需要优化
 class VueComponentCopyPasteProcessor : ES6CopyPasteProcessorBase<VueComponentCopyPasteProcessor.VueComponentImportsTransferableData>() {
 
   override val dataFlavor: DataFlavor

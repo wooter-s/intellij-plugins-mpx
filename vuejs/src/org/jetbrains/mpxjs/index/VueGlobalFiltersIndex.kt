@@ -7,7 +7,7 @@ import com.intellij.psi.stubs.StubIndexKey
 class VueGlobalFiltersIndex : VueIndexBase<JSImplicitElementProvider>(KEY) {
   companion object {
     val KEY: StubIndexKey<String, JSImplicitElementProvider> =
-      StubIndexKey.createIndexKey("vue.global.filters.index")
+      StubIndexKey.createIndexKey("mpx.global.filters.index")
     val JS_KEY: String = createJSKey(KEY)
   }
 }

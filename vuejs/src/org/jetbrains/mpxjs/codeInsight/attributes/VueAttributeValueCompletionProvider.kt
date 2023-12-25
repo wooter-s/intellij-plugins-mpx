@@ -32,6 +32,7 @@ class VueAttributeValueCompletionProvider : CompletionProvider<CompletionParamet
   }
 
   private fun listOfCompletions(xmlTag: XmlTag, xmlAttribute: XmlAttribute): Set<String> =
+    // 这是Kotlin语言中的when表达式，它类似于其他语言中的switch语句。when表达式用于通过检查一个值是否符合某种条件来选择执行不同的代码块
     when (VueAttributeNameParser.parse(xmlAttribute.name, xmlTag).kind) {
       SCRIPT_LANG -> VUE_SCRIPT_LANGUAGE
       STYLE_LANG -> VUE_STYLE_LANGUAGE
