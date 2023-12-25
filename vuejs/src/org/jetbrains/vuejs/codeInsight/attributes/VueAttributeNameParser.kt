@@ -36,7 +36,10 @@ class VueAttributeNameParser private constructor() {
         paramsPos = 0
         isShorthand = true
       }
-      else if (attributeName.startsWith(ATTR_ARGUMENT_PREFIX)) {
+      else if (attributeName.startsWith(ATTR_ARGUMENT_PREFIX)
+        || attributeName.startsWith("bind")
+        || attributeName.startsWith("catch")
+        ) {
         name = "bind"
         kind = VueDirectiveKind.BIND
         paramsPos = 0
