@@ -1,6 +1,6 @@
 <idea-plugin url="https://github.com/JetBrains/intellij-plugins/tree/master/vuejs" package="org.jetbrains.vuejs">
   <!--suppress PluginXmlCapitalization -->
-  <name>Vue.js</name>
+  <name>Mpx.js</name>
   <id>org.jetbrains.plugins.vue</id>
   <description><![CDATA[
     Support for <a href="https://vuejs.org">Vue.js</a> projects.
@@ -63,7 +63,7 @@
     <css.inclusionContext implementation="org.jetbrains.vuejs.css.VueCssInclusionContext"/>
     <html.attributeValueProvider implementation="org.jetbrains.vuejs.codeInsight.attributes.VueCustomAttributeValueProvider"/>
     <metaLanguage implementation="org.jetbrains.vuejs.lang.expr.VueExprMetaLanguage"/>
-    <fileType name="Vue.js" extensions="mpx" language="Vue" implementationClass="org.jetbrains.vuejs.lang.html.VueFileType"
+    <fileType name="Mpx.js" extensions="mpx" language="Vue" implementationClass="org.jetbrains.vuejs.lang.html.VueFileType"
               fieldName="INSTANCE"/>
     <lang.parserDefinition language="Vue" implementationClass="org.jetbrains.vuejs.lang.html.parser.VueParserDefinition"/>
     <lang.parserDefinition language="VueJS" implementationClass="org.jetbrains.vuejs.lang.expr.parser.VueJSParserDefinition"/>
