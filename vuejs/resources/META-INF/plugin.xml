@@ -63,7 +63,7 @@
     <css.inclusionContext implementation="org.jetbrains.vuejs.css.VueCssInclusionContext"/>
     <html.attributeValueProvider implementation="org.jetbrains.vuejs.codeInsight.attributes.VueCustomAttributeValueProvider"/>
     <metaLanguage implementation="org.jetbrains.vuejs.lang.expr.VueExprMetaLanguage"/>
-    <fileType name="Vue.js" extensions="vue" language="Vue" implementationClass="org.jetbrains.vuejs.lang.html.VueFileType"
+    <fileType name="Vue.js" extensions="mpx" language="Vue" implementationClass="org.jetbrains.vuejs.lang.html.VueFileType"
               fieldName="INSTANCE"/>
     <lang.parserDefinition language="Vue" implementationClass="org.jetbrains.vuejs.lang.html.parser.VueParserDefinition"/>
     <lang.parserDefinition language="VueJS" implementationClass="org.jetbrains.vuejs.lang.expr.parser.VueJSParserDefinition"/>
