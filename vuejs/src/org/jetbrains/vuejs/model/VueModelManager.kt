@@ -33,6 +33,7 @@ import com.intellij.psi.xml.XmlTag
 import com.intellij.util.asSafely
 import com.intellij.xml.util.HtmlUtil
 import com.intellij.xml.util.HtmlUtil.SCRIPT_TAG_NAME
+import org.jetbrains.vuejs.codeInsight.findCreatePage
 import org.jetbrains.vuejs.codeInsight.findDefaultExport
 import org.jetbrains.vuejs.codeInsight.getHostFile
 import org.jetbrains.vuejs.codeInsight.toAsset
@@ -277,7 +278,7 @@ class VueModelManager {
                  ?: return null
       val scriptModule = findModule(file, false)
       if (scriptModule != null) {
-        findDefaultExport(scriptModule)
+        findCreatePage(scriptModule)
           ?.let { getComponentDescriptor(it) }
           ?.asSafely<VueSourceEntityDescriptor>()
           ?.let { return it }

@@ -6,6 +6,7 @@ import com.intellij.lang.javascript.psi.types.JSStringLiteralTypeImpl
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.util.asSafely
+import org.jetbrains.vuejs.codeInsight.findCreatePage
 import org.jetbrains.vuejs.codeInsight.findDefaultExport
 import org.jetbrains.vuejs.codeInsight.fromAsset
 import org.jetbrains.vuejs.codeInsight.objectLiteralFor
@@ -13,7 +14,7 @@ import org.jetbrains.vuejs.libraries.nuxt.model.NuxtConfig
 
 class NuxtConfigImpl(override val file: PsiFile, nuxt2_15: Boolean) : NuxtConfig {
 
-  private val configLiteral = objectLiteralFor(findDefaultExport(file as? JSFile))
+  private val configLiteral = objectLiteralFor(findCreatePage(file as? JSFile))
 
   private val globalDefault = nuxt2_15
 

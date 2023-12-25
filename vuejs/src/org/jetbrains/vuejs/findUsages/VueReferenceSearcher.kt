@@ -25,6 +25,7 @@ import com.intellij.util.Processor
 import com.intellij.util.asSafely
 import com.intellij.webSymbols.search.PsiSourcedWebSymbolRequestResultProcessor
 import org.jetbrains.vuejs.VueBundle
+import org.jetbrains.vuejs.codeInsight.findCreatePage
 import org.jetbrains.vuejs.codeInsight.findDefaultExport
 import org.jetbrains.vuejs.codeInsight.fromAsset
 import org.jetbrains.vuejs.context.isVueContext
@@ -109,7 +110,7 @@ class VueReferenceSearcher : QueryExecutorBase<PsiReference, ReferencesSearch.Se
       if (component != null && isVueContext(component.source ?: element)) {
         // Add search for default export if present
         if (element is JSImplicitElement) {
-          findDefaultExport(findModule(component.source?.containingFile, false))?.let { defaultExport ->
+          findCreatePage(findModule(component.source?.containingFile, false))?.let { defaultExport ->
             val optimizer = queryParameters.optimizer
             val collector = SearchRequestCollector(optimizer.searchSession)
             optimizer.searchQuery(

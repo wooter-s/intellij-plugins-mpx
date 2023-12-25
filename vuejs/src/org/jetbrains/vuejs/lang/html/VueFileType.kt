@@ -7,7 +7,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import org.jetbrains.vuejs.index.VUE_FILE_EXTENSION
 
-class VueFileType private constructor() : WebFrameworkHtmlFileType(VueLanguage.INSTANCE, "Vue.js", "vue") {
+class VueFileType private constructor() : WebFrameworkHtmlFileType(VueLanguage.INSTANCE, "Mpx.js", "mpx") {
   companion object {
     @JvmField
     val INSTANCE: VueFileType = VueFileType()
