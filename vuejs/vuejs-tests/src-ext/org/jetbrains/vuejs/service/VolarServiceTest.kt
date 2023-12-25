@@ -8,6 +8,7 @@ import com.intellij.lang.javascript.typescript.service.TypeScriptServiceTestBase
 import com.intellij.lang.typescript.compiler.TypeScriptCompilerSettings
 import com.intellij.openapi.Disposable
 import com.intellij.platform.lsp.tests.checkLspHighlighting
+import com.intellij.platform.lsp.tests.waitForDiagnosticsFromLspServer
 import com.intellij.util.text.SemVer
 import junit.framework.TestCase
 import org.jetbrains.vuejs.lang.VueInspectionsProvider
@@ -250,7 +251,7 @@ class VolarServiceTest : VolarServiceTestBase() {
 
   @Test
   fun testMultilineCompletionItem() {
-    myFixture.configureVueDependencies(VueTestModule.VUE_3_0_0)
+    myFixture.configureVueDependencies(VueTestModule.VUE_3_3_4)
     myFixture.addFileToProject("tsconfig.json", tsconfig)
     myFixture.configureByText("main.vue", """
       <script lang="ts">
@@ -266,6 +267,7 @@ class VolarServiceTest : VolarServiceTestBase() {
     myFixture.type("spre")
     myFixture.completeBasic()
 
+    waitForDiagnosticsFromLspServer(project, file.virtualFile)
     checkHighlightingByText(myFixture, """
       <script lang="ts">
       import {defineComponent} from "vue"
@@ -293,8 +295,8 @@ class VolarServiceTest : VolarServiceTestBase() {
 
     myFixture.checkLspHighlighting()
     myFixture.completeBasic()
-    myFixture.checkLspHighlighting()
 
+    waitForDiagnosticsFromLspServer(project, file.virtualFile)
     checkHighlightingByText(myFixture, """
       import Helper from "./helper";
       

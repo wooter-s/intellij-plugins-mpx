@@ -40,10 +40,7 @@ import org.jetbrains.mpxjs.index.findScriptTag
 import org.jetbrains.mpxjs.index.isScriptSetupTag
 import org.jetbrains.mpxjs.libraries.VUE_CLASS_COMPONENT
 import org.jetbrains.mpxjs.model.VueEntitiesContainer
-import org.jetbrains.mpxjs.model.source.COMPONENTS_PROP
-import org.jetbrains.mpxjs.model.source.NAME_PROP
-import org.jetbrains.mpxjs.model.source.VueComponents
-import org.jetbrains.mpxjs.model.source.VueSourceComponent
+import org.jetbrains.mpxjs.model.source.*
 import org.jetbrains.mpxjs.model.tryResolveSrcReference
 
 class VueComponentSourceEdit private constructor(private val component: Pointer<VueSourceComponent>) {
@@ -207,7 +204,8 @@ class VueComponentSourceEdit private constructor(private val component: Pointer<
         }
       }
       useDefineComponent -> {
-        insertImportIfNotThere("defineComponent", false, VUE_MODULE, scriptScope)
+        insertImportIfNotThere(CREATE_PAGE_FUN, false, VUE_MODULE, scriptScope)
+        insertImportIfNotThere(DEFINE_COMPONENT_FUN, false, VUE_MODULE, scriptScope)
       }
       useVueExtend -> {
         insertImportIfNotThere("Vue", true, VUE_MODULE, scriptScope)

@@ -6,7 +6,6 @@ import com.intellij.webSymbols.LookupElementInfo
 import com.intellij.webSymbols.enableIdempotenceChecksOnEveryCache
 import org.angular2.Angular2TestCase
 import org.angular2.Angular2TestModule
-import org.angular2.Angular2TestModule.ANGULAR_CDK_14_2_0
 import org.angular2.Angular2TestModule.ANGULAR_CORE_13_3_5
 import org.angular2.Angular2TsConfigFile
 
@@ -91,33 +90,6 @@ class Angular2CompletionTest : Angular2TestCase("completion") {
   fun testTemplatesCompletion16Strict() =
     doLookupTest(Angular2TestModule.ANGULAR_COMMON_16_2_8, extension = "html", configurators = listOf(Angular2TsConfigFile()))
 
-  fun testCompletionInExpression() {
-    doLookupTest(ANGULAR_CORE_13_3_5, ANGULAR_CDK_14_2_0, dir = true)
-
-    // Export from other file
-    myFixture.type("kThemes\n")
-    myFixture.type(".")
-    myFixture.completeBasic()
-    myFixture.type("l\n;")
-
-    // Local symbol
-    myFixture.type("CdkColors")
-    myFixture.completeBasic()
-    myFixture.type(".")
-    myFixture.completeBasic()
-    myFixture.type("re\n;")
-
-    // Global symbol
-    myFixture.type("Ma")
-    myFixture.completeBasic()
-    myFixture.type("th\n")
-    myFixture.type(".")
-    myFixture.completeBasic()
-    myFixture.type("abs\n")
-
-    myFixture.checkResultByFile("completionInExpression/completionInExpression.ts.after")
-  }
-
   fun testPrimaryBlocks() =
     doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
 
@@ -180,6 +152,49 @@ class Angular2CompletionTest : Angular2TestCase("completion") {
 
   fun testNoGlobalImportInTsFiles() =
     doTypingTest("do1\n", dir = true)
+
+  fun testIfBlockParameters() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html", checkDocumentation = true)
+
+  fun testIfBlockParameterTyping() =
+    doTypingTest("\nfoo", Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0)
+
+  fun testForBlockOfKeyword() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testForBlockParams() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html", checkDocumentation = true)
+
+  fun testForBlockLetEqKeyword() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testForBlockImplicitVariables() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testForBlockImplicitVariableInExpr() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html", checkDocumentation = true,
+                 lookupItemFilter = { it.lookupString == "\$count" })
+
+  fun testDeferBlockTimeExpressionStart() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testDeferBlockTimeExpressionTimeUnit() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testDeferBlockParameters() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testDeferBlockPrefetchParameters() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testDeferBlockOnTriggers() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testDeferBlockOnTimerNoArgCompletion() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
+
+  fun testDeferBlockOnViewport() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_0_0_RC_0, extension = "html")
 
   private fun notAnElement(it: LookupElementInfo): Boolean = !it.lookupString.startsWith("<")
 

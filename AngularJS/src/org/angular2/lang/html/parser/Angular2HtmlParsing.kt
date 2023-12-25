@@ -177,15 +177,30 @@ class Angular2HtmlParsing(private val templateSyntax: Angular2TemplateSyntax, bu
   private fun parseBlockStart() {
     assert(builder.tokenType == Angular2HtmlTokenTypes.BLOCK_NAME)
     val startMarker = builder.mark()
+    val blockName = builder.tokenText!!.removePrefix("@")
     builder.advanceLexer()
     if (builder.tokenType == Angular2HtmlTokenTypes.BLOCK_PARAMETERS_START) {
       val parameters = builder.mark()
       builder.advanceLexer()
       val parametersContents = builder.mark()
-      while (!builder.eof() && builder.tokenType != Angular2HtmlTokenTypes.BLOCK_PARAMETERS_END) {
-        builder.advanceLexer()
+      var parameterIndex = 0
+      while (!builder.eof()) {
+        if (builder.tokenType is Angular2EmbeddedExprTokenType) {
+          builder.advanceLexer()
+          if (builder.tokenType == Angular2HtmlTokenTypes.BLOCK_SEMICOLON) {
+            builder.advanceLexer()
+          }
+        }
+        else if (builder.tokenType == Angular2HtmlTokenTypes.BLOCK_SEMICOLON) {
+          builder.mark().collapse(Angular2EmbeddedExprTokenType.createBlockParameter(blockName, parameterIndex))
+          builder.advanceLexer()
+        }
+        else {
+          break
+        }
+        parameterIndex++
       }
-      if (builder.eof()) {
+      if (builder.eof() || builder.tokenType != Angular2HtmlTokenTypes.BLOCK_PARAMETERS_END) {
         parameters.errorBefore(JavaScriptBundle.message("javascript.parser.message.missing.rparen"), parametersContents)
         parametersContents.drop()
         parameters.precede().done(Angular2HtmlElementTypes.BLOCK_PARAMETERS)
@@ -363,7 +378,7 @@ class Angular2HtmlParsing(private val templateSyntax: Angular2TemplateSyntax, bu
     val errorMarker = mark()
     assert(token() === Angular2HtmlTokenTypes.EXPANSION_FORM_START)
     advance() //consume LBRACE
-    errorMarker.error(Angular2Bundle.message("angular.parse.template.unterminated-expansion-form-critical"))
+    errorMarker.error(Angular2Bundle.message("angular.parse.template.unterminated-expansion-form"))
   }
 
   private fun remapTokensUntilComma(textType: IElementType): Boolean {

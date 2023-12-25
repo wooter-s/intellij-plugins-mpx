@@ -6,11 +6,14 @@ import com.intellij.lang.javascript.psi.JSVariable;
 import com.intellij.lang.javascript.psi.stubs.JSVariableStub;
 
 public interface Angular2StubElementTypes {
-  int STUB_VERSION = 5;
+  int STUB_VERSION = 6;
 
   String EXTERNAL_ID_PREFIX = "NG:";
 
   JSStubElementType<JSVariableStub<JSVariable>, JSVariable> TEMPLATE_VARIABLE = new Angular2TemplateVariableElementType();
 
   JSStubElementType<JSVariableStub<JSVariable>, JSVariable> BLOCK_PARAMETER_VARIABLE = new Angular2BlockParameterVariableElementType();
+
+  Angular2DeferredTimeLiteralExpressionElementType DEFERRED_TIME_LITERAL_EXPRESSION =
+    new Angular2DeferredTimeLiteralExpressionElementType();
 }

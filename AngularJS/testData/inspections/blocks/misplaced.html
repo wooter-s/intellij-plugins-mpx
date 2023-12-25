@@ -1,0 +1,19 @@
+<error descr="@else block must be a sibling of primary block @if">@else</error> {
+
+}
+
+@if(foo) {
+
+} <error descr="@default block must be nested under primary block @switch">@default</error> {
+
+}
+
+@switch(foo) {
+  @case("a") {}
+  <error descr="@else block must be a sibling of primary block @if">@else</error> {}
+}
+
+@switch(foo) {
+  <error descr="@if block cannot be nested under @switch">@if</error>(bar) {
+  }
+}

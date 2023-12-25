@@ -34,6 +34,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.psi.tree.TokenSet
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parentOfType
 import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.psi.xml.XmlFile
@@ -57,6 +58,7 @@ import org.jetbrains.mpxjs.model.VueEntitiesContainer
 import org.jetbrains.mpxjs.model.VueModelProximityVisitor
 import org.jetbrains.mpxjs.model.VueModelVisitor
 import org.jetbrains.mpxjs.model.source.*
+import org.jetbrains.mpxjs.model.source.VueComponents.Companion.isComponentDefiningCall
 import org.jetbrains.mpxjs.types.asCompleteType
 import org.jetbrains.mpxjs.web.VueWebSymbolsQueryConfigurator
 import java.util.*
@@ -232,7 +234,7 @@ fun <T : PsiElement> resolveElementTo(element: PsiElement?, vararg classes: KCla
             }
             else return null
           }
-          else findDefaultExport(cur)?.let { queue.add(it) }
+          else findCreatePage(cur)?.let { queue.add(it) }
         }
         else -> JSStubBasedPsiTreeUtil.calculateMeaningfulElements(cur)
           .toCollection(queue)
@@ -433,6 +435,17 @@ private fun findDefaultCommonJSExport(element: PsiElement): PsiElement? {
     .mapNotNull { it.initializerOrStub }
     .firstOrNull()
 }
+
+fun findCreatePage(element: PsiElement?): PsiElement? =
+  element?.let {
+    val res = PsiTreeUtil.findChildrenOfType(element, JSCallExpression::class.java)
+    for (item in res) {
+      if (isComponentDefiningCall(item)) {
+        return@let item
+      }
+    }
+    return@let null
+  }
 
 fun resolveLocalComponent(context: VueEntitiesContainer, tagName: String, containingFile: PsiFile): List<VueComponent> {
   val result = mutableListOf<VueComponent>()

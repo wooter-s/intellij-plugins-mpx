@@ -41,4 +41,43 @@ class Angular17HtmlParsingTest : Angular2HtmlParsingTest() {
     """.trimIndent())
   }
 
+  fun testEmptyPrimaryExpressionBlock() {
+    doTestHtml("""
+      @for (; track ; ;) {{{item}}}
+    """.trimIndent())
+  }
+
+  fun testEmptyPrimaryExpressionBlockReparse() {
+    doReparseTest("""
+      @for (track) {}
+    """.trimIndent(), """
+      @for (;track) {}
+    """.trimIndent())
+  }
+
+  fun testDeferredBlockTimeLiteral() {
+    doTestHtml("""
+      @defer{} @placeholder(minimum 12s) {} @loading(after two; minimum 12 ms &&; maximum 1e2hr) {}
+    """.trimIndent())
+  }
+
+  fun testDeferBlockOnTriggers() {
+    doTestHtml("""
+      @defer(prefetch on viewport; on idle(var); on timer(12ms); on idle var; prefetch when foo == 12; prefetch ;)
+    """.trimIndent())
+  }
+
+  fun testIncompleteParameters() {
+    doTestHtml("""
+      @if(foo() {
+
+      }
+      @else if ( ) {
+        
+      } @else {
+      
+      }
+    """.trimIndent())
+  }
+
 }

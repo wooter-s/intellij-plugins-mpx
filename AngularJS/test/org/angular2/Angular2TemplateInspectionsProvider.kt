@@ -38,6 +38,8 @@ class Angular2TemplateInspectionsProvider(private val strict: Boolean = false) :
       AngularNonStandaloneComponentImportsInspection::class.java,
       AngularBindingTypeMismatchInspection::class.java,
       AngularInaccessibleSymbolInspection::class.java,
+      AngularIncorrectBlockUsageInspection::class.java,
+      AngularForBlockNonIterableVar::class.java,
       // TS
       TypeScriptUnresolvedReferenceInspection::class.java,
       TypeScriptValidateTypesInspection::class.java,

@@ -203,20 +203,28 @@
                                  referenceClass="com.intellij.webSymbols.references.WebSymbolReference"
                                  implementationClass="org.angular2.web.references.Angular2DirectivePropertyLiteralReferencesProvider"
                                  targetClass="com.intellij.webSymbols.WebSymbol"/>
+    <psi.symbolReferenceProvider hostElementClass="org.angular2.lang.html.psi.Angular2HtmlBlock"
+                                 hostLanguage="Angular2Html"
+                                 referenceClass="com.intellij.webSymbols.references.WebSymbolReference"
+                                 implementationClass="org.angular2.web.references.Angular2BlockReferencesProvider"
+                                 targetClass="com.intellij.webSymbols.WebSymbol"/>
     <webSymbols.declarationProvider implementation="org.angular2.web.declarations.Angular2SelectorDeclarationProvider"/>
     <webSymbols.declarationProvider implementation="org.angular2.web.declarations.Angular2DirectiveExportAsDeclarationProvider"/>
     <webSymbols.declarationProvider implementation="org.angular2.web.declarations.Angular2DirectivePropertyDeclarationProvider"/>
+    <webSymbols.webTypes.symbolFactory namespace="html" kind="ng-blocks" implementation="org.angular2.codeInsight.blocks.Angular2HtmlBlockSymbol$Factory"/>
+    <webSymbols.webTypes.symbolFactory namespace="html" kind="ng-block-parameters" implementation="org.angular2.codeInsight.blocks.Angular2BlockParameterSymbol$Factory"/>
+    <webSymbols.documentationCustomizer implementation="org.angular2.web.Angular2WebSymbolDocumentationCustomizer"/>
     <elementDescriptionProvider
       order="first"
       implementation="org.angular2.refactoring.Angular2ElementDescriptionProvider"/>
     <referencesSearch implementation="org.angular2.findUsages.Angular2ReferenceSearcher"/>
     <gotoSymbolContributor implementation="org.angular2.navigation.Angular2GotoSymbolContributor"/>
     <gotoRelatedProvider implementation="org.angular2.navigation.Angular2GotoRelatedProvider"/>
-    <typedHandler implementation="org.angular2.codeInsight.blocks.Angular2BlocksTypedHandler"/>
+    <typedHandler implementation="org.angular2.codeInsight.blocks.Angular2HtmlBlocksTypedHandler"/>
     <typedHandler implementation="org.angular2.editor.Angular2BracesInterpolationTypedHandler"/>
     <moveFileHandler implementation="org.angular2.refactoring.Angular2MoveFileHandler" order="first"/>
     <completion.htmlInTextCompletionPopupExtension
-      implementation="org.angular2.codeInsight.blocks.Angular2BlocksInTextCompletionPopupExtension"/>
+      implementation="org.angular2.codeInsight.blocks.Angular2HtmlBlocksInTextCompletionPopupExtension"/>
 
     <liveTemplateContext contextId="Angular" implementation="org.angular2.liveTemplate.Angular2BaseLiveTemplateContextType"/>
     <liveTemplateContext contextId="ANGULAR_TOP_LEVEL_STATEMENT" baseContextId="Angular"
@@ -236,7 +244,7 @@
               language="Angular2Html"/>
     <fileType name="Angular17Html" implementationClass="org.angular2.lang.html.Angular17HtmlFileType" fieldName="INSTANCE"
               language="Angular17Html"/>
-    <langCodeStyleSettingsProvider implementation="org.angular2.options.Angular2CodeStyleSettingsProvider"/>
+    <langCodeStyleSettingsProvider implementation="org.angular2.options.Angular2HtmlCodeStyleSettingsProvider"/>
     <fileIndentOptionsProvider implementation="org.angular2.lang.html.psi.formatter.Angular2HtmlFileIndentOptionsProvider"
                                id="angular2html" order="before html"/>
     <!--suppress PluginXmlValidity -->
@@ -247,6 +255,7 @@
                       id="angular2"/>
     <lang.parserDefinition language="Angular2Html" implementationClass="org.angular2.lang.html.parser.Angular2HtmlParserDefinition"/>
     <lang.parserDefinition language="Angular17Html" implementationClass="org.angular2.lang.html.parser.Angular17HtmlParserDefinition"/>
+    <tree.CustomLanguageASTComparator language="Angular2Html" implementationClass="org.angular2.lang.expr.parser.Angular2HtmlASTComparator"/>
     <braceMatcher filetype="Angular17Html" implementationClass="org.angular2.lang.html.Angular17HtmlBraceMatcher"/>
     <lang.syntaxHighlighterFactory language="Angular2Html"
                                    implementationClass="org.angular2.lang.html.highlighting.Angular2HtmlHighlighterFactory"/>
@@ -296,10 +305,23 @@
     <localInspection implementationClass="org.angular2.inspections.AngularBindingTypeMismatchInspection"
                      groupKey="angular.inspection.group.name" enabledByDefault="true" language="HtmlCompatible"
                      level="ERROR" key="angular.inspection.invalid-binding-type.name" bundle="messages.Angular2Bundle"/>
+    <localInspection implementationClass="org.angular2.inspections.AngularIncorrectBlockUsageInspection"
+                     groupKey="angular.inspection.group.name" enabledByDefault="true" language="Angular2Html"
+                     level="ERROR" key="angular.inspection.incorrect-block-usage.name" bundle="messages.Angular2Bundle"/>
+    <localInspection implementationClass="org.angular2.inspections.AngularForBlockNonIterableVar"
+                     groupKey="angular.inspection.group.name" enabledByDefault="true" language="Angular2Html"
+                     level="ERROR" key="angular.inspection.for-block-non-iterable.name" bundle="messages.Angular2Bundle"/>
+    <localInspection implementationClass="org.angular2.inspections.AngularDeferBlockOnTriggerInspection"
+                     groupKey="angular.inspection.group.name" enabledByDefault="true" language="Angular2Html"
+                     level="ERROR" key="angular.inspection.defer-block-on-trigger.name" bundle="messages.Angular2Bundle"/>
+    <errorQuickFixProvider implementation="org.angular2.inspections.Angular2ErrorQuickFixProvider"/>
     <idIndexer filetype="Angular2Html" implementationClass="org.angular2.lang.html.index.Angular2HtmlIdIndexer"/>
     <todoIndexer filetype="Angular2Html" implementationClass="org.angular2.lang.html.index.Angular2HtmlTodoIndexer"/>
+    <idIndexer filetype="Angular17Html" implementationClass="org.angular2.lang.html.index.Angular17HtmlIdIndexer"/>
+    <todoIndexer filetype="Angular17Html" implementationClass="org.angular2.lang.html.index.Angular17HtmlTodoIndexer"/>
     <stubElementTypeHolder class="org.angular2.lang.html.stub.Angular2HtmlStubElementTypes" externalIdPrefix="NG-HTML:"/>
     <lang.formatter language="Angular2Html" implementationClass="org.angular2.lang.html.psi.formatter.Angular2HtmlFormattingModelBuilder"/>
+    <lang.foldingBuilder language="Angular2Html" implementationClass="org.angular2.editor.Angular2HtmlFoldingBuilder"/>
     <gotoDeclarationHandler implementation="org.angular2.editor.Angular2GotoDeclarationHandler" order="first"/>
     <typeDeclarationProvider implementation="org.angular2.editor.Angular2TypeDeclarationProvider" order="first"/>
     <lang.symbolTypeProvider implementation="org.angular2.editor.Angular2TypeDeclarationProvider"/>
@@ -346,6 +368,11 @@
     <codeInsight.parameterNameHints language="Angular2Html"
                                     implementationClass="org.angular2.editor.Angular2InlayParameterHintsProvider"/>
     <highlightVisitor implementation="org.angular2.lang.expr.highlighting.Angular2RainbowVisitor"/>
+    <psi.symbolReferenceProvider hostElementClass="org.angular2.lang.expr.psi.Angular2BlockParameter"
+                                 hostLanguage="Angular2"
+                                 referenceClass="com.intellij.webSymbols.references.WebSymbolReference"
+                                 implementationClass="org.angular2.web.references.Angular2BlockParameterReferencesProvider"
+                                 targetClass="com.intellij.webSymbols.WebSymbol"/>
 
     <!-- Angular2 metadata JSON contributions -->
     <stubElementTypeHolder class="org.angular2.entities.metadata.Angular2MetadataElementTypes" externalIdPrefix="NG-META:"/>

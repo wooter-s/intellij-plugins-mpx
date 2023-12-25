@@ -148,6 +148,21 @@ class Angular2HighlightingTest : Angular2TestCase("highlighting") {
   fun testNgSrcAttribute() = checkHighlighting(ANGULAR_CORE_17_0_0_RC_0, ANGULAR_COMMON_17_0_0_RC_0,
                                                strictTemplates = true, extension = "ts", dir = true)
 
+  fun testIfBlockAsVarType() = checkHighlighting(ANGULAR_CORE_17_0_0_RC_0, ANGULAR_COMMON_17_0_0_RC_0,
+                                                 strictTemplates = true, extension = "ts")
+
+  fun testForBlockSemanticOfHighlighting() = checkHighlighting(ANGULAR_CORE_17_0_0_RC_0,
+                                                               strictTemplates = true, extension = "ts", checkInformation = true)
+
+  fun testForBlockVarType() = checkHighlighting(ANGULAR_CORE_17_0_0_RC_0,
+                                                strictTemplates = true, extension = "ts")
+
+  fun testForBlockIterableType() = checkHighlighting(ANGULAR_CORE_17_0_0_RC_0,
+                                                     strictTemplates = true, extension = "ts")
+
+  fun testDeferBlockSemanticHighlighting() = checkHighlighting(ANGULAR_CORE_17_0_0_RC_0,
+                                                               strictTemplates = true, extension = "html", checkInformation = true)
+
   override fun setUp() {
     super.setUp()
     myFixture.enableInspections(Angular2TemplateInspectionsProvider())

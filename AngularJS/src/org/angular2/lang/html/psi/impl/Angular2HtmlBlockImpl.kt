@@ -1,15 +1,18 @@
 // Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.angular2.lang.html.psi.impl
 
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.formatter.xml.AbstractXmlBlock
-import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.util.childrenOfType
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.siblings
 import com.intellij.psi.xml.XmlText
 import com.intellij.psi.xml.XmlTokenType
+import com.intellij.util.IncorrectOperationException
+import com.intellij.util.asSafely
 import com.intellij.util.takeWhileInclusive
-import org.angular2.codeInsight.blocks.Angular2HtmlBlockDefinition
+import org.angular2.codeInsight.blocks.Angular2HtmlBlockSymbol
 import org.angular2.codeInsight.blocks.Angular2HtmlBlockUtils.toCanonicalBlockName
 import org.angular2.codeInsight.blocks.getAngular2HtmlBlocksConfig
 import org.angular2.lang.expr.psi.Angular2BlockParameter
@@ -24,39 +27,48 @@ class Angular2HtmlBlockImpl(type: Angular2HtmlElementTypes.Angular2ElementType)
   : Angular2HtmlCompositePsiElement(type), Angular2HtmlBlock {
 
   override fun getName(): String =
-    findChildByType(Angular2HtmlTokenTypes.BLOCK_NAME)
-      ?.text?.toCanonicalBlockName()!!
+    nameElement.text?.toCanonicalBlockName()!!
+
+  override val nameElement: PsiElement
+    get() = firstChild.takeIf { it.elementType == Angular2HtmlTokenTypes.BLOCK_NAME }!!
 
   override val parameters: List<Angular2BlockParameter>
-    get() = PsiTreeUtil.findChildOfType(this, Angular2HtmlBlockParameters::class.java)
-              ?.parameters ?: emptyList()
+    get() = childrenOfType<Angular2HtmlBlockParameters>().firstOrNull()?.parameters ?: emptyList()
 
   override val contents: Angular2HtmlBlockContents?
-    get() = PsiTreeUtil.findChildOfType(this, Angular2HtmlBlockContents::class.java)
+    get() = childrenOfType<Angular2HtmlBlockContents>().firstOrNull()
 
-  override val definition: Angular2HtmlBlockDefinition?
+  override val definition: Angular2HtmlBlockSymbol?
     get() = getAngular2HtmlBlocksConfig(this)[this]
 
   override val isPrimary: Boolean
     get() = definition?.isPrimary == true
 
-  override val primaryBlockDefinition: Angular2HtmlBlockDefinition?
+  override val primaryBlockDefinition: Angular2HtmlBlockSymbol?
     get() = getAngular2HtmlBlocksConfig(this).let { config ->
       config[config[this]?.primaryBlock ?: getName().takeIf { config[this]?.isPrimary == true }]
     }
 
   override val primaryBlock: Angular2HtmlBlock?
-    get() =
-      blockSiblingsBackward().lastOrNull()?.takeIf { it.isPrimary }
+    get() {
+      val primaryBlockDefinition = primaryBlockDefinition
+      return if (primaryBlockDefinition?.hasNestedSecondaryBlocks == true)
+        parent.asSafely<Angular2HtmlBlockContents>()
+          ?.parent
+          ?.asSafely<Angular2HtmlBlock>()
+          ?.takeIf { it.getName() == primaryBlockDefinition.name }
+      else
+        blockSiblingsBackward().lastOrNull()?.takeIf { it.isPrimary }
+    }
 
   override fun blockSiblingsForward(): Sequence<Angular2HtmlBlock> {
     val blocksConfig = getAngular2HtmlBlocksConfig(this)
-    val primaryBlockName = blocksConfig[this]?.let { if (it.isPrimary) getName() else it.primaryBlock }
+    val symbol = blocksConfig[this]
+    val primaryBlockName = symbol?.let { if (it.isPrimary) getName() else it.primaryBlock }
     return siblings(true, false)
       .filter { !AbstractXmlBlock.containsWhiteSpacesOnly(it.node) && it.node.getTextLength() > 0 }
       .takeWhile { it is Angular2HtmlBlock && blocksConfig[it]?.primaryBlock == primaryBlockName }
       .filterIsInstance<Angular2HtmlBlock>()
-      .takeWhileInclusive { blocksConfig[it]?.last != true }
   }
 
   override fun blockSiblingsBackward(): Sequence<Angular2HtmlBlock> {
@@ -85,6 +97,10 @@ class Angular2HtmlBlockImpl(type: Angular2HtmlElementTypes.Angular2ElementType)
         visitor.visitElement(this)
       }
     }
+  }
+
+  override fun setName(name: String): PsiElement {
+    throw IncorrectOperationException()
   }
 
   override fun toString(): String =
