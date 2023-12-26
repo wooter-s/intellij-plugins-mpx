@@ -555,7 +555,7 @@ class VueFrameworkHandler : FrameworkIndexingHandler() {
   private fun isComponentDefiningCall(callNode: ASTNode): Boolean =
     checkCallExpression(callNode) { referenceName, hasQualifier ->
       (!hasQualifier && referenceName == DEFINE_COMPONENT_FUN)
-      (!hasQualifier && referenceName == CREATE_PAGE_FUN)
+      || (!hasQualifier && referenceName == CREATE_PAGE_FUN)
       || (!hasQualifier && referenceName == DEFINE_NUXT_COMPONENT_FUN)
       || (hasQualifier && referenceName == EXTEND_FUN)
       || (!hasQualifier && referenceName == DEFINE_OPTIONS_FUN)
