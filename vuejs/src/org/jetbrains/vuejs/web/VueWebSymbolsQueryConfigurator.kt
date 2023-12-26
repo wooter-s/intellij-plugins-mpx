@@ -34,7 +34,7 @@ class VueWebSymbolsQueryConfigurator : WebSymbolsQueryConfigurator {
   companion object {
     val VUE_TOP_LEVEL_ELEMENTS = WebSymbolQualifiedKind(NAMESPACE_HTML, "vue-file-top-elements")
     val VUE_COMPONENTS = WebSymbolQualifiedKind(NAMESPACE_HTML, "vue-components")
-    val VUE_COMPONENT_PROPS = WebSymbolQualifiedKind(NAMESPACE_HTML, "props")
+    val VUE_COMPONENT_PROPS = WebSymbolQualifiedKind(NAMESPACE_HTML, "properties")
     val VUE_COMPONENT_COMPUTED_PROPERTIES = WebSymbolQualifiedKind(NAMESPACE_HTML, "computed-properties")
     val VUE_COMPONENT_DATA_PROPERTIES = WebSymbolQualifiedKind(NAMESPACE_HTML, "data-properties")
     val VUE_DIRECTIVES = WebSymbolQualifiedKind(NAMESPACE_HTML, "vue-directives")

@@ -146,7 +146,7 @@
           "pattern": {
             "items": "/html/vue-directives",
             "template": [
-              "v-",
+              "wx:",
               "#item:Vue directive",
               {
                 "delegate": "argument",
@@ -625,7 +625,7 @@
           }
         },
         {
-          "name": "else-if",
+          "name": "elif",
           "description": "Denote the “else if block” for `v-if`. Can be chained.",
           "doc-url": "https://vuejs.org/v2/api/#v-else-if",
           "attribute-value": {

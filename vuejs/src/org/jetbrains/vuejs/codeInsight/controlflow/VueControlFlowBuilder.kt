@@ -24,9 +24,9 @@ import org.jetbrains.vuejs.lang.expr.psi.VueJSEmbeddedExpressionContent
  */
 class VueControlFlowBuilder : JSControlFlowBuilder() {
   companion object {
-    private const val V_IF = "v-if"
-    private const val V_ELSE_IF = "v-else-if"
-    private const val V_ELSE = "v-else"
+    private const val V_IF = "wx:if"
+    private const val V_ELSE_IF = "wx:elif"
+    private const val V_ELSE = "wx:else"
 
     // v-for is not included because Vue template has no break/continue/return/throw etc.
     private val controlFlowRelevantDirectives = setOf(V_IF, V_ELSE_IF, V_ELSE)
