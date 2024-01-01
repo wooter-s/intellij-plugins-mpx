@@ -97,7 +97,8 @@
     <xml.xmlSuppressionProvider implementation="org.jetbrains.vuejs.inspections.VueXmlSuppressionProvider" order="first"/>
     <notificationGroup displayType="BALLOON" id="Vue" isLogByDefault="true"
                        bundle="messages.VueBundle" key="vue.documentation.vue"/>
-
+    <xml.elementDescriptorProvider
+            implementation="org.jetbrains.vuejs.lang.html.tag.CustomElementDescriptorProvider"/>
     <stubIndex implementation="org.jetbrains.vuejs.index.VueComponentsIndex"/>
     <stubIndex implementation="org.jetbrains.vuejs.index.VueCompositionAppIndex"/>
     <stubIndex implementation="org.jetbrains.vuejs.index.VueOptionsIndex"/>
