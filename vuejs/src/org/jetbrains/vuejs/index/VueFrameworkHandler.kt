@@ -749,6 +749,16 @@ fun findTopLevelVueTags(xmlFile: XmlFile, tagName: String): List<XmlTag> {
   return emptyList()
 }
 
+fun findTopJsonScriptVueTap(xmlFile: XmlFile): XmlTag? {
+  val scriptTags = findTopLevelVueTags(xmlFile, "script")
+  val tag = scriptTags.first {
+    it.attributes.any {
+      (it.name == "name" && it.value == "json") || (it.name == "type" && it.value == "application/json")
+    }
+  }
+
+  return tag
+}
 private enum class VueStaticMethod(val methodName: String) {
   Component(COMPONENT_FUN),
   Mixin(MIXIN_FUN),
