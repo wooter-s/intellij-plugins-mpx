@@ -48,8 +48,8 @@ fun hasVueFiles(project: Project): Boolean =
   }
 
 fun hasPinia(context: PsiElement) =
-  WebSymbolsContext.get(KIND_VUE_STORE, context) == VUE_STORE_PINIA
-
+  //WebSymbolsContext.get(KIND_VUE_STORE, context) == VUE_STORE_PINIA
+  false
 fun hasVuex(context: PsiElement) =
   WebSymbolsContext.get(KIND_VUE_STORE, context) == VUE_STORE_VUEX
 
