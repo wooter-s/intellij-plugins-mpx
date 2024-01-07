@@ -302,51 +302,51 @@
     <webSymbols.codeCompletionItemCustomizer
       implementation="org.jetbrains.mpxjs.web.VueSymbolsCodeCompletionItemCustomizer"/>
 
-    <vuejs.templateScopesProvider
+    <mpxjs.templateScopesProvider
       implementation="org.jetbrains.mpxjs.codeInsight.template.VueStandardSymbolsScopesProvider"
       id="standardSymbols"
       order="before templateElements"/>
-    <vuejs.templateScopesProvider
+    <mpxjs.templateScopesProvider
       implementation="org.jetbrains.mpxjs.codeInsight.template.VueTemplateElementsScopeProvider"
       id="templateElements"/>
-    <vuejs.templateScopesProvider
+    <mpxjs.templateScopesProvider
       implementation="org.jetbrains.mpxjs.codeInsight.template.VueScriptSetupScopeProvider"
       id="scriptSetupScope"
       order="after templateElements"/>
-    <vuejs.templateScopesProvider
+    <mpxjs.templateScopesProvider
       implementation="org.jetbrains.mpxjs.codeInsight.template.VueContainerScopeProvider"
       id="containerScope"
       order="after scriptSetupScope"/>
 
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueDefaultContainerInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueDefaultContainerInfoProvider"
                                  id="default"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueComponentTemplateInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueComponentTemplateInfoProvider"
                                  id="defaultTemplate"
                                  order="after default, before decoratedComponent"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueCompositionInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueCompositionInfoProvider"
                                  id="composition"
                                  order="after default, before decoratedComponent"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueScriptSetupInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.model.source.VueScriptSetupInfoProvider"
                                  id="scriptSetup"
                                  order="after default, before decoratedComponent"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.componentDecorator.VueDecoratedComponentInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.componentDecorator.VueDecoratedComponentInfoProvider"
                                  id="decoratedComponent"
                                  order="after default"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.vuex.model.component.VuexBasicComponentInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.vuex.model.component.VuexBasicComponentInfoProvider"
                                  id="vuexBasic"
                                  order="after decoratedComponent"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.vuex.model.component.VuexDecoratedComponentInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.vuex.model.component.VuexDecoratedComponentInfoProvider"
                                  id="vuexDecoratedComponent"
                                  order="after decoratedComponent"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.templateLoader.TemplateLoaderComponentInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.templateLoader.TemplateLoaderComponentInfoProvider"
                                  id="templateLoader"
                                  order="after defaultTemplate"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.vuelidate.VuelidateContainerInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.vuelidate.VuelidateContainerInfoProvider"
                                  id="vuelidate"
                                  order="after decoratedComponent"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.nuxt.model.NuxtComponentProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.nuxt.model.NuxtComponentProvider"
                                  id="nuxt"/>
-    <vuejs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.cssModules.VueCssModulesInfoProvider"
+    <mpxjs.containerInfoProvider implementation="org.jetbrains.mpxjs.libraries.cssModules.VueCssModulesInfoProvider"
                                  id="css-modules"/>
 
     <lang.documentationProvider implementationClass="org.jetbrains.mpxjs.codeInsight.documentation.VueDocumentationProvider"
