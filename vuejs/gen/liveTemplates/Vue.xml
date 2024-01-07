@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<templateSet group="Vue">
+<templateSet group="Mpx">
   <template name="vrouter"
             value="import Vue from &apos;vue&apos;;&#10;import VueRouter from &apos;vue-router&apos;;&#10;&#10;Vue.use(VueRouter);&#10;&#10;export const router = new VueRouter({&#10;	base: &apos;/&apos;,&#10;	mode: &apos;history&apos;,&#10;	routes: [&#10;		{ path: &apos;/path&apos;, component: component }&#10;	]&#10;});"
             description="Base for Vue Router"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -27,7 +27,7 @@
             description="Vue Router global guards afterEach"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -37,7 +37,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="next" expression="" defaultValue="&quot;next();&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -57,7 +57,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="next" expression="" defaultValue="&quot;next();&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -104,7 +104,7 @@
             description="Import vuex store into main.js"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -157,7 +157,7 @@
     <variable name="key" expression="" defaultValue="&quot;key&quot;" alwaysStopAt="true"/>
     <variable name="value" expression="" defaultValue="&quot;value&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -166,7 +166,7 @@
             description="Vuex store 2"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -177,7 +177,7 @@
     <variable name="VueCompositionApiPackage" expression="" defaultValue="&quot;@vue/composition-api&quot;" alwaysStopAt="true"/>
     <variable name="VueCompositionApi" expression="" defaultValue="&quot;VueCompositionApi&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -191,7 +191,7 @@
     <variable name="el" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <variable name="componentName" expression="" defaultValue="&quot;HelloWorld&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -202,7 +202,7 @@
     <variable name="component" expression="" defaultValue="&quot;component&quot;" alwaysStopAt="true"/>
     <variable name="name" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -225,7 +225,7 @@
     <variable name="return" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <variable name="name" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -236,7 +236,7 @@
     <variable name="name" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true"/>
     <variable name="count" expression="" defaultValue="&quot;count&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -247,7 +247,7 @@
     <variable name="name" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true"/>
     <variable name="initialValue" expression="" defaultValue="&quot;initialValue&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -261,7 +261,7 @@
     <variable name="foo" expression="" defaultValue="&quot;foo&quot;" alwaysStopAt="true"/>
     <variable name="bar" expression="" defaultValue="&quot;bar&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -272,7 +272,7 @@
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <variable name="foo" expression="" defaultValue="&quot;foo&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -282,7 +282,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -292,7 +292,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="count" expression="" defaultValue="&quot;count&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -316,7 +316,7 @@
     <context>
       <option name="JS_STATEMENT" value="true"/>
       <option name="TS_STATEMENT" value="true"/>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -360,7 +360,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="New" expression="" defaultValue="&quot;New&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -370,7 +370,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="Name" expression="" defaultValue="&quot;Name&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -380,7 +380,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="New" expression="" defaultValue="&quot;New&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -389,7 +389,7 @@
             description="Import GSAP library"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -399,7 +399,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="libName" expression="" defaultValue="&quot;libName&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -419,7 +419,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -429,7 +429,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -439,7 +439,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -449,7 +449,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -459,7 +459,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -469,7 +469,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -479,7 +479,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="body" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -561,7 +561,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="nameOfAction" expression="" defaultValue="&quot;'nameOfAction'&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -571,7 +571,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="nameOfGetter" expression="" defaultValue="&quot;'nameOfGetter'&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -581,7 +581,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="nameOfMutation" expression="" defaultValue="&quot;'nameOfMutation'&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -591,7 +591,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="vmapstate" expression="" defaultValue="&quot;'nameOfState'&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -679,7 +679,7 @@
     <variable name="data" expression="" defaultValue="&quot;@import '@/styles/_variables.scss';&quot;" alwaysStopAt="true"/>
     <variable name="sass" expression="" defaultValue="&quot;sass&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_SCRIPT" value="true"/>
+      <option name="MPX_SCRIPT" value="true"/>
     </context>
   </template>
 
@@ -725,7 +725,7 @@
     <variable name="emit" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <variable name="event" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_INSIDE_TAG" value="true"/>
+      <option name="MPX_INSIDE_TAG" value="true"/>
     </context>
   </template>
 
@@ -736,7 +736,7 @@
     <variable name="event" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
     <variable name="foo" expression="" defaultValue="&quot;foo&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_INSIDE_TAG" value="true"/>
+      <option name="MPX_INSIDE_TAG" value="true"/>
     </context>
   </template>
 
@@ -891,7 +891,7 @@
     <variable name="handler" expression="" defaultValue="&quot;handler&quot;" alwaysStopAt="true"/>
     <variable name="arg" expression="" defaultValue="&quot;arg&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_INSIDE_TAG" value="true"/>
+      <option name="MPX_INSIDE_TAG" value="true"/>
     </context>
   </template>
 
@@ -900,7 +900,7 @@
             description="Base for Vue File with SCSS"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -909,7 +909,7 @@
             description="Base for Vue File Composition API with SCSS"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -919,7 +919,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="count" expression="" defaultValue="&quot;count&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -928,7 +928,7 @@
             description="Base for Vue File Composition API - Typescript"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -937,7 +937,7 @@
             description="Base for Vue File Setup Composition API with SCSS"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -946,7 +946,7 @@
             description="Base for Vue File Setup Composition API - Typescript"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -955,7 +955,7 @@
             description="Base for Vue File with Class based Typescript format"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -964,7 +964,7 @@
             description="Base for Vue File with CSS"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -973,7 +973,7 @@
             description="Base for Vue File with PostCSS"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -982,7 +982,7 @@
             description="Base for Vue File with no styles"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -991,7 +991,7 @@
             description="Base for Vue File with PostCSS"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -1000,7 +1000,7 @@
             description="Base for Vue File with Stylus"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -1009,7 +1009,7 @@
             description="Base for Vue File with Typescript"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 
@@ -1018,7 +1018,7 @@
             description="Base for Vue File with PostCSS"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TOP_LEVEL" value="true"/>
+      <option name="MPX_TOP_LEVEL" value="true"/>
     </context>
   </template>
 

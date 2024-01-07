@@ -87,7 +87,7 @@ class VueEmptyComponentInitializersIndex : ScalarIndexExtension<Boolean>() {
   }
 
   companion object {
-    val VUE_NO_INITIALIZER_COMPONENTS_INDEX = ID.create<Boolean, Void>("VueNoScriptFilesIndex")
+    val VUE_NO_INITIALIZER_COMPONENTS_INDEX = ID.create<Boolean, Void>("MpxNoScriptFilesIndex")
   }
 
   override fun getKeyDescriptor(): KeyDescriptor<Boolean> = BooleanDataDescriptor.INSTANCE

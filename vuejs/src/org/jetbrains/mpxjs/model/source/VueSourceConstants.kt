@@ -1,7 +1,7 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.mpxjs.model.source
 
-const val VUE_NAMESPACE: String = "Vue"
+const val VUE_NAMESPACE: String = "Mpx"
 
 const val EXTEND_FUN: String = "extend"
 const val COMPONENT_FUN: String = "component"

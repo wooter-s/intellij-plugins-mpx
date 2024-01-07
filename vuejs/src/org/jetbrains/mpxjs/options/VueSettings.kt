@@ -12,7 +12,7 @@ import org.jetbrains.mpxjs.lang.typescript.service.volar.VolarExecutableDownload
 fun getVueSettings(project: Project): VueSettings = project.service<VueSettings>()
 
 @Service(Service.Level.PROJECT)
-@State(name = "VueSettings", storages = [Storage(StoragePathMacros.WORKSPACE_FILE)])
+@State(name = "MpxSettings", storages = [Storage(StoragePathMacros.WORKSPACE_FILE)])
 class VueSettings(val project: Project) : SimplePersistentStateComponent<VueSettingsState>(VueSettingsState()) {
 
   var serviceType

@@ -20,7 +20,7 @@ class VueScriptSetupEmbeddedContentElementType(forcedLanguage: JSLanguageDialect
   : JSEmbeddedContentElementType(forcedLanguage, debugName) {
 
   override fun getExternalId(): String =
-    "VUE:$debugName"
+    "MPX:$debugName"
 
   override fun indexStub(stub: JSEmbeddedContentStub, sink: IndexSink) {
     super.indexStub(stub, sink)

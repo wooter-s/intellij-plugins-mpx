@@ -22,7 +22,7 @@ import org.jetbrains.mpxjs.lang.html.VueFileType
  */
 class VueComponentStylesIndex : ScalarIndexExtension<String>() {
   companion object {
-    val KEY = ID.create<String, Void>("VueComponentStylesIndex")
+    val KEY = ID.create<String, Void>("MpxComponentStylesIndex")
   }
 
   override fun getName(): ID<String, Void> = KEY
