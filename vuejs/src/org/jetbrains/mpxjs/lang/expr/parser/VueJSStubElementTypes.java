@@ -10,7 +10,7 @@ public interface VueJSStubElementTypes {
 
   int STUB_VERSION = 3;
 
-  String EXTERNAL_ID_PREFIX = "VUE-JS:";
+  String EXTERNAL_ID_PREFIX = "MPX-JS:";
 
   JSVariableElementType V_FOR_VARIABLE = new VueJSVForVariableElementType();
 
