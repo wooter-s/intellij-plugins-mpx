@@ -11,7 +11,7 @@
     "noImplicitAny": true,
     "noImplicitReturns": true
 //    "sourceMap": true,
-//    "sourceRoot": "(path-to-repo)/ultimate/contrib/vuejs/vue-service"
+//    "sourceRoot": "(path-to-repo)/ultimate/contrib/mpxjs/vue-service"
   },
   "include": [
     "**/*.ts"

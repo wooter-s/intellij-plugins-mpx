@@ -29,7 +29,7 @@ sourceSets {
   }
   test {
     java {
-      //setSrcDirs(listOf("vuejs-tests/src"))
+      //setSrcDirs(listOf("mpxjs-tests/src"))
     }
   }
 }
