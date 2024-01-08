@@ -24,7 +24,7 @@
       <li>Create new projects from the IDE Welcome screen using Mpx CLI</li>
     </ul>
     ]]></description>
-  <vendor>JetBrains</vendor>
+  <vendor>Wooter</vendor>
   <category>JavaScript Frameworks and Tools</category>
 
   <resource-bundle>messages.VueBundle</resource-bundle>
