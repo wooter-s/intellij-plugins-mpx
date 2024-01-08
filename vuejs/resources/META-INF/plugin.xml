@@ -1,7 +1,7 @@
 <idea-plugin url="https://github.com/JetBrains/intellij-plugins/tree/master/vuejs" package="org.jetbrains.mpxjs">
   <!--suppress PluginXmlCapitalization -->
   <name>Mpx.js</name>
-  <id>org.jetbrains.plugins.vue</id>
+  <id>org.wooter.mpxjs</id>
   <description><![CDATA[
     Support for <a href="https://vuejs.org">Vue.js</a> projects.
 
@@ -273,7 +273,7 @@
                              implementationClass="org.jetbrains.mpxjs.model.VueFakeScrAttributeValueManipulator"/>
 
     <webSymbols.framework id="mpx" implementation="org.jetbrains.mpxjs.web.VueFramework"/>
-    <webSymbols.context kind="framework" name="vue" implementation="org.jetbrains.mpxjs.context.VueFileContext"
+    <webSymbols.context kind="framework" name="mpx" implementation="org.jetbrains.mpxjs.context.VueFileContext"
                         id="vue.file"/>
 
 <!--    <webSymbols.webTypes source="web-types/vue@1.0.0.web-types.json"/>-->
