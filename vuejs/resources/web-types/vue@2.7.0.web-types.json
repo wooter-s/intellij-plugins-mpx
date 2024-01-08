@@ -1,7 +1,7 @@
 {
   "$schema": "../../../../community/platform/webSymbols/web-types-gen/resources/web-types.json",
-  "framework": "vue",
-  "name": "vue",
+  "framework": "mpx",
+  "name": "mpx",
   "version": "2.7.0",
   "js-types-syntax": "typescript",
   "description-markup": "markdown",
@@ -5139,7 +5139,7 @@
           }
         },
         {
-          "name": "else-if",
+          "name": "elif",
           "description": "Denote the “else if block” for `v-if`. Can be chained.",
           "doc-url": "https://vuejs.org/v2/api/#v-else-if",
           "attribute-value": {
