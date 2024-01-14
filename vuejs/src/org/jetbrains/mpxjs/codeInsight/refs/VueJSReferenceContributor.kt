@@ -179,13 +179,35 @@ private class PathReferenceProvider : PsiReferenceProvider() {
     if (text.startsWith("@")) {
 
     } else {
-      // 处理相对路径
-      StaticPathReferenceProvider(FileType.EMPTY_ARRAY).apply {
-        setEndingSlashNotAllowed(false)
-        setRelativePathsAllowed(true)
-        createReferences(element, result, false)
+      // 如果是路径
+      if (text.contains("/")) {
+        // 处理相对路径
+        StaticPathReferenceProvider(FileType.EMPTY_ARRAY).apply {
+          setEndingSlashNotAllowed(false)
+          setRelativePathsAllowed(true)
+          createReferences(element, result, false)
+        }
       }
     }
+
+    // 检查路径是否包含文件扩展名，如果不包含，添加默认的文件扩展名.mpx
+    //result.forEach { ref ->
+    //  val path = (ref.element as JSLiteralExpression).stringValue
+    //  path?.let { path ->
+    //    val fileName = path.substringAfterLast("/")
+    //    if (!fileName.contains(".")) {
+    //      //val absolutePath = Path.of("$path.mpx").toAbsolutePath().toString()
+    //      val virtualFile = LocalFileSystem.getInstance().findFileByPath("$path.mpx")
+    //      virtualFile?.let { virtualFile ->
+    //        val fileElement = PsiManager.getInstance(element.project).findDirectory(virtualFile)?.originalElement
+    //        fileElement?.let { fileElement ->
+    //          ref.bindToElement(fileElement)
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
+
     return result.toTypedArray()
   }
 }
