@@ -162,6 +162,7 @@ class VueComponents {
     fun isComponentDefiningCall(callExpression: JSCallExpression): Boolean =
       VueFrameworkHandler.getFunctionNameFromVueIndex(callExpression).let {
         it == DEFINE_COMPONENT_FUN || it == DEFINE_NUXT_COMPONENT_FUN || it == EXTEND_FUN || it == DEFINE_OPTIONS_FUN || it == CREATE_PAGE_FUN
+          || it == CREATE_APP_FUN
       }
 
     @StubSafe
@@ -172,6 +173,7 @@ class VueComponents {
       callExpression.methodExpression?.let {
         JSSymbolUtil.isAccurateReferenceExpressionName(it, DEFINE_COMPONENT_FUN) ||
         JSSymbolUtil.isAccurateReferenceExpressionName(it, CREATE_PAGE_FUN) ||
+        JSSymbolUtil.isAccurateReferenceExpressionName(it, CREATE_APP_FUN) ||
         JSSymbolUtil.isAccurateReferenceExpressionName(it, DEFINE_NUXT_COMPONENT_FUN) ||
         JSSymbolUtil.isAccurateReferenceExpressionName(it, VUE_NAMESPACE, EXTEND_FUN) ||
         JSSymbolUtil.isAccurateReferenceExpressionName(it, DEFINE_OPTIONS_FUN)

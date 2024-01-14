@@ -206,6 +206,7 @@ class VueComponentSourceEdit private constructor(private val component: Pointer<
       useDefineComponent -> {
         insertImportIfNotThere(CREATE_PAGE_FUN, false, VUE_MODULE, scriptScope)
         insertImportIfNotThere(DEFINE_COMPONENT_FUN, false, VUE_MODULE, scriptScope)
+        insertImportIfNotThere(CREATE_APP_FUN, false, VUE_MODULE, scriptScope)
       }
       useVueExtend -> {
         insertImportIfNotThere("Vue", true, VUE_MODULE, scriptScope)
