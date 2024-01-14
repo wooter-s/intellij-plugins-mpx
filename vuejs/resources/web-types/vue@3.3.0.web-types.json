@@ -4669,32 +4669,20 @@
           "value": {
             "kind": "expression",
             "type": "any",
-            "required": false
+            "required": true
           },
           "exclusive-contributions": [
             "/html/modifiers"
           ],
           "pattern": {
             "proximity": 10,
-            "delegate": "/html/vue-directives/bind",
             "template": [
-              ":",
-              "$...",
+              "bind",
               {
-                "delegate": "argument",
-                "required": true,
-                "template": [
-                  "#item:event name"
-                ]
+                "or": ["", ":"]
               },
               {
-                "items": "/html/modifiers",
-                "template": [
-                  ".",
-                  "#item:modifier"
-                ],
-                "required": false,
-                "repeat": true
+                "items": "/html/bind-directives"
               }
             ]
           }
@@ -4760,7 +4748,7 @@
           "value": {
             "kind": "expression",
             "type": "any",
-            "required": false
+            "required": true
           }
         },
         {
@@ -4772,7 +4760,7 @@
           "value": {
             "kind": "expression",
             "type": "any",
-            "required": false
+            "required": true
           }
         },
         {
@@ -4784,7 +4772,7 @@
           "value": {
             "kind": "expression",
             "type": "any",
-            "required": false
+            "required": true
           }
         },
         {
@@ -4796,7 +4784,7 @@
           "value": {
             "kind": "expression",
             "type": "any",
-            "required": false
+            "required": true
           }
         },
         {
@@ -5269,6 +5257,152 @@
           "name": "Vue Composition API local directive",
           "pattern": {
             "items": "vue-script-setup-local-directives"
+          }
+        }
+      ],
+      "bind-directives": [
+        {
+          "name": "touchstart",
+          "priority": "low",
+          "proximity": 10,
+          "description": "手指触摸动作开始",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "touchmove",
+          "priority": "low",
+          "proximity": 10,
+          "description": "手指触摸后移动",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "touchcancel",
+          "priority": "low",
+          "proximity": 10,
+          "description": "手指触摸动作被打断，如来电提醒，弹窗",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "touchend",
+          "priority": "low",
+          "proximity": 10,
+          "description": "手指触摸动作结束",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "tap",
+          "priority": "low",
+          "proximity": 10,
+          "description": "手指触摸后马上离开",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "longpress",
+          "priority": "low",
+          "proximity": 10,
+          "description": "手指触摸后，超过350ms再离开，如果指定了事件回调函数并触发了这个事件，tap事件将不被触发",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "longtap",
+          "priority": "low",
+          "proximity": 10,
+          "description": "手指触摸后，超过350ms再离开（推荐使用longpress事件代替）",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "transitionend",
+          "priority": "low",
+          "proximity": 10,
+          "description": "会在 WXSS transition 或 wx.createAnimation 动画结束后触发",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "animationstart",
+          "priority": "low",
+          "proximity": 10,
+          "description": "会在一个 WXSS animation 动画开始时触发",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "animationiteration",
+          "priority": "low",
+          "proximity": 10,
+          "description": "会在一个 WXSS animation 一次迭代结束时触发",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "animationend",
+          "priority": "low",
+          "proximity": 10,
+          "description": "会在一个 WXSS animation 动画完成时触发",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
+          }
+        },
+        {
+          "name": "touchforcechange",
+          "priority": "low",
+          "proximity": 10,
+          "description": "在支持 3D Touch 的 iPhone 设备，重按时会触发",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html#%E4%BA%8B%E4%BB%B6%E5%88%86%E7%B1%BB",
+          "value": {
+            "kind": "expression",
+            "type": "any",
+            "required": false
           }
         }
       ],
