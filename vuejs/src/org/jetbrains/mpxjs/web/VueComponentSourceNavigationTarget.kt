@@ -1,7 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.mpxjs.web
 
-import com.intellij.codeInsight.navigation.targetPresentation
+import org.jetbrains.mpxjs.codeInsight.attributes.targetPresentation
 import com.intellij.ide.util.EditSourceUtil
 import com.intellij.model.Pointer
 import com.intellij.navigation.EmptyNavigatable
