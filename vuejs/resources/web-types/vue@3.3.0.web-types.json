@@ -4581,7 +4581,11 @@
               }
             ]
           },
-          "hide-from-completion": true
+          "value": {
+            "kind": "plain",
+            "type": "any",
+            "required": true
+          }
         },
         {
           "name": "Wx directive",
@@ -4677,7 +4681,14 @@
           "pattern": {
             "proximity": 10,
             "template": [
-              "bind",
+              {
+                "or": [
+                  "bind",
+                  "mut-bind",
+                  "capture-bind",
+                  "catch"
+                ]
+              },
               {
                 "or": ["", ":"]
               },
