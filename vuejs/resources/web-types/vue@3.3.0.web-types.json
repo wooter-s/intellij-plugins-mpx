@@ -9,14 +9,14 @@
   "framework-config": {
     "enable-when": {
       "node-packages": [
-        "vue",
-        "@vue/cli"
+        "@mpxjs",
+        "@mpxjs/cli"
       ],
       "file-extensions": [
-        "vue"
+        "mpx"
       ],
       "ide-libraries": [
-        "vue"
+        "mpx"
       ]
     }
   },

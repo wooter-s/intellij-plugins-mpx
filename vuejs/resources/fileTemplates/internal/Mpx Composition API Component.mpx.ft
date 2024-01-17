@@ -1,0 +1,25 @@
+<template>
+  #[[$END$]]#
+</template>
+
+<script ${SCRIPT_LANG_ATTR}>
+createComponent({
+  setup(props, context) {
+    return {
+      props,
+      context
+    }
+  }
+})
+</script>
+
+<script type="application/json">
+  {
+    "component": true,
+    "usingComponents": {
+    }
+  }
+</script>
+<style ${STYLE_LANG_ATTR}>
+
+</style>

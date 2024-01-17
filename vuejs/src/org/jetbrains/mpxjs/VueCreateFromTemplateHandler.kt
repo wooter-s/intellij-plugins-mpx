@@ -15,10 +15,10 @@ import org.jetbrains.mpxjs.lang.html.VueFileType
 class VueCreateFromTemplateHandler : DefaultCreateFromTemplateHandler() {
 
   companion object {
-    const val VUE_CLASS_API_TEMPLATE_NAME: String = "Vue Class API Component"
-    const val VUE_COMPOSITION_API_TEMPLATE_NAME: String = "Vue Composition API Component"
-    const val VUE_OPTIONS_API_TEMPLATE_NAME: String = "Vue Options API Component"
-    const val VUE_RECENT_TEMPLATES: String = "vue.recent.templates"
+    const val VUE_CLASS_API_TEMPLATE_NAME: String = "Mpx Class API Component"
+    const val VUE_COMPOSITION_API_TEMPLATE_NAME: String = "Mpx Composition API Component"
+    const val VUE_OPTIONS_API_TEMPLATE_NAME: String = "Mpx Options API Component"
+    const val VUE_RECENT_TEMPLATES: String = "mpx.recent.templates"
   }
 
   override fun handlesTemplate(template: FileTemplate): Boolean {

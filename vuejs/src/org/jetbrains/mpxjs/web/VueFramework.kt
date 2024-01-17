@@ -71,6 +71,6 @@ class VueFramework : WebFramework() {
 
   companion object {
     val instance get() = get("mpx")
-    const val ID = "mpx"
+    const val ID = "vue"
   }
 }
