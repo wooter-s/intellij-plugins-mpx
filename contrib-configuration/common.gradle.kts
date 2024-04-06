@@ -1,4 +1,8 @@
 repositories {
+  // 阿里云镜像
+  maven {
+    url = uri("https://maven.aliyun.com/repository/public")
+  }
   mavenCentral()
   maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
   maven("https://www.jetbrains.com/intellij-repository/snapshots")

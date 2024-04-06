@@ -17,6 +17,7 @@ intellij {
                      // Needed for tests-only
                      //"org.jetbrains.plugins.stylus:233.11799.172",
                      "org.intellij.plugins.postcss",
+                      "org.intellij.plugins.markdown",
                      // Needed for tests-only
                      //"com.jetbrains.plugins.Jade:$targetVersion",
                      "intellij.prettierJS"
@@ -52,7 +53,7 @@ sourceSets {
   }
   test {
     java {
-      //setSrcDirs(listOf("vuejs-tests/src"))
+      //setSrcDirs(listOf("mpxjs-tests/src"))
     }
   }
 }
