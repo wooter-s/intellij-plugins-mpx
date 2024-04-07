@@ -1,5 +1,5 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.lang
+package org.jetbrains.mpxjs.lang
 
 import com.intellij.lang.ecmascript6.psi.ES6Property
 import com.intellij.lang.javascript.psi.*
@@ -18,13 +18,13 @@ import com.intellij.util.asSafely
 import com.intellij.webSymbols.*
 import com.intellij.webSymbols.utils.asSingleSymbol
 import junit.framework.TestCase
-import org.jetbrains.vuejs.codeInsight.VueJSSpecificHandlersFactory
-import org.jetbrains.vuejs.lang.VueTestModule.VUE_2_6_10
-import org.jetbrains.vuejs.lang.expr.psi.VueJSVForExpression
-import org.jetbrains.vuejs.model.VueModelManager
-import org.jetbrains.vuejs.model.VueNamedSymbol
-import org.jetbrains.vuejs.model.VueRegularComponent
-import org.jetbrains.vuejs.web.scopes.VueBindingShorthandSymbol
+import org.jetbrains.mpxjs.codeInsight.VueJSSpecificHandlersFactory
+import org.jetbrains.mpxjs.lang.VueTestModule.VUE_2_6_10
+import org.jetbrains.mpxjs.lang.expr.psi.VueJSVForExpression
+import org.jetbrains.mpxjs.model.VueModelManager
+import org.jetbrains.mpxjs.model.VueNamedSymbol
+import org.jetbrains.mpxjs.model.VueRegularComponent
+import org.jetbrains.mpxjs.web.scopes.VueBindingShorthandSymbol
 
 class VueResolveTest : BasePlatformTestCase() {
   override fun getTestDataPath(): String = getVueTestDataPath() + "/resolve/"

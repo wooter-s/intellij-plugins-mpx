@@ -1,5 +1,5 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.service
+package org.jetbrains.mpxjs.service
 
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementPresentation
@@ -11,10 +11,10 @@ import com.intellij.platform.lsp.tests.checkLspHighlighting
 import com.intellij.platform.lsp.tests.waitForDiagnosticsFromLspServer
 import com.intellij.util.text.SemVer
 import junit.framework.TestCase
-import org.jetbrains.vuejs.lang.VueInspectionsProvider
-import org.jetbrains.vuejs.lang.VueTestModule
-import org.jetbrains.vuejs.lang.configureVueDependencies
-import org.jetbrains.vuejs.options.getVueSettings
+import org.jetbrains.mpxjs.lang.VueInspectionsProvider
+import org.jetbrains.mpxjs.lang.VueTestModule
+import org.jetbrains.mpxjs.lang.configureVueDependencies
+import org.jetbrains.mpxjs.options.getVueSettings
 import org.junit.Test
 
 class VolarServiceTest : VolarServiceTestBase() {

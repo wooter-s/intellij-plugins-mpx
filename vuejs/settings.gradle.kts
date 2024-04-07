@@ -3,3 +3,5 @@
 buildscript {
   apply(from = "../contrib-configuration/settings.gradle.kts")
 }
+
+rootProject.name = "mpxjs"

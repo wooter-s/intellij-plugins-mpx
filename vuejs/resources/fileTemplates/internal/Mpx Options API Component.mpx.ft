@@ -1,0 +1,49 @@
+<template>
+  #[[$END$]]#
+</template>
+<script${SCRIPT_LANG_ATTR}>
+#if($USE_DEFINE_COMPONENT)
+import {
+  createComponent
+} from '@mpxjs/core'
+
+createComponent({
+  properties: {
+  },
+  methods: {
+
+  }
+})
+#elseif($USE_VUE_EXTEND)
+import {
+  createComponent
+} from '@mpxjs/core'
+
+createComponent({
+  properties: {
+  },
+  methods: {
+
+  }
+})
+
+## export default Vue.extend({
+## name: "${COMPONENT_NAME}"
+## })
+#else
+export default {
+name: "${COMPONENT_NAME}"
+}
+#end
+</script>
+<script type="application/json">
+{
+  "component": true,
+  "usingComponents": {
+  }
+}
+</script>
+
+<style ${STYLE_LANG_ATTR}>
+
+</style>

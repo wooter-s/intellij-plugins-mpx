@@ -10,7 +10,7 @@ plugins {
 intellij {
   version.set("LATEST-EAP-SNAPSHOT")
   type.set("IU")
-  pluginName.set("Vue.js")
+  pluginName.set("Mpx.js")
   downloadSources.set(true)
   plugins.set(listOf("JavaScript", "JSIntentionPowerPack", "JavaScriptDebugger", "com.intellij.css", "HtmlTools",
                      "org.jetbrains.plugins.sass", "org.jetbrains.plugins.less", "intellij.webpack",
