@@ -54,7 +54,7 @@ class VueReferenceSearcher : QueryExecutorBase<PsiReference, ReferencesSearch.Se
             UsageSearchContext.IN_CODE,
             false,
             element,
-            PsiSourcedWebSymbolRequestResultProcessor(element, true)
+            PsiSourcedWebSymbolRequestResultProcessor(element, emptyList(), true)
           )
         }
 
@@ -137,7 +137,7 @@ class VueReferenceSearcher : QueryExecutorBase<PsiReference, ReferencesSearch.Se
             (UsageSearchContext.IN_CODE + UsageSearchContext.IN_FOREIGN_LANGUAGES + UsageSearchContext.IN_COMMENTS).toShort(),
             false,
             searchTarget,
-            PsiSourcedWebSymbolRequestResultProcessor(element, true)
+            PsiSourcedWebSymbolRequestResultProcessor(element, emptyList(), true)
           )
         }
         return
@@ -151,7 +151,7 @@ class VueReferenceSearcher : QueryExecutorBase<PsiReference, ReferencesSearch.Se
             (UsageSearchContext.IN_CODE + UsageSearchContext.IN_FOREIGN_LANGUAGES + UsageSearchContext.IN_COMMENTS).toShort(),
             false,
             element,
-            PsiSourcedWebSymbolRequestResultProcessor(element, true)
+            PsiSourcedWebSymbolRequestResultProcessor(element, emptyList(), true)
           )
         }
         return
@@ -209,7 +209,7 @@ private class ScriptSetupImportProcessor(target: PsiElement?, queryParameters: R
           UsageSearchContext.IN_CODE,
           false,
           localElement,
-          PsiSourcedWebSymbolRequestResultProcessor(localElement, true)
+          PsiSourcedWebSymbolRequestResultProcessor(localElement, emptyList(), true)
         )
       }
 

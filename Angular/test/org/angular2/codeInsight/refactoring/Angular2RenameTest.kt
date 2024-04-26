@@ -132,4 +132,73 @@ class Angular2RenameTest : Angular2TestCase("refactoring/rename") {
   fun testHostDirectiveOutputWithJsTextRefToFilterOut() =
     checkSymbolRename("data-source.directive.ts", "newOutput", Angular2TestModule.ANGULAR_CORE_15_1_5)
 
+  fun testStructuralDirectiveWithNgTemplateSelector1() =
+    checkSymbolRename("appFoo", dir = false)
+
+  fun testStructuralDirectiveWithNgTemplateSelector2() =
+    checkSymbolRename("appFoo", dir = false)
+
+  fun testSignalInputFromDeclaration() =
+    checkSymbolRename("newInput", dir = false)
+
+  fun testSignalInputFromUsage() =
+    checkSymbolRename("newInput", dir = false)
+
+  fun testSignalInputRequiredFromDeclaration() =
+    checkSymbolRename("newInput", dir = false)
+
+  fun testSignalInputAliasedFromDeclaration() =
+    checkSymbolRename("newAliasedInput", dir = false)
+
+  fun testSignalInputAliasedFromUsage() =
+    checkSymbolRename("newAliasedInput", dir = false)
+
+  fun testSignalInputAliasedRequiredFromDeclaration() =
+    checkSymbolRename("newAliasedInput", dir = false)
+
+  fun testSignalInputAliasedRequiredFromUsage() =
+    checkSymbolRename("newAliasedInput", dir = false)
+
+  fun testSignalOutputFromDeclaration() =
+    checkSymbolRename("newOutput", dir = false)
+
+  fun testSignalOutputFromUsage() =
+    checkSymbolRename("newOutput", dir = false)
+
+  fun testSignalOutputAliasedFromDeclaration() =
+    checkSymbolRename("newAliasedOutput", dir = false)
+
+  fun testSignalOutputAliasedFromUsage() =
+    checkSymbolRename("newAliasedOutput", dir = false)
+
+  fun testSignalModelFromDeclaration() =
+    checkSymbolRename("newModel", dir = false)
+
+  fun testSignalModelRequiredFromDeclaration() =
+    checkSymbolRename("newModel", dir = false)
+
+  fun testSignalModelFromUsage1() =
+    checkSymbolRename("newModel", dir = false)
+
+  fun testSignalModelFromUsage2() =
+    checkSymbolRename("newModel", dir = false)
+
+  fun testSignalModelFromUsage3() =
+    checkSymbolRename("newModel", dir = false)
+
+  fun testSignalModelAliasedFromDeclaration() =
+    checkSymbolRename("newAliasedModel", dir = false)
+
+  fun testSignalModelAliasedFromUsage1() =
+    checkSymbolRename("newAliasedModel", dir = false)
+
+  fun testSignalModelAliasedFromUsage2() =
+    checkSymbolRename("newAliasedModel", dir = false)
+
+  fun testSignalModelAliasedFromUsage3() =
+    checkSymbolRename("newAliasedModel", dir = false)
+
+  fun testSignalModelAliasedRequiredFromUsage() =
+    checkSymbolRename("newAliasedModel", dir = false)
+
 }

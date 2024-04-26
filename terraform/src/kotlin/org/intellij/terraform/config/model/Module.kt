@@ -5,7 +5,10 @@ import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.LanguageMatcher
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.io.FileUtilRt
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
@@ -146,11 +149,42 @@ class Module private constructor(val item: PsiFileSystemItem) {
     return collected.toList()
   }
 
+  private fun calculateModuleAwareSearchScope(context: PsiFileSystemItem): GlobalSearchScope? {
+    val currentFile = context.virtualFile ?: return null
+    val currentFileDir = currentFile.takeIf { it.isDirectory } ?: currentFile.parent
+
+    val terraformDir = ModuleDetectionUtil.getTerraformDirSomewhere(currentFile, context.project)
+    if (terraformDir != null && currentFileDir != null && VfsUtil.isAncestor(terraformDir, currentFile, true)) {
+      return GlobalSearchScopes.directoryScope(context.project, currentFileDir, false)
+    }
+
+    val manifestRoots = terraformDir?.let { findRootsFromManifest(context, it) } ?: emptyList()
+    val exactModuleRoot = findClosestRoot(manifestRoots, currentFile)
+                          ?: context.project.service<LocalSchemaService>().findLockFile(currentFile)?.parent
+
+    val dirToSearchIn = exactModuleRoot ?: currentFileDir ?: return null
+    val otherModuleRoots = manifestRoots.filterNot { VfsUtil.isAncestor(it, dirToSearchIn, false) }
+    val exclusion = GlobalSearchScopes.directoriesScope(context.project, true, *otherModuleRoots.toTypedArray())
+    return GlobalSearchScopes.directoryScope(context.project, dirToSearchIn, exactModuleRoot != null)
+      .intersectWith(GlobalSearchScope.notScope(exclusion))
+  }
+
+  private fun findClosestRoot(possibleRoots: List<VirtualFile>, currentFile: VirtualFile): VirtualFile? =
+    possibleRoots
+      .filter { VfsUtil.isAncestor(it, currentFile, false) }
+      .maxByOrNull { it.path.length }
+
+  private fun findRootsFromManifest(context: PsiFileSystemItem, dotTerraformDir: VirtualFile): List<VirtualFile> {
+    val manifest = ModuleDetectionUtil.getManifestForDirectory(dotTerraformDir, context, context.project).value ?: return emptyList()
+    return manifest.modules.mapNotNull { module ->
+      val path = FileUtil.toSystemIndependentName(module.dir)
+      manifest.context.findFileByRelativePath(path)
+    }
+  }
+
+
   private fun processAllFilesWithVariables(processor: Processor<PsiFile>): Boolean {
-    val contextFile = item.virtualFile?.let { item.project.service<LocalSchemaService>().findLockFile(it) } ?: item.virtualFile
-    val dirToSearch = contextFile.takeIf { it.isDirectory } ?: contextFile.parent
-    val searchScope = dirToSearch?.let { GlobalSearchScopes.directoryScope(item.project, it, true) }
-                      ?: GlobalSearchScope.projectScope(item.project)
+    val searchScope = calculateModuleAwareSearchScope(item) ?: GlobalSearchScope.projectScope(item.project)
 
     val terraformScope = PsiSearchScopeUtil.restrictScopeToFileLanguage(
       item.project,
