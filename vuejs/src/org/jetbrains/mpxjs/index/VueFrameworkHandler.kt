@@ -578,7 +578,7 @@ fun <T : PsiElement> createIndexRecord(key: StubIndexKey<String, T>): Pair<Strin
 
 private const val REQUIRE = "require"
 
-private const val METHOD_NAME_USER_STRING = "vmn"
+private const val METHOD_NAME_USER_STRING = "mpx_vmn"
 
 private val VUE_DESCRIPTOR_OWNERS = arrayOf(VUE_NAMESPACE, MIXIN_FUN, COMPONENT_FUN, EXTEND_FUN, DIRECTIVE_FUN, DELIMITERS_PROP,
                                             FILTER_FUN, DEFINE_COMPONENT_FUN, DEFINE_NUXT_COMPONENT_FUN)

@@ -37,31 +37,6 @@
           ]
         },
         {
-          "name": "slot",
-          "description": "`<slot>` serve as content distribution outlets in component templates. `<slot>` itself will be replaced.",
-          "doc-url": "https://v3.vuejs.org/api/built-in-components.html#slot",
-          "attributes": [
-            {
-              "name": "name",
-              "description": "Used for named slot.",
-              "value": {
-                "type": "string"
-              }
-            }
-          ],
-          "vue-special-properties": [
-            {
-              "name": "Scoped slot binding",
-              "pattern": "(?!v-).*",
-              "doc-hide-pattern": true,
-              "priority": "low",
-              "attribute-value": {
-                "required": true
-              }
-            }
-          ]
-        },
-        {
           "name": "share-element",
           "description": "共享元素，一种动画形式，类似于 flutter Hero动画，表现为元素像是在页面间穿越一样。该组件需与 page-container 组件结合使用。",
           "attributes": [
@@ -394,6 +369,7 @@
         {
           "name": "slot",
           "description": "自定义组件中可嵌入内容",
+          "doc-url": "https://mpxjs.cn/guide/basic/component.html#slot",
           "attributes": [
             {
               "name": "name",
@@ -5136,24 +5112,24 @@
         },
         {
           "name": "if",
-          "description": "Conditionally render the element based on the truthy-ness of the expression value. The element and its contained directives / components are destroyed and re-constructed during toggles. If the element is a `<template>` element, its content will be extracted as the conditional block.\n\nThis directive triggers transitions when its condition changes.",
-          "doc-url": "https://v3.vuejs.org/api/directives.html#v-if",
+          "description": "根据表达式的值的 truthiness (opens new window)来有条件地渲染元素。在切换时元素及它的数据绑定 / 组件被销毁并重建。 注意：如果元素是 <block/>, 注意它并不是一个组件，它仅仅是一个包装元素，不会在页面中做任何渲染，只接受控制属性。",
+          "doc-url": "https://mpxjs.cn/api/directives.html#wx-if",
           "attribute-value": {
             "required": true
           }
         },
         {
           "name": "else",
-          "description": "Denote the “else block” for `v-if` or a `v-if/v-else-if` chain.",
-          "doc-url": "https://v3.vuejs.org/api/directives.html#v-else",
+          "description": "不需要表达式，前一兄弟元素必须有 wx:if 或 wx:elif",
+          "doc-url": "https://mpxjs.cn/api/directives.html#wx-else",
           "attribute-value": {
             "kind": "no-value"
           }
         },
         {
           "name": "elif",
-          "description": "Denote the “else if block” for `v-if`. Can be chained.",
-          "doc-url": "https://v3.vuejs.org/api/directives.html#v-else-if",
+          "description": "前一兄弟元素必须有 wx:if 或 wx:elif。表示 wx:if 的“ wx:elif 块”，可以链式调用。",
+          "doc-url": "https://mpxjs.cn/api/directives.html#wx-elif",
           "attribute-value": {
             "required": true
           }
@@ -5161,7 +5137,7 @@
         {
           "name": "for",
           "description": "Render the element or template block multiple times based on the source data. The directive’s value must use the special syntax `alias in expression` to provide an alias for the current element being iterated on. Alternatively, you can also specify an alias for the index (or the key if used on an Object). The default behavior of `v-for` will try to patch the elements in-place without moving them. To force it to reorder elements, you need to provide an ordering hint with the `key` special attribute.",
-          "doc-url": "https://v3.vuejs.org/api/directives.html#v-for",
+          "doc-url": "https://mpxjs.cn/api/directives.html#wx-for",
           "attribute-value": {
             "type": "void",
             "required": true
