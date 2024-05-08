@@ -38,8 +38,12 @@ class VueJSReferenceContributor : PsiReferenceContributor() {
 
   override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
     registrar.registerReferenceProvider(THIS_INSIDE_COMPONENT, VueComponentLocalReferenceProvider())
+    // TODO 解析组件名称
     registrar.registerReferenceProvider(COMPONENT_NAME, VueComponentNameReferenceProvider())
     registrar.registerReferenceProvider(TEMPLATE_ID_REF, VueTemplateIdReferenceProvider())
+    // TODO 自定义组件的引用
+
+    // 注册路径引用
     registrar.registerReferenceProvider(
       JSPatterns.jsLiteral()
         .inside(

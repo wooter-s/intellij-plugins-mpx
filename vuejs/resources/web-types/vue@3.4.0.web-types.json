@@ -4565,8 +4565,8 @@
         },
         {
           "name": "Wx directive",
-          "description": "Directives are special attributes with the `v-` prefix. Directive attribute values are expected to be a single JavaScript expression (with the exception of `v-for` and `v-on`). A directive's job is to reactively apply side effects to the DOM when the value of its expression changes.",
-          "doc-url": "https://v3.vuejs.org/guide/template-syntax.html#directives",
+          "description": "Directives are special attributes with the `wx:` prefix. Directive attribute values are expected to be a single JavaScript expression (with the exception of `wx:for` and `wx:on`). A directive's job is to reactively apply side effects to the DOM when the value of its expression changes.",
+          "doc-url": "https://www.mpxjs.cn/api/directives.html",
           "virtual": true,
           "value": {
             "kind": "expression",
@@ -4577,29 +4577,10 @@
             "/html/modifiers"
           ],
           "pattern": {
-            "items": "/html/vue-directives",
+            "items": "/html/wx-directives",
             "template": [
               "wx:",
-              "#item:Vue directive",
-              {
-                "delegate": "argument",
-                "template": [
-                  "-",
-                  "#...",
-                  "#item:argument"
-                ],
-                "required": false,
-                "proximity": 5
-              },
-              {
-                "items": "/html/modifiers",
-                "template": [
-                  ".",
-                  "#item:modifier"
-                ],
-                "required": false,
-                "repeat": true
-              }
+              "#item:Wx directive"
             ]
           }
         },
@@ -4618,7 +4599,7 @@
           ],
           "pattern": {
             "proximity": 10,
-            "delegate": "/html/vue-directives/on",
+            "delegate": "/html/wx-directives/on",
             "template": [
               "@",
               "$...",
@@ -4662,7 +4643,8 @@
                   "bind",
                   "mut-bind",
                   "capture-bind",
-                  "catch"
+                  "catch",
+                  "capture-catch"
                 ]
               },
               {
@@ -5101,7 +5083,7 @@
           ]
         }
       ],
-      "vue-directives": [
+      "wx-directives": [
         {
           "name": "show",
           "description": "Toggles the element’s `display` CSS property based on the truthy-ness of the expression value.\n\nThis directive triggers transitions when its condition changes.",
@@ -5136,7 +5118,7 @@
         },
         {
           "name": "for",
-          "description": "Render the element or template block multiple times based on the source data. The directive’s value must use the special syntax `alias in expression` to provide an alias for the current element being iterated on. Alternatively, you can also specify an alias for the index (or the key if used on an Object). The default behavior of `v-for` will try to patch the elements in-place without moving them. To force it to reorder elements, you need to provide an ordering hint with the `key` special attribute.",
+          "description": "在组件上使用 wx:for 控制属性绑定一个数组，即可使用数组中各项的数据重复渲染该组件。默认数组的当前项的下标变量名默认为 index，数组当前项的变量名默认为 item",
           "doc-url": "https://mpxjs.cn/api/directives.html#wx-for",
           "attribute-value": {
             "type": "void",
@@ -5196,8 +5178,8 @@
         },
         {
           "name": "model",
-          "description": "Create a two-way binding on a form input element or a component. For detailed usage and other notes, see the Guide section.",
-          "doc-url": "https://v3.vuejs.org/api/directives.html#v-model",
+          "description": "Mpx针对表单组件提供了wx:model双向绑定指令，类似于v-model，该指令是一个语法糖指令，监听了组件抛出的输入事件并对绑定的数据进行更新，默认情况下会监听表单组件的input事件，并将event.detail.value中的数据更新到组件的value属性上。",
+          "doc-url": "https://mpxjs.cn/guide/basic/two-way-binding.html#%E5%8F%8C%E5%90%91%E7%BB%91%E5%AE%9A",
           "attribute-value": {
             "type": "any",
             "required": true
@@ -5207,7 +5189,7 @@
             "pattern": {
               "items": [
                 {
-                  "path": "/html/vue-directives/model/modifiers",
+                  "path": "/html/wx-directives/model/modifiers",
                   "includeVirtual": false,
                   "filter": "match-with-target-list",
                   "target-list": "/js/events",
