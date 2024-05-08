@@ -12,10 +12,12 @@ import com.intellij.openapi.diagnostic.RuntimeExceptionWithAttachments
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileTypes.FileTypeManager
+import com.intellij.openapi.options.advanced.AdvancedSettings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.getProjectDataPath
 import com.intellij.openapi.util.NlsSafe
+import com.intellij.openapi.util.registry.RegistryManager
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
@@ -27,8 +29,12 @@ import com.intellij.platform.workspace.storage.entities
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import com.intellij.util.SuspendingLazy
 import com.intellij.util.concurrency.annotations.RequiresBlockingContext
+import com.intellij.util.suspendingLazy
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.intellij.terraform.LatestInvocationRunner
 import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.model.TypeModel
@@ -67,11 +73,16 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
     val myDeferred = modelComputationCache[lock]
 
     if (myDeferred == null || myDeferred.isCompleted && myDeferred.getCompletionExceptionOrNull() is CancellationException) {
-      scheduleModelRebuild(setOf(lock))
+      if (buildLocalMetadataAutomatically) {
+        scheduleModelRebuild(setOf(lock)).let { scope.launch { it.getValue() } }
+      }
       return null
     }
 
     if (!myDeferred.isCompleted) {
+      scope.launch {
+        myDeferred.join() // not myDeferred.start() because it logs exceptions
+      }
       return null
     }
 
@@ -132,13 +143,13 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
     }.toSet()
   }
 
-  fun scheduleModelRebuild(virtualFiles: Set<VirtualFile>): Deferred<*> {
-    val scheduled = mutableListOf<Deferred<*>>()
+  fun scheduleModelRebuild(virtualFiles: Set<VirtualFile>, explicitlyAllowRunningProcess: Boolean = false): SuspendingLazy<List<TypeModel>> {
+    val scheduled = mutableListOf<Deferred<TypeModel>>()
     val locks = virtualFiles.mapNotNullTo(mutableSetOf()) { findLockFile(it) }
     for (lock in locks) {
       modelComputationCache[lock]?.cancel()
       if (lock.exists()) {
-        buildModel(lock).also {
+        buildModel(lock, explicitlyAllowRunningProcess).also {
           modelComputationCache[lock] = it
           scheduled.add(it)
         }
@@ -150,26 +161,34 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
     if (locks.isNotEmpty()) {
       scope.launch { daemonRestarter.cancelPreviousAndRun() }
     }
-    return scope.async {
+    return scope.suspendingLazy {
       scheduled.awaitAll()
     }
   }
 
   suspend fun awaitModelsReady() {
-    modelBuildScope.coroutineContext.job.children.forEach { it.join() }
+    modelBuildScope.coroutineContext.job.children.filter { it.isActive }.forEach { it.join() }
   }
 
-  private fun buildModel(lock: VirtualFile): Deferred<TypeModel> {
-    return modelBuildScope.async {
-      withBackgroundProgress(project, HCLBundle.message("rebuilding.local.schema"), false) {
-        logger<LocalSchemaService>().info("building local model: $lock")
-        val json = retrieveJsonForTFLock(lock)
-        buildModelFromJson(json)
+  private val processesSemaphore = Semaphore(
+    RegistryManager.getInstance().intValue("terraform.registry.metadata.parallelism", 4)
+  )
+
+  private fun buildModel(lock: VirtualFile, explicitlyAllowRunningProcess: Boolean): Deferred<TypeModel> {
+    val startMode = if (buildLocalMetadataEagerly || explicitlyAllowRunningProcess) CoroutineStart.DEFAULT else CoroutineStart.LAZY
+    return modelBuildScope.async(start = startMode) {
+      // a case for the BatchAsyncProcessor (IJPL-149050)
+      processesSemaphore.withPermit {
+        withBackgroundProgress(project, HCLBundle.message("rebuilding.local.schema"), false) {
+          logger<LocalSchemaService>().info("building local model: $lock")
+          val json = retrieveJsonForTFLock(lock, explicitlyAllowRunningProcess)
+          buildModelFromJson(json)
+        }
       }
     }
   }
 
-  private suspend fun retrieveJsonForTFLock(lock: VirtualFile): String {
+  private suspend fun retrieveJsonForTFLock(lock: VirtualFile, explicitlyAllowRunningProcess: Boolean): String {
     val lockData = readAction {
       WorkspaceModel.getInstance(project).currentSnapshot.entities<TFLocalMetaEntity>().firstOrNull {
         it.lockFile.virtualFile == lock
@@ -190,7 +209,7 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
       }
     }
 
-    val generateResult = runCatching { generateNewJsonFile(lock) }
+    val generateResult = runCatching { generateNewJsonFile(lock, explicitlyAllowRunningProcess) }
     if (generateResult.isFailure) {
       logger<LocalSchemaService>().info(
         "failed to generate new model for lock: ${lock.name}",
@@ -238,7 +257,8 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
       return localModelsPath
     }
 
-  private suspend fun generateNewJsonFile(lock: VirtualFile): @NlsSafe String {
+  private suspend fun generateNewJsonFile(lock: VirtualFile, explicitlyAllowRunningProcess: Boolean): @NlsSafe String {
+    if (!explicitlyAllowRunningProcess && !buildLocalMetadataAutomatically) throw IllegalStateException("generateNewJsonFile is not enabled")
     val jsonFromProcess = buildJsonFromTerraformProcess(project, lock)
     return withContext(Dispatchers.IO) {
       val uuid = UUID.randomUUID().toString()
@@ -335,6 +355,12 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
   }
 
 }
+
+internal val buildLocalMetadataAutomatically: Boolean
+  get() = AdvancedSettings.getBoolean("org.intellij.terraform.config.build.metadata.auto")
+
+internal val buildLocalMetadataEagerly: Boolean
+  get() = AdvancedSettings.getBoolean("org.intellij.terraform.config.build.metadata.eagerly")
 
 private class VirtualFileMap<T>(project: Project) {
 

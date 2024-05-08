@@ -199,6 +199,10 @@
                  description="Specifies timeout in ms for for connecting to Terraform registry and fetching docs from GitHub"
                  restartRequired="false"/>
 
+    <registryKey key="terraform.registry.metadata.parallelism" defaultValue="4"
+                 description="Specifies number of max parallel building metadata"
+                 restartRequired="true"/>
+
     <statementUpDownMover implementation="org.intellij.terraform.config.HCLStatementMover" id="HCL_SM" order="before line"/>
 
     <!-- Formatter -->
@@ -327,6 +331,30 @@
     <gotoSymbolContributor implementation="org.intellij.terraform.hcl.GoToSymbolContributor"/>
 
     <!-- Terraform as Tool -->
+    <advancedSetting id="org.intellij.terraform.config.documentation.download"
+                     default="true"
+                     groupKey="advanced.setting.terraform"
+                     bundle="messages.HCLBundle"
+                     descriptionKey="terraform.documentation.download.enabled"/>
+
+    <advancedSetting id="org.intellij.terraform.config.build.metadata.auto"
+                     default="true"
+                     groupKey="advanced.setting.terraform"
+                     bundle="messages.HCLBundle"
+                     descriptionKey="terraform.metadata.build.auto"/>
+
+    <advancedSetting id="org.intellij.terraform.config.build.metadata.eagerly"
+                     default="false"
+                     groupKey="advanced.setting.terraform"
+                     bundle="messages.HCLBundle"
+                     descriptionKey="terraform.metadata.build.eagerly"/>
+
+    <advancedSetting id="org.intellij.terraform.config.variables.deep.search"
+                     default="true"
+                     groupKey="advanced.setting.terraform"
+                     bundle="messages.HCLBundle"
+                     descriptionKey="terraform.variables.deep.search"/>
+
     <projectService serviceImplementation="org.intellij.terraform.runtime.TerraformToolProjectSettings"/>
     <projectConfigurable groupId="tools" instance="org.intellij.terraform.runtime.TerraformToolConfigurable"
                          id="reference.settingsdialog.project.terraform"
