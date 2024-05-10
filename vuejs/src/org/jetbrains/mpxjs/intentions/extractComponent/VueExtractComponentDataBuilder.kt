@@ -256,7 +256,7 @@ export default {
   }
 
   private fun optimizeUnusedComponentsAndImports(file: PsiFile) {
-    val componentsInitializer = objectLiteralFor(findDefaultExport(findModule(file, false)))
+    val componentsInitializer = objectLiteralFor(findCreatePage(findModule(file, false)))
       ?.findProperty("components")?.value?.asSafely<JSObjectLiteralExpression>()?.properties
     if (!componentsInitializer.isNullOrEmpty()) {
       val names = componentsInitializer.map { toAsset(it.name ?: "", true) }.toMutableSet()

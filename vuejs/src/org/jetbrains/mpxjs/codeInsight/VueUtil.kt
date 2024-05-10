@@ -34,6 +34,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.psi.tree.TokenSet
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parentOfType
 import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.psi.xml.XmlFile
@@ -58,6 +59,7 @@ import org.jetbrains.mpxjs.model.VueEntitiesContainer
 import org.jetbrains.mpxjs.model.VueModelProximityVisitor
 import org.jetbrains.mpxjs.model.VueModelVisitor
 import org.jetbrains.mpxjs.model.source.*
+import org.jetbrains.mpxjs.model.source.VueComponents.Companion.isComponentDefiningCall
 import org.jetbrains.mpxjs.types.asCompleteType
 import org.jetbrains.mpxjs.web.VUE_COMPONENTS
 import java.util.*
@@ -433,6 +435,17 @@ private fun findDefaultCommonJSExport(element: PsiElement): PsiElement? {
     .mapNotNull { it.initializerOrStub }
     .firstOrNull()
 }
+
+fun findCreatePage(element: PsiElement?): PsiElement? =
+  element?.let {
+    val res = PsiTreeUtil.findChildrenOfType(element, JSCallExpression::class.java)
+    for (item in res) {
+      if (isComponentDefiningCall(item)) {
+        return@let item
+      }
+    }
+    return@let null
+  }
 
 fun resolveLocalComponent(context: VueEntitiesContainer, tagName: String, containingFile: PsiFile): List<VueComponent> {
   val result = mutableListOf<VueComponent>()

@@ -42,7 +42,7 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   private val CREATE_COMMAND = "create"
 
   override fun getId(): String {
-    return "VueJS"
+    return "MpxJS"
   }
 
   override fun getName(): String {

@@ -22,6 +22,7 @@ class VueJSExtraParser(
 ) : JavaScriptParserBase<ES6Parser<*, *, *, *>>(parser) {
   private val statementParser get() = myJavaScriptParser.statementParser
 
+  // WOO TAG 解析表达式
   fun parseEmbeddedExpression(root: IElementType, attributeInfo: VueAttributeInfo?, expressionContent: IElementType) {
     val rootMarker = builder.mark()
     val statementMarker = builder.mark()

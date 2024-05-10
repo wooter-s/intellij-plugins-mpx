@@ -3,7 +3,7 @@ package org.jetbrains.mpxjs.lang.html
 
 import com.intellij.javascript.web.html.WebFrameworkHtmlDialect
 
-class VueLanguage private constructor() : WebFrameworkHtmlDialect("Vue") {
+class VueLanguage private constructor() : WebFrameworkHtmlDialect("Mpx") {
   companion object {
     val INSTANCE: VueLanguage = VueLanguage()
   }

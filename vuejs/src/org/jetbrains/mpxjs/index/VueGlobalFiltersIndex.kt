@@ -7,5 +7,5 @@ import com.intellij.psi.stubs.StubIndexKey
 class VueGlobalFiltersIndex : VueIndexBase<JSImplicitElementProvider>(VUE_GLOBAL_FILTERS_INDEX_KEY)
 
 val VUE_GLOBAL_FILTERS_INDEX_KEY: StubIndexKey<String, JSImplicitElementProvider> =
-  StubIndexKey.createIndexKey("vue.global.filters.index")
+  StubIndexKey.createIndexKey("mpx.global.filters.index")
 val VUE_GLOBAL_FILTERS_INDEX_JS_KEY: String = VueIndexBase.createJSKey(VUE_GLOBAL_FILTERS_INDEX_KEY)

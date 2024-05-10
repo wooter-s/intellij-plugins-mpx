@@ -10,9 +10,12 @@ import com.intellij.lang.javascript.psi.impl.JSPropertyImpl
 import com.intellij.lang.javascript.psi.impl.JSReferenceExpressionImpl
 import com.intellij.lang.javascript.psi.resolve.CachingPolyReferenceBase
 import com.intellij.lang.javascript.psi.stubs.impl.JSImplicitElementImpl
+import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.paths.StaticPathReferenceProvider
 import com.intellij.openapi.util.TextRange
 import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PlatformPatterns
+import com.intellij.patterns.XmlPatterns
 import com.intellij.psi.*
 import com.intellij.psi.filters.ElementFilter
 import com.intellij.psi.filters.position.FilterPattern
@@ -37,6 +40,13 @@ class VueJSReferenceContributor : PsiReferenceContributor() {
     registrar.registerReferenceProvider(THIS_INSIDE_COMPONENT, VueComponentLocalReferenceProvider())
     registrar.registerReferenceProvider(COMPONENT_NAME, VueComponentNameReferenceProvider())
     registrar.registerReferenceProvider(TEMPLATE_ID_REF, VueTemplateIdReferenceProvider())
+    registrar.registerReferenceProvider(
+      JSPatterns.jsLiteral()
+        .inside(
+          XmlPatterns.xmlTag().withLocalName("script").withAttributeValue("name", "json")
+        ),
+      PathReferenceProvider()
+    )
   }
 }
 
@@ -155,3 +165,46 @@ private class VueTemplateIdReference(element: JSLiteralExpression, rangeInElemen
   }
 }
 
+private class PathReferenceProvider : PsiReferenceProvider() {
+  override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
+    val text = ElementManipulators.getValueText(element)
+    val result = mutableListOf<PsiReference>()
+
+    // "@src/components/HelloWorld"
+    // 获取第一个域名
+    //val domain = text.substring(0, text.indexOf("/"))
+    if (text.startsWith("@")) {
+
+    } else {
+      // 如果是路径
+      if (text.contains("/")) {
+        // 处理相对路径
+        StaticPathReferenceProvider(FileType.EMPTY_ARRAY).apply {
+          setEndingSlashNotAllowed(false)
+          setRelativePathsAllowed(true)
+          createReferences(element, result, false)
+        }
+      }
+    }
+
+    // 检查路径是否包含文件扩展名，如果不包含，添加默认的文件扩展名.mpx
+    //result.forEach { ref ->
+    //  val path = (ref.element as JSLiteralExpression).stringValue
+    //  path?.let { path ->
+    //    val fileName = path.substringAfterLast("/")
+    //    if (!fileName.contains(".")) {
+    //      //val absolutePath = Path.of("$path.mpx").toAbsolutePath().toString()
+    //      val virtualFile = LocalFileSystem.getInstance().findFileByPath("$path.mpx")
+    //      virtualFile?.let { virtualFile ->
+    //        val fileElement = PsiManager.getInstance(element.project).findDirectory(virtualFile)?.originalElement
+    //        fileElement?.let { fileElement ->
+    //          ref.bindToElement(fileElement)
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
+
+    return result.toTypedArray()
+  }
+}

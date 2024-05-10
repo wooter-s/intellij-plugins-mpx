@@ -11,6 +11,7 @@ import java.util.function.Consumer
 class VueContainerScopeProvider : VueTemplateScopesProvider() {
 
   override fun getScopes(element: PsiElement, hostElement: PsiElement?): List<VueTemplateScope> {
+    // WOO TAG : 这里实现了一个 VueContainerScope，在Vue表达式里提供变量的上下文
     return VueModelManager.findEnclosingContainer(hostElement ?: element)
              ?.let { listOf(VueContainerScope(it)) }
            ?: emptyList()

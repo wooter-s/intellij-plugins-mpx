@@ -50,6 +50,7 @@ object VueExprParsing {
             createExprParser(builder).parseJS(root)
           }
           else -> {
+            // WOO TAG 解析
             createExprParser(builder).parseInterpolation(root)
           }
         }

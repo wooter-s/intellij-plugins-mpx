@@ -92,4 +92,4 @@ class VueEmptyComponentInitializersIndex : ScalarIndexExtension<Boolean>() {
 
 }
 
-val VUE_NO_INITIALIZER_COMPONENTS_INDEX = ID.create<Boolean, Void>("VueNoScriptFilesIndex")
+val VUE_NO_INITIALIZER_COMPONENTS_INDEX = ID.create<Boolean, Void>("MpxNoScriptFilesIndex")

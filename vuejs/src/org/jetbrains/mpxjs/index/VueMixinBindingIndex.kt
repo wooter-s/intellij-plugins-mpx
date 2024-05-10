@@ -7,5 +7,5 @@ import com.intellij.psi.stubs.StubIndexKey
 class VueMixinBindingIndex : VueIndexBase<JSImplicitElementProvider>(VUE_MIXIN_BINDING_INDEX_KEY)
 
 val VUE_MIXIN_BINDING_INDEX_KEY: StubIndexKey<String, JSImplicitElementProvider> =
-  StubIndexKey.createIndexKey("vue.mixin.binding.index")
+  StubIndexKey.createIndexKey("mpx.mixin.binding.index")
 val VUE_MIXIN_BINDING_INDEX_JS_KEY: String = VueIndexBase.createJSKey(VUE_MIXIN_BINDING_INDEX_KEY)

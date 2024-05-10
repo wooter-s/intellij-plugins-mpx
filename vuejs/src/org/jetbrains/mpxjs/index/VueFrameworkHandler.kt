@@ -491,6 +491,7 @@ class VueFrameworkHandler : FrameworkIndexingHandler() {
   private fun isComponentDefiningCall(callNode: ASTNode): Boolean =
     checkCallExpression(callNode) { referenceName, hasQualifier ->
       (!hasQualifier && referenceName == DEFINE_COMPONENT_FUN)
+      || (!hasQualifier && referenceName == CREATE_PAGE_FUN)
       || (!hasQualifier && referenceName == DEFINE_NUXT_COMPONENT_FUN)
       || (hasQualifier && referenceName == EXTEND_FUN)
       || (!hasQualifier && referenceName == DEFINE_OPTIONS_FUN)
@@ -576,10 +577,10 @@ fun <T : PsiElement> createIndexRecord(key: StubIndexKey<String, T>): Pair<Strin
 
 private const val REQUIRE = "require"
 
-private const val METHOD_NAME_USER_STRING = "vmn"
+private const val METHOD_NAME_USER_STRING = "mpx_vmn"
 
 private val VUE_DESCRIPTOR_OWNERS = arrayOf(VUE_NAMESPACE, MIXIN_FUN, COMPONENT_FUN, EXTEND_FUN, DIRECTIVE_FUN, DELIMITERS_PROP,
-                                            FILTER_FUN, DEFINE_COMPONENT_FUN, DEFINE_NUXT_COMPONENT_FUN)
+                                            FILTER_FUN, DEFINE_COMPONENT_FUN, CREATE_PAGE_FUN, DEFINE_NUXT_COMPONENT_FUN)
 private val COMPONENT_INDICATOR_PROPS = setOf(TEMPLATE_PROP, DATA_PROP, "render", PROPS_PROP, "propsData", COMPUTED_PROP, METHODS_PROP,
                                               "watch", MIXINS_PROP, COMPONENTS_PROP, DIRECTIVES_PROP, FILTERS_PROP, SETUP_METHOD,
                                               MODEL_PROP, SLOTS_PROP)
@@ -748,6 +749,16 @@ fun findTopLevelVueTags(xmlFile: XmlFile, tagName: String): List<XmlTag> {
   return emptyList()
 }
 
+fun findTopJsonScriptVueTap(xmlFile: XmlFile): XmlTag? {
+  val scriptTags = findTopLevelVueTags(xmlFile, "script")
+  val tag = scriptTags.first {
+    it.attributes.any {
+      (it.name == "name" && it.value == "json") || (it.name == "type" && it.value == "application/json")
+    }
+  }
+
+  return tag
+}
 private enum class VueStaticMethod(val methodName: String) {
   Component(COMPONENT_FUN),
   Mixin(MIXIN_FUN),

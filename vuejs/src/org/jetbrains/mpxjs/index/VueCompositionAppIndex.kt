@@ -7,5 +7,5 @@ import com.intellij.psi.stubs.StubIndexKey
 class VueCompositionAppIndex : VueIndexBase<JSImplicitElementProvider>(VUE_COMPOSITION_APP_INDEX_KEY)
 
 val VUE_COMPOSITION_APP_INDEX_KEY: StubIndexKey<String, JSImplicitElementProvider> =
-  StubIndexKey.createIndexKey("vue.composition.app.index")
+  StubIndexKey.createIndexKey("mpx.composition.app.index")
 val VUE_COMPOSITION_APP_INDEX_JS_KEY: String = VueIndexBase.createJSKey(VUE_COMPOSITION_APP_INDEX_KEY)

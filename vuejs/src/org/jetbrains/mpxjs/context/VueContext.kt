@@ -26,7 +26,7 @@ import org.jetbrains.mpxjs.libraries.componentDecorator.OPTIONS_DEC
 import org.jetbrains.mpxjs.web.VUE_TOP_LEVEL_ELEMENTS
 import org.jetbrains.mpxjs.web.VueFramework
 
-private val vueFrameworkInstance get() = WebFramework.get("vue")
+private val vueFrameworkInstance get() = WebFramework.get("mpx")
 
 fun isVueContext(context: PsiElement): Boolean = vueFrameworkInstance.isInContext(context)
 
