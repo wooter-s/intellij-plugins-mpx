@@ -25,8 +25,9 @@ class DartStructureViewModel extends TextEditorBasedStructureViewModel implement
 
   @NotNull private final StructureViewTreeElement myRootElement;
 
-  private final DartServerData.OutlineListener myListener = filePath -> {
-    if (filePath.equals(getPsiFile().getVirtualFile().getPath())) {
+  private final DartServerData.OutlineListener myListener = fileInfo -> {
+    VirtualFile file = fileInfo.findFile();
+    if (file != null && file.equals(getPsiFile().getVirtualFile())) {
       fireModelUpdate();
     }
   };

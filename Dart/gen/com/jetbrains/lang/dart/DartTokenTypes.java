@@ -191,6 +191,7 @@ public interface DartTokenTypes {
   IElementType ASSERT = new DartElementType("assert");
   IElementType ASYNC = new DartElementType("async");
   IElementType AT = new DartElementType("@");
+  IElementType AUGMENT = new DartElementType("augment");
   IElementType AWAIT = new DartElementType("await");
   IElementType BASE = new DartElementType("base");
   IElementType BIN_NOT = new DartElementType("~");
@@ -257,6 +258,7 @@ public interface DartTokenTypes {
   IElementType LT_EQ = new DartElementType("<=");
   IElementType LT_LT = new DartElementType("<<");
   IElementType LT_LT_EQ = new DartElementType("<<=");
+  IElementType MACRO = new DartElementType("macro");
   IElementType MINUS = new DartElementType("-");
   IElementType MINUS_EQ = new DartElementType("-=");
   IElementType MINUS_MINUS = new DartElementType("--");

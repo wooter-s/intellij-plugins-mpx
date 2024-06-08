@@ -5,16 +5,17 @@ import com.google.common.collect.Sets;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsSafe;
-import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.impl.source.resolve.ResolveCache;
 import com.intellij.psi.search.SearchScope;
+import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.util.EventDispatcher;
+import com.intellij.util.PathUtil;
 import com.intellij.util.SmartList;
 import org.dartlang.analysis.server.protocol.*;
 import org.jetbrains.annotations.*;
@@ -23,45 +24,48 @@ import java.util.*;
 
 public final class DartServerData {
   public interface OutlineListener extends EventListener {
-    void outlineUpdated(@NotNull final String filePath);
+    void outlineUpdated(@NotNull DartFileInfo fileInfo);
   }
 
   private final DartAnalysisServerService myService;
 
   private final EventDispatcher<OutlineListener> myEventDispatcher = EventDispatcher.create(OutlineListener.class);
 
-  private final Map<String, List<DartError>> myErrorData = Collections.synchronizedMap(new HashMap<>());
-  private final Map<String, List<DartHighlightRegion>> myHighlightData = Collections.synchronizedMap(new HashMap<>());
-  private final Map<String, List<DartNavigationRegion>> myNavigationData = Collections.synchronizedMap(new HashMap<>());
-  private final Map<String, List<DartOverrideMember>> myOverrideData = Collections.synchronizedMap(new HashMap<>());
-  private final Map<String, List<DartRegion>> myImplementedClassData = Collections.synchronizedMap(new HashMap<>());
-  private final Map<String, List<DartRegion>> myImplementedMemberData = Collections.synchronizedMap(new HashMap<>());
-  private final Map<String, Outline> myOutlineData = Collections.synchronizedMap(new HashMap<>());
+  private final Map<DartFileInfo, List<DartError>> myErrorData = Collections.synchronizedMap(new HashMap<>());
+  private final Map<DartFileInfo, List<DartHighlightRegion>> myHighlightData = Collections.synchronizedMap(new HashMap<>());
+  private final Map<DartFileInfo, List<DartNavigationRegion>> myNavigationData = Collections.synchronizedMap(new HashMap<>());
+  private final Map<DartFileInfo, List<DartOverrideMember>> myOverrideData = Collections.synchronizedMap(new HashMap<>());
+  private final Map<DartFileInfo, List<DartRegion>> myImplementedClassData = Collections.synchronizedMap(new HashMap<>());
+  private final Map<DartFileInfo, List<DartRegion>> myImplementedMemberData = Collections.synchronizedMap(new HashMap<>());
+  private final Map<DartFileInfo, Outline> myOutlineData = Collections.synchronizedMap(new HashMap<>());
+
   private final Map<Integer, AvailableSuggestionSet> myAvailableSuggestionSetMap = Collections.synchronizedMap(new HashMap<>());
   private final Map<String, Map<String, Map<String, Set<String>>>> myExistingImports = Collections.synchronizedMap(new HashMap<>());
 
-  private final Set<String> myFilePathsWithUnsentChanges = Sets.newConcurrentHashSet();
+  private final Set<DartLocalFileInfo> myLocalFilesWithUnsentChanges = Sets.newConcurrentHashSet();
 
   // keeps track of files in which error regions have been updated by DocumentListener
-  private final Set<String> myFilePathsWithInaccurateErrorInfo = Sets.newConcurrentHashSet();
+  private final Set<DartLocalFileInfo> myLocalFilesWithOutdatedErrorInfo = Sets.newConcurrentHashSet();
 
-  DartServerData(@NotNull final DartAnalysisServerService service) {
+  private final Map<String, LightVirtualFile> myNotLocalFileUriToVirtualFileMap = Collections.synchronizedMap(new HashMap<>());
+
+  DartServerData(@NotNull DartAnalysisServerService service) {
     myService = service;
   }
 
-  boolean isErrorInfoInaccurate(@NotNull final String filePath) {
-    return myFilePathsWithInaccurateErrorInfo.contains(filePath);
+  boolean isErrorInfoUpToDate(@NotNull DartLocalFileInfo fileInfo) {
+    return !myLocalFilesWithOutdatedErrorInfo.contains(fileInfo);
   }
 
   /**
    * @return {@code true} if {@code errors} were processes, {@code false} if ignored;
    * errors are ignored if the file has been edited and new contents has not yet been sent to the server.
    */
-  boolean computedErrors(@NotNull String filePath, @NotNull List<? extends AnalysisError> errors, boolean restartHighlighting) {
-    if (myFilePathsWithUnsentChanges.contains(filePath)) return false;
+  boolean computedErrors(@NotNull DartFileInfo fileInfo, @NotNull List<? extends AnalysisError> errors, boolean restartHighlighting) {
+    if (myLocalFilesWithUnsentChanges.contains(fileInfo)) return false;
 
-    final List<DartError> newErrors = new ArrayList<>(errors.size());
-    final VirtualFile file = LocalFileSystem.getInstance().findFileByPath(filePath);
+    List<DartError> newErrors = new ArrayList<>(errors.size());
+    VirtualFile file = fileInfo.findFile();
 
     for (AnalysisError error : errors) {
       final int offset = myService.getConvertedOffset(file, error.getLocation().getOffset());
@@ -69,8 +73,10 @@ public final class DartServerData {
       newErrors.add(new DartError(error, offset, length));
     }
 
-    myFilePathsWithInaccurateErrorInfo.remove(filePath);
-    myErrorData.put(filePath, newErrors);
+    if (fileInfo instanceof DartLocalFileInfo) {
+      myLocalFilesWithOutdatedErrorInfo.remove(fileInfo);
+    }
+    myErrorData.put(fileInfo, newErrors);
 
     if (restartHighlighting) {
       forceFileAnnotation(file, false);
@@ -79,17 +85,17 @@ public final class DartServerData {
     return true;
   }
 
-  void computedClosingLabels(@NotNull final String filePath, @NotNull final List<ClosingLabel> labels) {
-    if (myFilePathsWithUnsentChanges.contains(filePath)) return;
+  void computedClosingLabels(@NotNull DartFileInfo fileInfo, @NotNull List<ClosingLabel> labels) {
+    if (myLocalFilesWithUnsentChanges.contains(fileInfo)) return;
 
-    DartClosingLabelManager.getInstance().computedClosingLabels(myService.getProject(), FileUtil.toSystemIndependentName(filePath), labels);
+    DartClosingLabelManager.getInstance().computedClosingLabels(myService.getProject(), fileInfo, labels);
   }
 
-  void computedHighlights(@NotNull final String filePath, final @NotNull List<? extends HighlightRegion> regions) {
-    if (myFilePathsWithUnsentChanges.contains(filePath)) return;
+  void computedHighlights(@NotNull DartFileInfo fileInfo, @NotNull List<? extends HighlightRegion> regions) {
+    if (myLocalFilesWithUnsentChanges.contains(fileInfo)) return;
 
-    final List<DartHighlightRegion> newRegions = new ArrayList<>(regions.size());
-    final VirtualFile file = LocalFileSystem.getInstance().findFileByPath(filePath);
+    List<DartHighlightRegion> newRegions = new ArrayList<>(regions.size());
+    VirtualFile file = fileInfo.findFile();
 
     for (HighlightRegion region : regions) {
       if (region.getLength() > 0) {
@@ -99,15 +105,15 @@ public final class DartServerData {
       }
     }
 
-    myHighlightData.put(filePath, newRegions);
+    myHighlightData.put(fileInfo, newRegions);
     forceFileAnnotation(file, false);
   }
 
-  void computedNavigation(@NotNull final String filePath, final @NotNull List<? extends NavigationRegion> regions) {
-    if (myFilePathsWithUnsentChanges.contains(filePath)) return;
+  void computedNavigation(@NotNull DartFileInfo fileInfo, @NotNull List<? extends NavigationRegion> regions) {
+    if (myLocalFilesWithUnsentChanges.contains(fileInfo)) return;
 
-    final List<DartNavigationRegion> newRegions = new ArrayList<>(regions.size());
-    final VirtualFile file = LocalFileSystem.getInstance().findFileByPath(filePath);
+    List<DartNavigationRegion> newRegions = new ArrayList<>(regions.size());
+    VirtualFile file = fileInfo.findFile();
 
     for (NavigationRegion region : regions) {
       if (region.getLength() > 0) {
@@ -116,15 +122,15 @@ public final class DartServerData {
       }
     }
 
-    myNavigationData.put(filePath, newRegions);
+    myNavigationData.put(fileInfo, newRegions);
     forceFileAnnotation(file, true);
   }
 
-  void computedOutline(@NotNull final String filePath, @NotNull final Outline outline) {
-    if (myFilePathsWithUnsentChanges.contains(filePath)) return;
+  void computedOutline(@NotNull DartFileInfo fileInfo, @NotNull Outline outline) {
+    if (myLocalFilesWithUnsentChanges.contains(fileInfo)) return;
 
-    myOutlineData.put(filePath, outline);
-    ApplicationManager.getApplication().invokeLater(() -> myEventDispatcher.getMulticaster().outlineUpdated(filePath),
+    myOutlineData.put(fileInfo, outline);
+    ApplicationManager.getApplication().invokeLater(() -> myEventDispatcher.getMulticaster().outlineUpdated(fileInfo),
                                                     ModalityState.nonModal(),
                                                     myService.getDisposedCondition());
   }
@@ -155,16 +161,18 @@ public final class DartServerData {
     final int length = service.getConvertedOffset(file, region.getOffset() + region.getLength()) - offset;
     final SmartList<DartNavigationTarget> targets = new SmartList<>();
     for (NavigationTarget target : region.getTargetObjects()) {
-      targets.add(new DartNavigationTarget(target));
+      String filePathOrUri = target.getFile().trim();
+      DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(service.getProject(), filePathOrUri);
+      targets.add(new DartNavigationTarget(fileInfo, target.getOffset(), target.getKind()));
     }
     return new DartNavigationRegion(offset, length, targets);
   }
 
-  void computedOverrides(@NotNull final String filePath, final @NotNull List<? extends OverrideMember> overrides) {
-    if (myFilePathsWithUnsentChanges.contains(filePath)) return;
+  void computedOverrides(@NotNull DartFileInfo fileInfo, @NotNull List<? extends OverrideMember> overrides) {
+    if (myLocalFilesWithUnsentChanges.contains(fileInfo)) return;
 
     final List<DartOverrideMember> newOverrides = new ArrayList<>(overrides.size());
-    final VirtualFile file = LocalFileSystem.getInstance().findFileByPath(filePath);
+    VirtualFile file = fileInfo.findFile();
 
     for (OverrideMember override : overrides) {
       if (override.getLength() > 0) {
@@ -174,16 +182,16 @@ public final class DartServerData {
       }
     }
 
-    myOverrideData.put(filePath, newOverrides);
+    myOverrideData.put(fileInfo, newOverrides);
     forceFileAnnotation(file, false);
   }
 
-  void computedImplemented(@NotNull final String filePath,
-                           final @NotNull List<? extends ImplementedClass> implementedClasses,
-                           final @NotNull List<? extends ImplementedMember> implementedMembers) {
-    if (myFilePathsWithUnsentChanges.contains(filePath)) return;
+  void computedImplemented(@NotNull DartFileInfo fileInfo,
+                           @NotNull List<? extends ImplementedClass> implementedClasses,
+                           @NotNull List<? extends ImplementedMember> implementedMembers) {
+    if (myLocalFilesWithUnsentChanges.contains(fileInfo)) return;
 
-    final VirtualFile file = LocalFileSystem.getInstance().findFileByPath(filePath);
+    VirtualFile file = fileInfo.findFile();
 
     final List<DartRegion> newImplementedClasses = new ArrayList<>(implementedClasses.size());
     for (ImplementedClass implementedClass : implementedClasses) {
@@ -200,16 +208,16 @@ public final class DartServerData {
     }
 
     boolean hasChanges = false;
-    final List<DartRegion> oldClasses = myImplementedClassData.get(filePath);
+    List<DartRegion> oldClasses = myImplementedClassData.get(fileInfo);
     if (oldClasses == null || !oldClasses.equals(newImplementedClasses)) {
       hasChanges = true;
-      myImplementedClassData.put(filePath, newImplementedClasses);
+      myImplementedClassData.put(fileInfo, newImplementedClasses);
     }
 
-    final List<DartRegion> oldMembers = myImplementedMemberData.get(filePath);
+    List<DartRegion> oldMembers = myImplementedMemberData.get(fileInfo);
     if (oldMembers == null || !oldMembers.equals(newImplementedMembers)) {
       hasChanges = true;
-      myImplementedMemberData.put(filePath, newImplementedMembers);
+      myImplementedMemberData.put(fileInfo, newImplementedMembers);
     }
 
     if (hasChanges) {
@@ -217,13 +225,58 @@ public final class DartServerData {
     }
   }
 
+  void textDocumentContentDidChange(@NotNull String fileUri) {
+    if (fileUri.startsWith("file://")) {
+      Logger.getInstance(DartServerData.class).warn("Ignoring textDocumentContentDidChange('" + fileUri + "')");
+      return;
+    }
+
+    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+      String contents = myService.lspMessage_dart_textDocumentContent(fileUri);
+      if (contents == null || contents.isEmpty()) {
+        myNotLocalFileUriToVirtualFileMap.remove(fileUri);
+        return;
+      }
+
+      LightVirtualFile file;
+      synchronized (myNotLocalFileUriToVirtualFileMap) {
+        file = myNotLocalFileUriToVirtualFileMap.get(fileUri);
+        if (file == null) {
+          String fileName = PathUtil.getFileName(fileUri);
+          file = new LightVirtualFile(fileName);
+          file.putUserData(DartFileInfoKt.DART_NOT_LOCAL_FILE_URI_KEY, fileUri);
+          myNotLocalFileUriToVirtualFileMap.put(fileUri, file);
+        }
+      }
+
+      if (contents.contentEquals(file.getContent())) {
+        return;
+      }
+
+      file.setWritable(true);
+      file.setContent(this, contents, true);
+      file.setWritable(false);
+
+      VirtualFile finalFile = file;
+      ApplicationManager.getApplication().invokeLater(() -> {
+        FileDocumentManager.getInstance().reloadFiles(finalFile);
+      }, ModalityState.nonModal(), myService.getDisposedCondition());
+    });
+  }
+
+  @Nullable
+  VirtualFile getNotLocalVirtualFile(@NotNull String fileUri) {
+    return myNotLocalFileUriToVirtualFileMap.get(fileUri);
+  }
+
   @NotNull
   List<DartError> getErrors(@NotNull final SearchScope scope) {
     final List<DartError> errors = new ArrayList<>();
 
     synchronized (myErrorData) {
-      for (Map.Entry<String, List<DartError>> entry : myErrorData.entrySet()) {
-        final VirtualFile file = LocalFileSystem.getInstance().findFileByPath(entry.getKey());
+      for (Map.Entry<DartFileInfo, List<DartError>> entry : myErrorData.entrySet()) {
+        DartFileInfo fileInfo = entry.getKey();
+        VirtualFile file = fileInfo instanceof DartLocalFileInfo localFileInfo ? localFileInfo.findFile() : null;
         if (file != null && scope.contains(file)) {
           errors.addAll(entry.getValue());
         }
@@ -234,44 +287,51 @@ public final class DartServerData {
   }
 
   @NotNull
-  List<DartError> getErrors(@NotNull final VirtualFile file) {
-    final List<DartError> errors = myErrorData.get(file.getPath());
+  List<DartError> getErrors(@NotNull VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    List<DartError> errors = myErrorData.get(fileInfo);
     return errors != null ? errors : Collections.emptyList();
   }
 
   @NotNull
-  List<DartHighlightRegion> getHighlight(@NotNull final VirtualFile file) {
-    final List<DartHighlightRegion> regions = myHighlightData.get(file.getPath());
+  List<DartHighlightRegion> getHighlight(@NotNull VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    List<DartHighlightRegion> regions = myHighlightData.get(fileInfo);
     return regions != null ? regions : Collections.emptyList();
   }
 
   @NotNull
-  List<DartNavigationRegion> getNavigation(@NotNull final VirtualFile file) {
-    final List<DartNavigationRegion> regions = myNavigationData.get(file.getPath());
+  List<DartNavigationRegion> getNavigation(@NotNull VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    List<DartNavigationRegion> regions = myNavigationData.get(fileInfo);
     return regions != null ? regions : Collections.emptyList();
   }
 
   @NotNull
-  List<DartOverrideMember> getOverrideMembers(@NotNull final VirtualFile file) {
-    final List<DartOverrideMember> regions = myOverrideData.get(file.getPath());
+  List<DartOverrideMember> getOverrideMembers(@NotNull VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    List<DartOverrideMember> regions = myOverrideData.get(fileInfo);
     return regions != null ? regions : Collections.emptyList();
   }
 
   @NotNull
-  List<DartRegion> getImplementedClasses(@NotNull final VirtualFile file) {
-    final List<DartRegion> classes = myImplementedClassData.get(file.getPath());
+  List<DartRegion> getImplementedClasses(@NotNull VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    List<DartRegion> classes = myImplementedClassData.get(fileInfo);
     return classes != null ? classes : Collections.emptyList();
   }
 
   @NotNull
-  List<DartRegion> getImplementedMembers(@NotNull final VirtualFile file) {
-    final List<DartRegion> classes = myImplementedMemberData.get(file.getPath());
+  List<DartRegion> getImplementedMembers(@NotNull VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    List<DartRegion> classes = myImplementedMemberData.get(fileInfo);
     return classes != null ? classes : Collections.emptyList();
   }
 
   @Nullable
-  Outline getOutline(@NotNull final VirtualFile file) {
-    return myOutlineData.get(file.getPath());
+  Outline getOutline(@NotNull VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    return myOutlineData.get(fileInfo);
   }
 
   void addOutlineListener(@NotNull final OutlineListener listener) {
@@ -289,13 +349,15 @@ public final class DartServerData {
 
   boolean hasAllData_TESTS_ONLY(@NotNull VirtualFile file) {
     assert ApplicationManager.getApplication().isUnitTestMode();
-    return !isErrorInfoInaccurate(file.getPath()) &&
-           myHighlightData.get(file.getPath()) != null &&
-           myNavigationData.get(file.getPath()) != null &&
-           myOverrideData.get(file.getPath()) != null &&
-           myImplementedClassData.get(file.getPath()) != null &&
-           myImplementedMemberData.get(file.getPath()) != null &&
-           myOutlineData.get(file.getPath()) != null;
+
+    DartLocalFileInfo fileInfo = (DartLocalFileInfo)DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    return isErrorInfoUpToDate(fileInfo) &&
+           myHighlightData.get(fileInfo) != null &&
+           myNavigationData.get(fileInfo) != null &&
+           myOverrideData.get(fileInfo) != null &&
+           myImplementedClassData.get(fileInfo) != null &&
+           myImplementedMemberData.get(fileInfo) != null &&
+           myOutlineData.get(fileInfo) != null;
   }
 
   @Nullable
@@ -324,27 +386,30 @@ public final class DartServerData {
   }
 
   void onFilesContentUpdated() {
-    myFilePathsWithUnsentChanges.clear();
+    myLocalFilesWithUnsentChanges.clear();
   }
 
   void onFileClosed(@NotNull final VirtualFile file) {
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    if (!(fileInfo instanceof DartLocalFileInfo localFileInfo)) return;
+
     // do not remove from myErrorData, this map is always kept up-to-date for all files, not only for visible
-    myHighlightData.remove(file.getPath());
-    myNavigationData.remove(file.getPath());
-    myOverrideData.remove(file.getPath());
-    myImplementedClassData.remove(file.getPath());
-    myImplementedMemberData.remove(file.getPath());
-    myOutlineData.remove(file.getPath());
+    myHighlightData.remove(localFileInfo);
+    myNavigationData.remove(localFileInfo);
+    myOverrideData.remove(localFileInfo);
+    myImplementedClassData.remove(localFileInfo);
+    myImplementedMemberData.remove(localFileInfo);
+    myOutlineData.remove(localFileInfo);
   }
 
-  void onFlushedResults(@NotNull final List<String> filePaths) {
-    removeAllFromMap(myErrorData, filePaths);
-    removeAllFromMap(myHighlightData, filePaths);
-    removeAllFromMap(myNavigationData, filePaths);
-    removeAllFromMap(myOverrideData, filePaths);
-    removeAllFromMap(myImplementedClassData, filePaths);
-    removeAllFromMap(myImplementedMemberData, filePaths);
-    removeAllFromMap(myOutlineData, filePaths);
+  void onFlushedResults(@NotNull List<DartFileInfo> fileInfos) {
+    removeAllFromMap(myErrorData, fileInfos);
+    removeAllFromMap(myHighlightData, fileInfos);
+    removeAllFromMap(myNavigationData, fileInfos);
+    removeAllFromMap(myOverrideData, fileInfos);
+    removeAllFromMap(myImplementedClassData, fileInfos);
+    removeAllFromMap(myImplementedMemberData, fileInfos);
+    removeAllFromMap(myOutlineData, fileInfos);
   }
 
   private static <T> void removeAllFromMap(@NotNull Map<T, ?> map, @NotNull List<? extends T> keys) {
@@ -366,29 +431,31 @@ public final class DartServerData {
     myAvailableSuggestionSetMap.clear();
   }
 
-  void onDocumentChanged(@NotNull final DocumentEvent e) {
-    final VirtualFile file = FileDocumentManager.getInstance().getFile(e.getDocument());
+  void onDocumentChanged(@NotNull DocumentEvent e) {
+    VirtualFile file = FileDocumentManager.getInstance().getFile(e.getDocument());
     if (!DartAnalysisServerService.isLocalAnalyzableFile(file)) return;
 
-    final String filePath = file.getPath();
-    myFilePathsWithUnsentChanges.add(filePath);
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(myService.getProject(), file);
+    if (!(fileInfo instanceof DartLocalFileInfo localFileInfo)) return;
 
-    boolean regionsUpdated = updateRegionsDeletingTouched(filePath, myErrorData.get(filePath), e);
+    myLocalFilesWithUnsentChanges.add(localFileInfo);
+
+    boolean regionsUpdated = updateRegionsDeletingTouched(localFileInfo, myErrorData.get(localFileInfo), e);
     if (regionsUpdated) {
-      myFilePathsWithInaccurateErrorInfo.add(filePath);
+      myLocalFilesWithOutdatedErrorInfo.add(localFileInfo);
     }
-    updateRegionsUpdatingTouched(myHighlightData.get(filePath), e);
-    updateRegionsDeletingTouched(filePath, myNavigationData.get(filePath), e);
-    updateRegionsDeletingTouched(filePath, myOverrideData.get(filePath), e);
-    updateRegionsDeletingTouched(filePath, myImplementedClassData.get(filePath), e);
-    updateRegionsDeletingTouched(filePath, myImplementedMemberData.get(filePath), e);
+    updateRegionsUpdatingTouched(myHighlightData.get(localFileInfo), e);
+    updateRegionsDeletingTouched(localFileInfo, myNavigationData.get(localFileInfo), e);
+    updateRegionsDeletingTouched(localFileInfo, myOverrideData.get(localFileInfo), e);
+    updateRegionsDeletingTouched(localFileInfo, myImplementedClassData.get(localFileInfo), e);
+    updateRegionsDeletingTouched(localFileInfo, myImplementedMemberData.get(localFileInfo), e);
     // A bit outdated outline data is not a big problem, updated data will come shortly
   }
 
   /**
    * @return {@code true} if at least one region has been updated or deleted, {@code false} if nothing done at all
    */
-  private static boolean updateRegionsDeletingTouched(@NotNull final String filePath,
+  private static boolean updateRegionsDeletingTouched(@NotNull final DartFileInfo fileInfo,
                                                       @Nullable final List<? extends DartRegion> regions,
                                                       @NotNull final DocumentEvent e) {
     if (regions == null) return false;
@@ -406,7 +473,7 @@ public final class DartServerData {
       if (region instanceof DartNavigationRegion) {
         // may be we'd better delete target touched by editing?
         for (DartNavigationTarget target : ((DartNavigationRegion)region).getTargets()) {
-          if (target.myFile.equals(filePath) && target.myConvertedOffset >= eventOffset) {
+          if (target.myFileInfo.equals(fileInfo) && target.myConvertedOffset >= eventOffset) {
             target.myConvertedOffset += deltaLength;
           }
         }
@@ -610,20 +677,20 @@ public final class DartServerData {
   }
 
   public static final class DartNavigationTarget {
-    private final String myFile;
+    private final DartFileInfo myFileInfo;
     private final int myOriginalOffset;
     private final String myKind;
 
     private int myConvertedOffset = -1;
 
-    private DartNavigationTarget(@NotNull final NavigationTarget target) {
-      myFile = FileUtil.toSystemIndependentName(target.getFile().trim()).intern();
-      myOriginalOffset = target.getOffset();
-      myKind = target.getKind().intern();
+    private DartNavigationTarget(@NotNull DartFileInfo fileInfo, int offset, @NotNull String kind) {
+      myFileInfo = fileInfo;
+      myOriginalOffset = offset;
+      myKind = kind.intern();
     }
 
-    public String getFile() {
-      return myFile;
+    public @Nullable VirtualFile findFile() {
+      return myFileInfo.findFile();
     }
 
     public int getOffset(@NotNull final Project project, @Nullable final VirtualFile file) {

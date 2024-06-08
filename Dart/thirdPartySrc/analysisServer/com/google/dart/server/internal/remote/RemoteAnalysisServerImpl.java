@@ -85,6 +85,10 @@ public abstract class RemoteAnalysisServerImpl implements AnalysisServer {
 
   // Execution domain
   private static final String LAUNCH_DATA_NOTIFICATION_RESULTS = "execution.launchData";
+
+  // LSP
+  public static final String LSP_NOTIFICATION = "lsp.notification";
+
   private final AnalysisServerSocket socket;
   private final Object requestSinkLock = new Object();
   private RequestSink requestSink;
@@ -369,7 +373,7 @@ public abstract class RemoteAnalysisServerImpl implements AnalysisServer {
   }
 
   @Override
-  public void edit_bulkFixes(List<String> included, boolean inTestMode, List<String> codes, BulkFixesConsumer consumer) { }
+  public void edit_bulkFixes(List<String> included, boolean inTestMode, boolean updatePubspec, List<String> codes, BulkFixesConsumer consumer) { }
 
   @Override
   public void edit_format(String file, int selectionOffset, int selectionLength, int lineLength, FormatConsumer consumer) {
@@ -580,12 +584,12 @@ public abstract class RemoteAnalysisServerImpl implements AnalysisServer {
   }
 
   @Override
-  public void server_setClientCapabilities(List<String> requests) {
+  public void server_setClientCapabilities(List<String> requests, boolean supportsUris) {
     String id = generateUniqueId();
     if (requests == null) {
       requests = StringUtilities.EMPTY_LIST;
     }
-    sendRequestToServer(id, RequestUtilities.generateClientCapabilities(id, requests));
+    sendRequestToServer(id, RequestUtilities.generateClientCapabilities(id, requests, supportsUris));
   }
 
   @Override
@@ -727,6 +731,10 @@ public abstract class RemoteAnalysisServerImpl implements AnalysisServer {
     }
     else if (event.equals(LAUNCH_DATA_NOTIFICATION_RESULTS)) {
       new NotificationExecutionLaunchDataProcessor(listener).process(response);
+    }
+    else if (event.equals(LSP_NOTIFICATION)) {
+      // lsp.notification
+      new NotificationLspProcessor(listener).process(response);
     }
     // it is a notification, even if we did not handle it
     return true;

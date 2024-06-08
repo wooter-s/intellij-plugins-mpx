@@ -15,7 +15,6 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -24,6 +23,9 @@ import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.PathUtil;
 import com.jetbrains.lang.dart.DartBundle;
 import com.jetbrains.lang.dart.analyzer.DartAnalysisServerService;
+import com.jetbrains.lang.dart.analyzer.DartFileInfo;
+import com.jetbrains.lang.dart.analyzer.DartFileInfoKt;
+import com.jetbrains.lang.dart.analyzer.DartLocalFileInfo;
 import com.jetbrains.lang.dart.assists.AssistUtils;
 import com.jetbrains.lang.dart.assists.DartSourceEditException;
 import org.dartlang.analysis.server.protocol.SourceChange;
@@ -94,9 +96,12 @@ public final class DartQuickFix implements IntentionAction, Comparable<Intention
                               @NotNull PsiFile file,
                               @NotNull SourceChange sourceChange,
                               @Nullable DartQuickFix dartQuickFix) {
-    final SourceFileEdit fileEdit = sourceChange.getEdits().get(0);
-    final String filePath = FileUtil.toSystemIndependentName(fileEdit.getFile());
+    SourceFileEdit fileEdit = sourceChange.getEdits().get(0);
+    String filePathOrUri = fileEdit.getFile();
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(project, filePathOrUri);
+    if (!(fileInfo instanceof DartLocalFileInfo localFileInfo)) return;
 
+    String filePath = localFileInfo.getFilePath();
     final VirtualFile virtualFile;
 
     // Create the file if it does not exist.
@@ -117,7 +122,7 @@ public final class DartQuickFix implements IntentionAction, Comparable<Intention
       }
     }
     else {
-      virtualFile = LocalFileSystem.getInstance().findFileByPath(filePath);
+      virtualFile = localFileInfo.findFile();
     }
 
     if (virtualFile == null) return;
@@ -153,12 +158,12 @@ public final class DartQuickFix implements IntentionAction, Comparable<Intention
 
   public static boolean isAvailable(@NotNull Project project, @NotNull SourceChange sourceChange) {
     final List<SourceFileEdit> fileEdits = sourceChange.getEdits();
-    if (fileEdits.size() < 1) {
+    if (fileEdits.isEmpty()) {
       return false;
     }
 
     for (SourceFileEdit fileEdit : fileEdits) {
-      final VirtualFile virtualFile = AssistUtils.findVirtualFile(fileEdit);
+      final VirtualFile virtualFile = AssistUtils.findVirtualFile(project, fileEdit);
       final ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
 
       if (fileEdit.getFileStamp() != -1) {
@@ -188,13 +193,11 @@ public final class DartQuickFix implements IntentionAction, Comparable<Intention
       return false;
     }
 
-    String path = FileUtil.toSystemIndependentName(sourceChange.getEdits().get(0).getFile());
-    VirtualFile vFile = target.getOriginalFile().getVirtualFile();
-    if (vFile == null || !vFile.getPath().equals(path)) {
-      return false;
-    }
+    String filePathOrUri = sourceChange.getEdits().get(0).getFile();
+    DartFileInfo fileInfo = DartFileInfoKt.getDartFileInfo(target.getProject(), filePathOrUri);
 
-    return true;
+    VirtualFile vFile = target.getOriginalFile().getVirtualFile();
+    return vFile != null && fileInfo instanceof DartLocalFileInfo localFileInfo && localFileInfo.getFilePath().equals(vFile.getPath());
   }
 
   public static void doInvokeForPreview(@NotNull PsiFile psiFile, @NotNull SourceChange sourceChange) {

@@ -61,6 +61,7 @@
 // BUILT_IN_IDENTIFIER
   ABSTRACT="abstract"
   AS="as"
+  AUGMENT="augment"
   BASE="base"
   COVARIANT="covariant"
   DEFERRED="deferred"
@@ -73,6 +74,7 @@
   IMPORT="import"
   INTERFACE="interface"
   LIBRARY="library"
+  MACRO="macro"
   MIXIN="mixin"
   OPERATOR="operator"
   PART="part"
@@ -193,7 +195,7 @@ partOfStatement ::= metadata* 'part' 'of' (libraryId | uriElement)';' {
 libraryId ::= <<nonStrictID>> ('.' <<nonStrictID>>)*
 {mixin="com.jetbrains.lang.dart.psi.impl.DartLibraryIdBase" implements="com.jetbrains.lang.dart.psi.DartReference"}
 
-libraryStatement ::= metadata* 'library' libraryNameElement? ';' {pin=3}
+libraryStatement ::= metadata* ('library' libraryNameElement? | 'augment' 'library' uriElement) ';' {pin=2}
 
 libraryNameElement ::= <<nonStrictID>> ('.' <<nonStrictID>>)* {
   mixin="com.jetbrains.lang.dart.psi.impl.DartLibraryNameElementBase"
@@ -201,8 +203,8 @@ libraryNameElement ::= <<nonStrictID>> ('.' <<nonStrictID>>)* {
   methods=[getName]
 }
 
-importStatement ::= metadata* 'import' uriElement importConfig* ('deferred'? 'as' componentName )? combinator* ';' {
-  pin=3
+importStatement ::= metadata* 'import' 'augment'? uriElement importConfig* ('deferred'? 'as' componentName )? combinator* ';' {
+  pin=4
   implements="com.jetbrains.lang.dart.psi.DartImportOrExportStatement"
   methods = [
     getUriString
@@ -235,7 +237,7 @@ metadata ::= '@' simpleQualifiedReferenceExpression typeArguments? (<<noSpace>> 
 
 uriElement ::= stringLiteralExpression {mixin="com.jetbrains.lang.dart.psi.impl.DartUriElementBase"   methods = [ getUriStringAndItsRange ]}
 
-varAccessDeclaration ::= metadata* 'external'? 'abstract'? 'static'?
+varAccessDeclaration ::= metadata* 'augment'? 'external'? 'abstract'? 'static'?
                                              ('covariant'? 'late'? finalOrConst type               componentName |
                                               'covariant'? 'late'? finalOrConst                    componentName <<failIfItLooksLikeConstantObjectExpression>> |
                                               'covariant'? 'late'? 'var'                           componentName |
@@ -254,32 +256,33 @@ varDeclarationListPart ::= componentName varInit?
   methods= [getMetadataList]
 }
 
-classDefinition ::= metadata* (mixinClassModifiers | classModifiers) 'class' componentName typeParameters? (mixinApplication | standardClassDeclarationTail)
-{pin=4 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartPsiClass" implements="com.jetbrains.lang.dart.psi.DartClass"}
+classDefinition ::= metadata* 'augment'? (mixinClassModifiers | classModifiers) 'class' componentName typeParameters? (mixinApplication | standardClassDeclarationTail)
+{pin=5 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartPsiClass" implements="com.jetbrains.lang.dart.psi.DartClass"}
 
-private classModifiers ::= 'sealed' | 'abstract'? ('base' | 'interface' | 'final')?
+private classModifiers ::= 'sealed' | 'macro' | 'abstract'? ('base' | 'interface' | 'final')?
 private mixinClassModifiers ::= 'abstract'? 'base'? 'mixin'
 
-mixinDeclaration ::= metadata* mixinModifier? 'mixin' componentName typeParameters? onMixins? interfaces? classBody
+mixinDeclaration ::= metadata* 'augment'? mixinModifier? 'mixin' componentName typeParameters? onMixins? interfaces? classBody
 {mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartPsiClass" implements="com.jetbrains.lang.dart.psi.DartClass"}
 
 private mixinModifier ::= 'sealed' | 'base' | 'interface' | 'final'
 
-enumDefinition ::= metadata* 'enum' componentName typeParameters? mixins? interfaces? '{' enumConstantDeclaration? (',' enumConstantDeclaration)* ','? ';'? classMembers '}'
-{pin=3  mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartPsiClass" implements="com.jetbrains.lang.dart.psi.DartClass"}
+enumDefinition ::= metadata* 'augment'? 'enum' componentName typeParameters? mixins? interfaces? '{' enumConstantDeclaration? (',' enumConstantDeclaration)* ','? ';'? classMembers '}'
+{pin=4 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartPsiClass" implements="com.jetbrains.lang.dart.psi.DartClass"}
 
-enumConstantDeclaration ::= metadata* componentName typeArguments? '.' componentName arguments |
-                            metadata* componentName typeArguments? arguments?
+enumConstantDeclaration ::= metadata* 'augment'? componentName typeArguments? '.' componentName arguments |
+                            metadata* 'augment'? componentName typeArguments? arguments?
 {
   mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl"
   implements="com.jetbrains.lang.dart.psi.DartComponent"
   methods = [getComponentName]
 }
 
-extensionDeclaration ::= 'extension' typeParameters? 'on' type '?'? classBody |
-                         'extension' <<nonStrictID>> typeParameters? 'on' type '?'? classBody
+extensionDeclaration ::= metadata* 'augment'? 'extension' typeParameters? 'on' type '?'? classBody |
+                         metadata* 'augment'? 'extension' <<nonStrictID>> typeParameters? 'on' type '?'? classBody
 
-extensionTypeDeclaration ::= 'extension' <<typeForExtensionType>> 'const'? componentName typeParameters? representationDeclaration interfaces? classBody {pin=4}
+extensionTypeDeclaration ::= metadata* 'augment'? 'extension' <<typeForExtensionType>> 'const'? componentName typeParameters? representationDeclaration interfaces? classBody
+{pin=6}
 private representationDeclaration ::=  ('.' (componentName | 'new'))? '(' metadata* type componentName ')'
 
 mixinApplication ::= '=' type mixins? interfaces? ';' {pin = 1}
@@ -294,13 +297,13 @@ private getterOrSetterDeclaration ::= getterDeclaration | setterDeclaration
 
 getterDeclaration ::= getterDeclarationWithReturnType | getterDeclarationWithoutReturnType // 'get' is a valid identifier, so can be a returnType
 {mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
-private getterDeclarationWithReturnType    ::= metadata* ('external' | 'static')* returnType 'get' componentName formalParameterList? (';' | functionBodyOrNative) {pin=5}
-private getterDeclarationWithoutReturnType ::= metadata* ('external' | 'static')*            'get' componentName formalParameterList? (';' | functionBodyOrNative) {pin=4}
+private getterDeclarationWithReturnType    ::= metadata* 'augment'? ('external' | 'static')* returnType 'get' componentName formalParameterList? (';' | functionBodyOrNative) {pin=6}
+private getterDeclarationWithoutReturnType ::= metadata* 'augment'? ('external' | 'static')*            'get' componentName formalParameterList? (';' | functionBodyOrNative) {pin=5}
 
 setterDeclaration ::= setterDeclarationWithReturnType | setterDeclarationWithoutReturnType // 'set' is a valid identifier, so can be a returnType
 {mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
-private setterDeclarationWithReturnType    ::= metadata* ('external' | 'static')* returnType 'set' componentName formalParameterList (';' | functionBodyOrNative) {pin=5}
-private setterDeclarationWithoutReturnType ::= metadata* ('external' | 'static')*            'set' componentName formalParameterList (';' | functionBodyOrNative) {pin=4}
+private setterDeclarationWithReturnType    ::= metadata* 'augment'? ('external' | 'static')* returnType 'set' componentName formalParameterList (';' | functionBodyOrNative) {pin=6}
+private setterDeclarationWithoutReturnType ::= metadata* 'augment'? ('external' | 'static')*            'set' componentName formalParameterList (';' | functionBodyOrNative) {pin=5}
 
 typeParameters ::= '<' typeParameter? (',' typeParameter)* '>'
 typeParameter ::= metadata* componentName ('extends' type)?
@@ -332,12 +335,12 @@ private functionBodyOrNative ::= 'native' functionBody
 
 private functionNative ::= 'native' (stringLiteralExpression ';' | ';' | stringLiteralExpression functionBody)
 
-methodDeclaration ::= metadata* ('external' | 'static' | 'const')* methodDeclarationPrivate initializers? (';' | functionBodyOrNative | redirection)?
-{pin=3 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartMethodDeclarationImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
+methodDeclaration ::= metadata* 'augment'? ('external' | 'static' | 'const')* methodDeclarationPrivate initializers? (';' | functionBodyOrNative | redirection)?
+{pin=4 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartMethodDeclarationImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
 private methodDeclarationPrivate ::= returnType <<methodNameWrapper>> typeParameters? formalParameterList | !untypedFunctionType <<methodNameWrapper>> typeParameters? formalParameterList // todo remove, use functionSignature as in spec
 
-namedConstructorDeclaration ::= metadata* ('external' | 'const')* componentName '.' (componentName | 'new') formalParameterList initializers? (';' | functionBodyOrNative | redirection)?
-{pin=6 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent" methods = [getComponentName]}
+namedConstructorDeclaration ::= metadata* 'augment'? ('external' | 'const')* componentName '.' (componentName | 'new') formalParameterList initializers? (';' | functionBodyOrNative | redirection)?
+{pin=7 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent" methods = [getComponentName]}
 
 initializers ::= ':' superCallOrFieldInitializer (',' superCallOrFieldInitializer)*
 
@@ -356,9 +359,9 @@ private super_call_or_field_initializer_recover ::= !(<<nonStrictID>> | 'sync' |
                                                     'interface' | 'late' | 'library' | 'mixin' | 'native' | 'part' | 'sealed' | 'set' |
                                                     'static' | 'typedef' | 'var' | 'void' | '}' )
 
-functionTypeAlias ::= metadata* 'typedef' functionPrefix typeParameters? formalParameterList ';'?
-                    | metadata* 'typedef' componentName typeParameters? '=' type ';'?
-{pin=5 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
+functionTypeAlias ::= metadata* 'augment'? 'typedef' functionPrefix typeParameters? formalParameterList ';'? |
+                      metadata* 'augment'? 'typedef' componentName typeParameters? '=' type ';'?
+{pin=6 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
 private functionPrefix ::= returnType componentName | componentName
 
 parameterTypeList ::= '(' ')'
@@ -374,8 +377,8 @@ optionalParameterTypes ::= optionalPositionalParameterTypes | namedParameterType
 private optionalPositionalParameterTypes ::= '[' normalParameterTypes ','? ']'
 private namedParameterTypes ::= '{' 'required'? typedIdentifier (',' 'required'? typedIdentifier)* ','? '}'
 
-factoryConstructorDeclaration ::= metadata* ('external' | 'const')* 'factory' componentName ('.' componentName)? formalParameterList factoryTail?
-{pin=3 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent" methods = [getComponentName]}
+factoryConstructorDeclaration ::= metadata* 'augment'? ('external' | 'const')* 'factory' componentName ('.' componentName)? formalParameterList factoryTail?
+{pin=4 mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent" methods = [getComponentName]}
 private factoryTail ::= varFactoryDeclaration ';' | functionBodyOrNative | ';' {pin(".*")=1}
 private varFactoryDeclaration ::= '=' type ['.' (referenceExpression | 'new')] {pin(".*")=1}
 
@@ -731,9 +734,9 @@ forElement ::= 'await'? 'for' '(' forLoopParts ')' element {pin=2};
 
 functionExpression ::= typeParameters? formalParameterList functionExpressionBody
 {mixin="com.jetbrains.lang.dart.psi.impl.DartFunctionExpressionBase"}
-functionDeclarationWithBodyOrNative ::= metadata* 'external'? (returnType componentName typeParameters? formalParameterList | componentName typeParameters? formalParameterList) ( ';' | functionBodyOrNative)
+functionDeclarationWithBodyOrNative ::= metadata* 'augment'? 'external'? (returnType componentName typeParameters? formalParameterList | componentName typeParameters? formalParameterList) ( ';' | functionBodyOrNative)
 {mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
-functionDeclarationWithBody ::= metadata*  (returnType componentName typeParameters? formalParameterList | componentName typeParameters? formalParameterList) functionBody // todo merge with functionDeclarationWithBodyOrNative
+functionDeclarationWithBody ::= metadata* 'augment'? (returnType componentName typeParameters? formalParameterList | componentName typeParameters? formalParameterList) functionBody // todo merge with functionDeclarationWithBodyOrNative
 {mixin="com.jetbrains.lang.dart.psi.impl.AbstractDartComponentImpl" implements="com.jetbrains.lang.dart.psi.DartComponent"}
 
 functionBody ::= arrowBodyWithSemi | <<blockBodyWrapper>> {methods=[getBlock]}

@@ -169,6 +169,7 @@ HEX_NUMBER = 0 [Xx] {HEX_DIGIT}*
 // BUILT_IN_IDENTIFIER (can be used as normal identifiers)
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "abstract"             { return ABSTRACT; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "as"                   { return AS; }
+<YYINITIAL, LONG_TEMPLATE_ENTRY> "augment"              { return AUGMENT; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "base"                 { return BASE; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "covariant"            { return COVARIANT; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "deferred"             { return DEFERRED; }
@@ -181,6 +182,7 @@ HEX_NUMBER = 0 [Xx] {HEX_DIGIT}*
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "import"               { return IMPORT; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "interface"            { return INTERFACE; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "library"              { return LIBRARY; }
+<YYINITIAL, LONG_TEMPLATE_ENTRY> "macro"                { return MACRO; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "mixin"                { return MIXIN; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "operator"             { return OPERATOR; }
 <YYINITIAL, LONG_TEMPLATE_ENTRY> "part"                 { return PART; }

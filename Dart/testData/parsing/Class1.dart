@@ -82,6 +82,7 @@ extension Tricky on int {
       Iterable<int>.generate(to - this + 1, (i) => i + this);
 }
 
+@foo
 extension MyFancyList<T> on List<T> {
   int get doubleLength => this.length * 2;
   List<T> operator-() => this.reversed.toList();
@@ -106,6 +107,9 @@ interface class MySubclass extends NoExtend {}
 base class A {}
 final class A{}
 sealed class A{}
+macro class macro{}
+augment class augment{}
+augment abstract class A{}
 abstract class A{}
 abstract base class A{}
 abstract interface class A{}
@@ -120,7 +124,43 @@ interface mixin	A{}
 final mixin	A{}
 sealed mixin A{}
 
+@foo
 extension type A<T>.named(int it) implements num {}
 extension type A.new(int it) implements num, int {}
 extension type const A(int it) implements num, int {}
 extension type A<T>.dynamic(int it) {  @a foo()  var a; }
+
+augment class Foo{}
+augment mixin Foo{}
+augment enum Enum {}
+augment extension foo on bar {}
+augment extension on bar {}
+augment typedef foo = bar;
+augment typedef foo(a);
+
+@a augment class Foo{}
+@a augment mixin Foo{}
+@a augment enum Enum {}
+@a augment typedef foo = bar;
+@a augment typedef foo(a);
+
+augment enum A {
+  second,
+  augment first;
+}
+
+augment int foo(){}
+
+augment var foo = 0;
+@a augment static var foo;
+@a augment const foo;
+@a augment get f() {}
+augment set asd();
+
+class y {
+  @a augment var foo = 0;
+  augment static var foo;
+  augment const foo;
+  augment get f();
+  @a augment set asd() {}
+}

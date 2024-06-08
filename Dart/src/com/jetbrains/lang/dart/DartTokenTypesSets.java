@@ -81,6 +81,7 @@ public interface DartTokenTypesSets {
 
   TokenSet BUILT_IN_IDENTIFIERS = TokenSet.create(ABSTRACT,
                                                   AS,
+                                                  AUGMENT,
                                                   BASE,
                                                   COVARIANT,
                                                   DEFERRED,
@@ -93,6 +94,7 @@ public interface DartTokenTypesSets {
                                                   IMPORT,
                                                   INTERFACE,
                                                   LIBRARY,
+                                                  MACRO,
                                                   MIXIN,
                                                   OPERATOR,
                                                   PART,
