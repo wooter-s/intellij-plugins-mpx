@@ -24,13 +24,10 @@ class DuplicateTagInspection : LocalInspectionTool() {
       override fun visitXmlTag(tag: XmlTag) {
         if (tag.language != VueLanguage.INSTANCE || !tag.containingFile.isVueFile) return
         val templateTag = TEMPLATE_TAG_NAME == tag.name
-        val scriptTag = HtmlUtil.isScriptTag(tag)
-        if (!templateTag && !scriptTag) return
+        if (!templateTag) return
         val parent = tag.parent as? XmlDocument ?: return
-        val isScriptSetup = tag.isScriptSetupTag()
         if (parent.childrenOfType<XmlTag>().any {
-            it != tag && ((scriptTag && HtmlUtil.isScriptTag(it) && isScriptSetup == it.isScriptSetupTag())
-                          || (templateTag && it.name == TEMPLATE_TAG_NAME))
+            it != tag && (templateTag && it.name == TEMPLATE_TAG_NAME)
           }) {
           val tagName = XmlTagUtil.getStartTagNameElement(tag)
           holder.registerProblem(tagName ?: tag,

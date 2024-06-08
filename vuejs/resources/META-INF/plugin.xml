@@ -139,7 +139,7 @@
     <localInspection language="Mpx" groupKey="vue.inspection.group.name" shortName="MpxDuplicateTag"
                      enabledByDefault="true" level="WARNING"
                      implementationClass="org.jetbrains.mpxjs.inspections.DuplicateTagInspection"
-                     key="vue.inspection.display.name.duplicate.tag" bundle="messages.VueBundle"/>
+                     key="mpx.inspection.display.name.duplicate.tag" bundle="messages.VueBundle"/>
     <localInspection language="Mpx" groupKey="vue.inspection.group.name" shortName="MpxMissingComponentImportInspection"
                      enabledByDefault="true" level="WARNING"
                      implementationClass="org.jetbrains.mpxjs.inspections.VueMissingComponentImportInspection"
