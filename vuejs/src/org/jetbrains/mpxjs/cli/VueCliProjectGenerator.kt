@@ -37,8 +37,8 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   private val DEFAULT_PROJECT_SETUP_KEY = Key.create<Boolean>("vue.project.generator.default.setup")
 
   private val CREATE_VUE_PACKAGE_NAME = "create-vue"
-  private val VUE_CLI_PACKAGE_NAME = "@vue/cli"
-  private val VUE_EXECUTABLE = "vue"
+  private val VUE_CLI_PACKAGE_NAME = "@mpxjs/cli"
+  private val VUE_EXECUTABLE = "mpx"
   private val CREATE_COMMAND = "create"
 
   override fun getId(): String {
@@ -46,38 +46,38 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   }
 
   override fun getName(): String {
-    return VueBundle.message("vue.project.generator.name")
+    return VueBundle.message("mpx.project.generator.name")
   }
 
   override fun getDescription(): String {
-    return VueBundle.message("vue.project.generator.description")
+    return VueBundle.message("mpx.project.generator.description")
   }
 
   override fun getIcon(): Icon {
     return VuejsIcons.Vue
   }
 
-  override fun createPeer(): ProjectGeneratorPeer<Settings> {
-    val defaultSetupCheckbox = JBCheckBox(VueBundle.message("vue.project.generator.use.default.project.setup"),
-                                          DEFAULT_PROJECT_SETUP_INITIALLY_SELECTED)
-    return object : NpmPackageGeneratorPeer() {
-      override fun createPanel(): JPanel {
-        val panel = super.createPanel()
-        panel.add(defaultSetupCheckbox)
-        return panel
-      }
-
-      override fun addExtraFields(settingsStep: SettingsStep) {
-        settingsStep.addSettingsComponent(defaultSetupCheckbox)
-      }
-
-      override fun getSettings(): Settings {
-        val settings = super.getSettings()
-        settings.putUserData(DEFAULT_PROJECT_SETUP_KEY, defaultSetupCheckbox.isSelected)
-        return settings
-      }
-    }
-  }
+  //override fun createPeer(): ProjectGeneratorPeer<Settings> {
+  //  val defaultSetupCheckbox = JBCheckBox(VueBundle.message("mpx.project.generator.use.default.project.setup"),
+  //                                        DEFAULT_PROJECT_SETUP_INITIALLY_SELECTED)
+  //  return object : NpmPackageGeneratorPeer() {
+  //    override fun createPanel(): JPanel {
+  //      val panel = super.createPanel()
+  //      panel.add(defaultSetupCheckbox)
+  //      return panel
+  //    }
+  //
+  //    override fun addExtraFields(settingsStep: SettingsStep) {
+  //      settingsStep.addSettingsComponent(defaultSetupCheckbox)
+  //    }
+  //
+  //    override fun getSettings(): Settings {
+  //      val settings = super.getSettings()
+  //      settings.putUserData(DEFAULT_PROJECT_SETUP_KEY, defaultSetupCheckbox.isSelected)
+  //      return settings
+  //    }
+  //  }
+  //}
 
   override fun customizeModule(baseDir: VirtualFile, entry: ContentEntry) {}
 
@@ -87,10 +87,12 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
 
     val packageName = settings.myPackage.name
     if (packageName.contains(CREATE_VUE_PACKAGE_NAME)) {
-      return if (default) arrayOf(workingDir, "--default") else arrayOf(workingDir)
+      return arrayOf(workingDir)
+      //return if (default) arrayOf(workingDir, "--default") else arrayOf(workingDir)
     }
 
-    return if (default) arrayOf(CREATE_COMMAND, "--default", workingDir) else arrayOf(CREATE_COMMAND, workingDir)
+    return arrayOf(CREATE_COMMAND, workingDir)
+    //return if (default) arrayOf(CREATE_COMMAND, "--default", workingDir) else arrayOf(CREATE_COMMAND, workingDir)
   }
 
   override fun generatorArgs(project: Project, baseDir: VirtualFile): Array<String> {
@@ -110,17 +112,17 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   }
 
   override fun packageNames(): List<String> {
-    return listOf(CREATE_VUE_PACKAGE_NAME, VUE_CLI_PACKAGE_NAME)
+    return listOf(VUE_CLI_PACKAGE_NAME)
   }
 
   override fun presentablePackageName(): String {
-    return VueBundle.message("vue.project.generator.presentable.package.name")
+    return VueBundle.message("mpx.project.generator.presentable.package.name")
   }
 
   override fun getNpxCommands(): List<NpxPackageDescriptor.NpxCommand> {
     return listOf(
       NpxPackageDescriptor.NpxCommand(CREATE_VUE_PACKAGE_NAME, CREATE_VUE_PACKAGE_NAME),
-      NpxPackageDescriptor.NpxCommand(VUE_CLI_PACKAGE_NAME, VUE_EXECUTABLE),
+      NpxPackageDescriptor.NpxCommand(VUE_CLI_PACKAGE_NAME, VUE_CLI_PACKAGE_NAME),
     )
   }
 
