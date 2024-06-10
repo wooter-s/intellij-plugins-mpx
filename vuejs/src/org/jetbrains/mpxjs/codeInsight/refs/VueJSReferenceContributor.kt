@@ -201,8 +201,8 @@ private class PathReferenceProvider : PsiReferenceProvider() {
         val isExistWithDefaultSuffix = LocalFileSystem.getInstance().findFileByPath("$realPath.mpx")?.exists()
 
         if (isExistWithIndexSuffix == true || isExistWithDefaultSuffix == true) {
-          val suffix = if (isExistWithIndexSuffix == true ) "index.mpx" else "mpx"
-          val viaFile = LocalFileSystem.getInstance().findFileByPath("$realPath/$suffix")
+          val suffix = if (isExistWithIndexSuffix == true ) "/index.mpx" else ".mpx"
+          val viaFile = LocalFileSystem.getInstance().findFileByPath("$realPath$suffix")
           val pathReference = viaFile?.let { viaFile ->
             val fileElement = PsiManager.getInstance(element.project).findFile(viaFile)?.originalElement
             fileElement?.let { fileElement ->
