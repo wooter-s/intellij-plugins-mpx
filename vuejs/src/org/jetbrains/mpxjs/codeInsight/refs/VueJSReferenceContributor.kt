@@ -13,6 +13,7 @@ import com.intellij.lang.javascript.psi.stubs.impl.JSImplicitElementImpl
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.paths.StaticPathReferenceProvider
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.XmlPatterns
@@ -26,6 +27,7 @@ import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.ProcessingContext
 import com.intellij.util.asSafely
+import com.intellij.webpack.WebpackConfigurable
 import org.jetbrains.mpxjs.codeInsight.getTextIfLiteral
 import org.jetbrains.mpxjs.context.isVueContext
 import org.jetbrains.mpxjs.index.VUE_ID_INDEX_KEY
@@ -38,10 +40,15 @@ class VueJSReferenceContributor : PsiReferenceContributor() {
 
   override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
     registrar.registerReferenceProvider(THIS_INSIDE_COMPONENT, VueComponentLocalReferenceProvider())
+    //registrar.registerReferenceProvider(
+    //  // template 标签下的所有xmlTag
+    //  XmlPatterns.xmlTag().withParent(XmlPatterns.xmlTag().withLocalName(TEMPLATE_TAG_NAME)),
+    //  VueComponentLocalReferenceProvider()
+    //)
     registrar.registerReferenceProvider(COMPONENT_NAME, VueComponentNameReferenceProvider())
     registrar.registerReferenceProvider(TEMPLATE_ID_REF, VueTemplateIdReferenceProvider())
     registrar.registerReferenceProvider(
-      JSPatterns.jsLiteral()
+      JSPatterns.jsLiteralExpression()
         .inside(
           XmlPatterns.xmlTag().withLocalName("script").withAttributeValue("name", "json")
         ),
@@ -98,7 +105,7 @@ private class VueTemplateIdReferenceProvider : PsiReferenceProvider() {
   }
 }
 
-private class VueComponentLocalReferenceProvider : PsiReferenceProvider() {
+public class VueComponentLocalReferenceProvider : PsiReferenceProvider() {
   override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
     if (element is JSReferenceExpressionImpl) {
       return arrayOf(VueComponentLocalReference(element, ElementManipulators.getValueTextRange(element)))
@@ -172,9 +179,64 @@ private class PathReferenceProvider : PsiReferenceProvider() {
 
     // "@src/components/HelloWorld"
     // 获取第一个域名
-    //val domain = text.substring(0, text.indexOf("/"))
     if (text.startsWith("@")) {
+      // 假设我们有一个别名到实际路径的映射
+      //
+      val alias = text.substring(0, text.indexOf("/"))
+      val filePath = text.substring(text.indexOf("/") + 1)
+      // 从webpack配置中找到别名对应的路径
+      val webpackConfigAlias = WebpackConfigurable(element.project).configManager.resolveConfig(element).resolve.alias
+      val path = webpackConfigAlias[alias]
+      path?.let { path ->
+        var realPath = path.mappings[0] + "/" + filePath
+        // 判断是否存在文件或者文件夹
+        val isExist = LocalFileSystem.getInstance().findFileByPath(realPath)?.exists()
+        val virtualFile = LocalFileSystem.getInstance().findFileByPath(realPath)
 
+        // "@/components/user-icon.mpx"
+        // 获取element字符串中每一个文件夹
+        // 判断添加index.mpx 文件，看是否存在
+        val isExistWithIndexSuffix = LocalFileSystem.getInstance().findFileByPath("$realPath/index.mpx")?.exists()
+        // 判断添加一个默认的文件后缀，看是否存在
+        val isExistWithDefaultSuffix = LocalFileSystem.getInstance().findFileByPath("$realPath.mpx")?.exists()
+
+        if (isExistWithIndexSuffix == true || isExistWithDefaultSuffix == true) {
+          val suffix = if (isExistWithIndexSuffix == true ) "index.mpx" else "mpx"
+          val viaFile = LocalFileSystem.getInstance().findFileByPath("$realPath/$suffix")
+          val pathReference = viaFile?.let { viaFile ->
+            val fileElement = PsiManager.getInstance(element.project).findFile(viaFile)?.originalElement
+            fileElement?.let { fileElement ->
+              PsiReferenceBase.createSelfReference(element, fileElement)
+            }
+          }
+          pathReference?.let { pathReference ->
+            result.add(pathReference)
+          }
+          return result.toTypedArray()
+        }
+
+        if (isExist == true) {
+          val pathReference = virtualFile?.let { file ->
+            val isDirectory = file.isDirectory
+            // 判断是否是文件夹
+            if (isDirectory) {
+              val directoryElement = PsiManager.getInstance(element.project).findDirectory(file)?.originalElement
+              directoryElement?.let { directoryElement ->
+                PsiReferenceBase.createSelfReference(element, directoryElement)
+              }
+            } else {
+              val fileElement = PsiManager.getInstance(element.project).findFile(file)?.originalElement
+              fileElement?.let { fileElement ->
+                PsiReferenceBase.createSelfReference(element, fileElement)
+              }
+            }
+          }
+          pathReference?.let { pathReference ->
+            result.add(pathReference)
+          }
+          return result.toTypedArray()
+        }
+      }
     } else {
       // 如果是路径
       if (text.contains("/")) {
