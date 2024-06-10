@@ -17,6 +17,7 @@ class VueCreateFromTemplateHandler : DefaultCreateFromTemplateHandler() {
   companion object {
     const val VUE_CLASS_API_TEMPLATE_NAME: String = "Mpx Class API Component"
     const val VUE_COMPOSITION_API_TEMPLATE_NAME: String = "Mpx Composition API Component"
+    const val VUE_COMPOSITION_API_PAGE_TEMPLATE_NAME: String = "Mpx Composition API Page"
     const val VUE_OPTIONS_API_TEMPLATE_NAME: String = "Mpx Options API Component"
     const val VUE_RECENT_TEMPLATES: String = "mpx.recent.templates"
   }
@@ -24,7 +25,7 @@ class VueCreateFromTemplateHandler : DefaultCreateFromTemplateHandler() {
   override fun handlesTemplate(template: FileTemplate): Boolean {
     val fileType = FileTypeManagerEx.getInstanceEx().getFileTypeByExtension(template.extension)
     return VueFileType == fileType && template.name
-      .let { it == VUE_CLASS_API_TEMPLATE_NAME || it == VUE_COMPOSITION_API_TEMPLATE_NAME || it == VUE_OPTIONS_API_TEMPLATE_NAME }
+      .let { it == VUE_CLASS_API_TEMPLATE_NAME || it == VUE_COMPOSITION_API_TEMPLATE_NAME || it == VUE_OPTIONS_API_TEMPLATE_NAME || it == VUE_COMPOSITION_API_PAGE_TEMPLATE_NAME }
   }
 
   override fun isNameRequired(): Boolean = true
@@ -36,6 +37,9 @@ class VueCreateFromTemplateHandler : DefaultCreateFromTemplateHandler() {
         props["COMPONENT_NAME"] = name
       }
       VUE_COMPOSITION_API_TEMPLATE_NAME -> {
+      }
+      VUE_COMPOSITION_API_PAGE_TEMPLATE_NAME -> {
+
       }
       VUE_CLASS_API_TEMPLATE_NAME -> {
         props["COMPONENT_NAME"] = String(name.mapIndexed { index, c ->

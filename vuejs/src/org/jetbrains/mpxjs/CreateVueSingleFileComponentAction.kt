@@ -20,7 +20,7 @@ class CreateVueSingleFileComponentAction : CreateFileFromTemplateAction(), DumbA
   companion object {
 
     @Nls
-    private val name = VueBundle.message("action.CreateVueSingleFileComp.text")
+    private val name = VueBundle.message("action.CreateMpxSingleFileComp.text")
   }
 
   override fun isAvailable(dataContext: DataContext): Boolean =
@@ -30,25 +30,28 @@ class CreateVueSingleFileComponentAction : CreateFileFromTemplateAction(), DumbA
 
   override fun buildDialog(project: Project, directory: PsiDirectory, builder: CreateFileFromTemplateDialog.Builder) {
     builder
-      .setTitle(VueBundle.message("vue.create.single.file.component.action.dialog.title", name))
+      .setTitle(VueBundle.message("mpx.create.single.file.component.action.dialog.title", name))
 
     val recentNames = PropertiesComponent.getInstance(project).getList(VUE_RECENT_TEMPLATES) ?: emptyList()
 
     listOfNotNull(
-      VueCreateFromTemplateHandler.VUE_CLASS_API_TEMPLATE_NAME.takeIf { getVueClassComponentLibrary(directory) != null },
-      VueCreateFromTemplateHandler.VUE_COMPOSITION_API_TEMPLATE_NAME.takeIf { supportsScriptSetup(directory) },
-      VueCreateFromTemplateHandler.VUE_OPTIONS_API_TEMPLATE_NAME
+      //VueCreateFromTemplateHandler.VUE_CLASS_API_TEMPLATE_NAME.takeIf { getVueClassComponentLibrary(directory) != null },
+      VueCreateFromTemplateHandler.VUE_COMPOSITION_API_TEMPLATE_NAME,
+      VueCreateFromTemplateHandler.VUE_COMPOSITION_API_PAGE_TEMPLATE_NAME,
+      //VueCreateFromTemplateHandler.VUE_OPTIONS_API_TEMPLATE_NAME,
     )
       .sortedByDescending { recentNames.indexOf(it) }
       .forEach { name ->
         builder.addKind(
           when (name) {
             VueCreateFromTemplateHandler.VUE_CLASS_API_TEMPLATE_NAME -> VueBundle.message(
-              "vue.create.single.file.component.template.class.api")
+              "mpx.create.single.file.component.template.class.api")
             VueCreateFromTemplateHandler.VUE_COMPOSITION_API_TEMPLATE_NAME -> VueBundle.message(
-              "vue.create.single.file.component.template.composition.api")
+              "mpx.create.single.file.component.template.composition.api")
+            VueCreateFromTemplateHandler.VUE_COMPOSITION_API_PAGE_TEMPLATE_NAME -> VueBundle.message(
+              "mpx.create.single.file.page.template.composition.api")
             VueCreateFromTemplateHandler.VUE_OPTIONS_API_TEMPLATE_NAME -> VueBundle.message(
-              "vue.create.single.file.component.template.options.api")
+              "mpx.create.single.file.component.template.options.api")
             else -> throw IllegalStateException(name)
           },
           VuejsIcons.Vue,
@@ -58,6 +61,6 @@ class CreateVueSingleFileComponentAction : CreateFileFromTemplateAction(), DumbA
   }
 
   override fun getActionName(directory: PsiDirectory?, newName: String, templateName: String?): String =
-    VueBundle.message("vue.create.single.file.component.action.name", newName)
+    VueBundle.message("mpx.create.single.file.component.action.name", newName)
 
 }
