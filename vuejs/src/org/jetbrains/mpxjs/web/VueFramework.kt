@@ -20,7 +20,7 @@ import java.util.function.Predicate
 import javax.swing.Icon
 
 class VueFramework : WebFramework() {
-  override val displayName: String = "Vue"
+  override val displayName: String = "Mpx"
   override val icon: Icon
     get() = VuejsIcons.Vue
 
@@ -68,6 +68,6 @@ class VueFramework : WebFramework() {
     VueAttributeNameCodeCompletionFilter(tag)
 
   companion object {
-    const val ID = "vue"
+    const val ID = "mpx"
   }
 }
