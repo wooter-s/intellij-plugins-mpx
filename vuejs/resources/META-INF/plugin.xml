@@ -87,7 +87,7 @@
     <xml.xmlExtension implementation="org.jetbrains.mpxjs.codeInsight.VueXmlExtension" order="before web-symbols-react"/>
     <xml.xmlSuppressionProvider implementation="org.jetbrains.mpxjs.inspections.VueXmlSuppressionProvider" order="first"/>
     <notificationGroup displayType="BALLOON" id="Mpx" isLogByDefault="true"
-                       bundle="messages.VueBundle" key="vue.documentation.vue"/>
+                       bundle="messages.VueBundle" key="mpx.documentation.mpx"/>
     <xml.elementDescriptorProvider
             implementation="org.jetbrains.mpxjs.lang.html.tag.CustomElementDescriptorProvider"/>
     <stubIndex implementation="org.jetbrains.mpxjs.index.VueComponentsIndex"/>

@@ -9,7 +9,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.mpxjs.VueBundle
 
-class VueComponentDescriptorLiveTemplateContextType : TemplateContextType(VueBundle.message("vue.live.template.context.component")) {
+class VueComponentDescriptorLiveTemplateContextType : TemplateContextType(VueBundle.message("mpx.live.template.context.component")) {
   override fun isInContext(file: PsiFile, offset: Int): Boolean {
     return VueBaseLiveTemplateContextType.Util.evaluateContext(
       file, offset,

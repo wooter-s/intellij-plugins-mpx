@@ -8,7 +8,7 @@ import com.intellij.psi.xml.XmlTag
 import org.jetbrains.mpxjs.VueBundle
 import org.jetbrains.mpxjs.lang.html.isVueFile
 
-class VueTopLevelLiveTemplateContextType : TemplateContextType(VueBundle.message("vue.live.template.context.top.level")) {
+class VueTopLevelLiveTemplateContextType : TemplateContextType(VueBundle.message("mpx.live.template.context.top.level")) {
   override fun isInContext(file: PsiFile, offset: Int): Boolean {
     if (file.isVueFile) {
       val element = file.findElementAt(offset) ?: return true

@@ -53,14 +53,14 @@ fun hasVueLibraryImport(file: PsiFile): Boolean {
 
     private fun hasVueScriptLink(tag: XmlTag): Boolean {
       val link = tag.getAttribute(HtmlUtil.SRC_ATTRIBUTE_NAME)?.value
-      if (link == null || !link.contains("vue")) {
+      if (link == null || !link.contains("mpx")) {
         return false
       }
       if (JSCDNLibManager.getLibraryForUrl(link)?.libraryName == VUE_MODULE) {
         return true
       }
       val fileName = VfsUtil.extractFileName(link)
-      return fileName != null && fileName.startsWith("vue.") && fileName.endsWith(".js")
+      return fileName != null && fileName.startsWith("mpx.") && fileName.endsWith(".js")
     }
   })
   return result

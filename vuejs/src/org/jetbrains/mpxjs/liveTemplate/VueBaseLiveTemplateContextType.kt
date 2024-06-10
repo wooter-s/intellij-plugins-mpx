@@ -15,7 +15,7 @@ import org.jetbrains.mpxjs.VueBundle
 import org.jetbrains.mpxjs.context.isVueContext
 import org.jetbrains.mpxjs.lang.html.VueFile
 
-class VueBaseLiveTemplateContextType : TemplateContextType(VueBundle.message("vue.documentation.vue")) {
+class VueBaseLiveTemplateContextType : TemplateContextType(VueBundle.message("mpx.documentation.mpx")) {
   override fun isInContext(file: PsiFile, offset: Int): Boolean {
     return file is VueFile
   }

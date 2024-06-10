@@ -13,7 +13,7 @@ import com.intellij.util.Processor
 import org.jetbrains.mpxjs.codeInsight.fromAsset
 import org.jetbrains.mpxjs.index.VueIndexBase.Companion.createJSKey
 
-const val VUE_FILE_EXTENSION = ".vue"
+const val VUE_FILE_EXTENSION = ".mpx"
 const val VUE_MODULE: String = "vue"
 const val VUE_INSTANCE_MODULE: String = "vue/types/vue"
 const val VUETIFY_MODULE: String = "vuetify"

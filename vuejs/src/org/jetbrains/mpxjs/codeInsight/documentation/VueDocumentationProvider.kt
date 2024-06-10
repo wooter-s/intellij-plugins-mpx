@@ -67,7 +67,7 @@ class VueDocumentationProvider : DocumentationProvider {
     val result = StringBuilder().append(DEFINITION_START)
     val name = item.defaultName ?: ""
     if (name.isBlank()) {
-      result.append(VueBundle.message("vue.documentation.vue") + " ").append(item.type)
+      result.append(VueBundle.message("mpx.documentation.mpx") + " ").append(item.type)
     }
     else {
       result.append(name)
@@ -93,7 +93,7 @@ class VueDocumentationProvider : DocumentationProvider {
   private class PsiWrappedVueDocumentedItem(val item: VueItemDocumentation,
                                             private val source: PsiElement) : FakePsiElement(), PsiNamedElement {
     override fun getParent(): PsiElement = source
-    override fun getName(): String = item.defaultName ?: (VueBundle.message("vue.documentation.vue") + " " + item.type)
+    override fun getName(): String = item.defaultName ?: (VueBundle.message("mpx.documentation.mpx") + " " + item.type)
   }
 
 }

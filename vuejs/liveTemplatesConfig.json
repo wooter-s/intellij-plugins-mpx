@@ -1,87 +1,82 @@
 {
-  "templateSetName": "Vue",
+  "templateSetName": "Mpx",
   "contextMapping": {
     "vue-script-vuex": "VUE_COMPONENT_DESCRIPTOR",
-    "vue-script-router": "VUE_SCRIPT",
-    "vue-script": "VUE_SCRIPT",
+    "vue-script-router": "MPX_SCRIPT",
+    "vue-script": "MPX_SCRIPT",
     "vue-template": "VUE_TEMPLATE",
-    "vue": "VUE_TOP_LEVEL"
+    "vue": "MPX_TOP_LEVEL"
   },
   "templates": {
-    "vanim": {
-      "description": "Vue transition component with JavaScript hooks"
+    "manim": {
+      "description": "Mpx transition component with JavaScript hooks"
     },
-    "vanimhook-js": {
-      "descriptionPrefix": "Vue",
+    "manimhook-js": {
+      "descriptionPrefix": "Mpx",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vc-direct": {
+    "mc-direct": {
       "context": [
         "JS_STATEMENT",
         "TS_STATEMENT",
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vcomponents": {
+    "mcomponents": {
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vcomputed": {
+    "mdata": {
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vdata": {
+    "mel-props": {
+      "descriptionPrefix": "Mpx"
+    },
+    "mfilter": {
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vel-props": {
-      "descriptionPrefix": "Vue"
+    "mfor": {
+      "description": "Mpx v-for statement"
     },
-    "vfilter": {
-      "context": [
-        "VUE_COMPONENT_DESCRIPTOR"
-      ]
-    },
-    "vfor": {
-      "description": "Vue v-for statement"
-    },
-    "vimport-gsap": {
+    "mimport-gsap": {
       "description": "Import GSAP library"
     },
-    "vmethod": {
+    "mmethod": {
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vmixin": {
+    "mmixin": {
       "context": [
         "JS_STATEMENT",
         "TS_STATEMENT"
       ]
     },
-    "vmixin-use": {
+    "mmixin-use": {
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vmodel": {
-      "descriptionPrefix": "Vue"
+    "mmodel": {
+      "descriptionPrefix": "Mpx"
     },
-    "vmodel-num": {
-      "descriptionPrefix": "Vue"
+    "mmodel-num": {
+      "descriptionPrefix": "Mpx"
     },
-    "von": {
-      "descriptionPrefix": "Vue",
+    "mon": {
+      "descriptionPrefix": "Mpx",
       "context": [
-        "VUE_INSIDE_TAG"
+        "MPX_INSIDE_TAG"
       ]
     },
-    "vprops": {
+    "mprops": {
       "variables": {
         "Number": {
           "name": "type",
@@ -96,32 +91,32 @@
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vsrc": {
-      "descriptionPrefix": "Vue"
+    "msrc": {
+      "descriptionPrefix": "Mpx"
     },
-    "vstore": {
+    "mstore": {
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vstore-import": {
+    "mstore-import": {
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vwatcher": {
+    "mwatcher": {
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vrouter": {
-      "description": "Base for Vue Router",
+    "mrouter": {
+      "description": "Base for Mpx Router",
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vroute-named": {
-      "description": "Vue Router route with per route code-splitting",
+    "mroute-named": {
+      "description": "Mpx Router route with per route code-splitting",
       "variables": {
         "pathName": {
           "name": "pathName",
@@ -140,60 +135,60 @@
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vaftereach": {
-      "description": "Vue Router global guards afterEach",
+    "maftereach": {
+      "description": "Mpx Router global guards afterEach",
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vbeforeeach": {
-      "description": "Vue Router global guards beforeEach",
+    "mbeforeeach": {
+      "description": "Mpx Router global guards beforeEach",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vbeforeenter": {
-      "description": "Vue Router per-route guard beforeEnter",
-      "variables": {},
-      "context": [
-        "VUE_COMPONENT_DESCRIPTOR"
-      ]
-    },
-    "vbeforeresolve": {
-      "description": "Vue Router global guards beforeResolve",
-      "variables": {},
-      "context": [
-        "VUE_SCRIPT"
-      ]
-    },
-    "vbeforerouteenter": {
-      "description": "Vue Router component guards beforeRouteEnter",
-      "context": [
-        "VUE_COMPONENT_DESCRIPTOR"
-      ]
-    },
-    "vbeforerouteleave": {
-      "description": "Vue Router component guards beforeRouteLeave",
+    "mbeforeenter": {
+      "description": "Mpx Router per-route guard beforeEnter",
       "variables": {},
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vbeforerouteupdate": {
-      "description": "Vue Router component guards beforeRouteUpdate",
+    "mbeforeresolve": {
+      "description": "Mpx Router global guards beforeResolve",
+      "variables": {},
+      "context": [
+        "MPX_SCRIPT"
+      ]
+    },
+    "mbeforerouteenter": {
+      "description": "Mpx Router component guards beforeRouteEnter",
+      "context": [
+        "VUE_COMPONENT_DESCRIPTOR"
+      ]
+    },
+    "mbeforerouteleave": {
+      "description": "Mpx Router component guards beforeRouteLeave",
       "variables": {},
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vscrollbehavior": {
-      "description": "Vue Router scrollBehavior",
+    "mbeforerouteupdate": {
+      "description": "Mpx Router component guards beforeRouteUpdate",
+      "variables": {},
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vaction": {
+    "mscrollbehavior": {
+      "description": "Mpx Router scrollBehavior",
+      "context": [
+        "VUE_COMPONENT_DESCRIPTOR"
+      ]
+    },
+    "maction": {
       "description": "Vuex action",
       "variables": {
         "updateValue": {
@@ -209,20 +204,20 @@
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vgetter": {
+    "mgetter": {
       "description": "Vuex getter",
       "variables": {},
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vmodule": {
+    "mmodule": {
       "description": "Vuex module",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vmutation": {
+    "mmutation": {
       "description": "Vuex mutation",
       "variables": {
         "updateValue": {
@@ -242,13 +237,13 @@
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vstore2": {
+    "mstore2": {
       "description": "Vuex store 2",
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vplugin": {
+    "mplugin": {
       "description": "Import a plugin to main.js or plugins file",
       "variables": {
         "VueCompositionApiPackage": {
@@ -261,10 +256,10 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vtest": {
+    "mtest": {
       "description": "Unit test component",
       "variables": {
         "name": {
@@ -273,7 +268,7 @@
         },
         "equal": {
           "name": "equal",
-          "defaultValue": "'Welcome to Your Vue.js App'"
+          "defaultValue": "'Welcome to Your Mpx.js App'"
         },
         "mount": {
           "name": "mount",
@@ -289,10 +284,10 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3useinoptions": {
+    "museinoptions": {
       "description": "Use Composition API within Options API",
       "variables": {
         "component": {
@@ -305,10 +300,10 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vcommit": {
+    "mcommit": {
       "description": "Commit to vuex store in methods for mutation",
       "variables": {
         "store": {
@@ -328,8 +323,8 @@
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "v3computed": {
-      "description": "Vue Composition api - computed",
+    "mcomputed": {
+      "description": "Mpx Composition api - computed",
       "variables": {
         "return": {
           "name": "return",
@@ -341,11 +336,11 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3reactive": {
-      "description": "Vue Composition api - reactive",
+    "mreactive": {
+      "description": "Mpx Composition api - reactive",
       "variables": {
         "name": {
           "name": "name",
@@ -357,11 +352,11 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3ref": {
-      "description": "Vue Ref",
+    "mref": {
+      "description": "Mpx Ref",
       "variables": {
         "name": {
           "name": "name",
@@ -373,11 +368,11 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3watch-array": {
-      "description": "Vue Composition api - watch as array",
+    "mwatch-array": {
+      "description": "Mpx Composition api - watch as array",
       "variables": {
         "1": {
           "name": "1",
@@ -401,11 +396,11 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3watch": {
-      "description": "Vue Composition api - watcher single source",
+    "mwatch": {
+      "description": "Mpx Composition api - watcher single source",
       "variables": {
         "body": {
           "name": "body",
@@ -417,21 +412,21 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3watcheffect": {
-      "description": "Vue Composition api - watchEffect",
+    "mwatcheffect": {
+      "description": "Mpx Composition api - watchEffect",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3reactive-setup": {
-      "description": "Vue Composition API Script with Reactive",
+    "mreactive-setup": {
+      "description": "Mpx Composition API Script with Reactive",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
     "vdispatch": {
@@ -458,157 +453,157 @@
       "description": "Import component that should be lazy loaded",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
     "vimport-export": {
       "description": "Import a component and include it in export default",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
     "vimport": {
       "description": "Import one component into another",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
     "vimport-lib": {
       "description": "Import a library",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3onbeforemount": {
-      "description": "Vue onBeforeMount Lifecycle hook",
+    "monbeforemount": {
+      "description": "Mpx onBeforeMount Lifecycle hook",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3onbeforeunmount": {
-      "description": "(beforeDestroy) Vue onBeforeUnmount Lifecycle hook",
+    "monbeforeunmount": {
+      "description": "(beforeDestroy) Mpx onBeforeUnmount Lifecycle hook",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3onbeforeupdate": {
-      "description": "Vue onBeforeUpdate Lifecycle hook",
+    "monbeforeupdate": {
+      "description": "Mpx onBeforeUpdate Lifecycle hook",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3onerrorcaptured": {
-      "description": "Vue onErrorCaptured Lifecycle hook",
+    "monerrorcaptured": {
+      "description": "Mpx onErrorCaptured Lifecycle hook",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3onmounted": {
-      "description": "Vue Mounted Lifecycle hook",
+    "monmounted": {
+      "description": "Mpx Mounted Lifecycle hook",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3onunmounted": {
-      "description": "(destroyed) Vue onUnmounted Lifecycle hook",
+    "monunmounted": {
+      "description": "(destroyed) Mpx onUnmounted Lifecycle hook",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "v3onupdated": {
-      "description": "Vue onUpdated Lifecycle hook",
+    "monupdated": {
+      "description": "Mpx onUpdated Lifecycle hook",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vbeforecreate": {
+    "mbeforecreate": {
       "description": "BeforeCreate lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vbeforedestroy": {
+    "mbeforedestroy": {
       "description": "BeforeDestroy lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vbeforemount": {
+    "mbeforemount": {
       "description": "BeforeMount lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vbeforeupdate": {
+    "mbeforeupdate": {
       "description": "BeforeUpdate lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vcreated": {
+    "mcreated": {
       "description": "Created lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vdestroyed": {
+    "mdestroyed": {
       "description": "Destroyed lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vmounted": {
+    "mmounted": {
       "description": "Mounted lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vupdated": {
+    "mupdated": {
       "description": "Updated lifecycle method",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vmapactions": {
+    "mmapactions": {
       "description": "Mapactions inside a vue component",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vmapgetters": {
+    "mmapgetters": {
       "description": "Mapgetters inside a vue component",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vmapmutations": {
+    "mmapmutations": {
       "description": "Mapmutations inside a vue component",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vmapstate": {
+    "mmapstate": {
       "description": "Map getters inside a vue component",
       "variables": {},
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vwatcher-options": {
-      "description": "Vue watcher with options",
+    "mwatcher-options": {
+      "description": "Mpx watcher with options",
       "variables": {
         "data": {
           "name": "data",
@@ -631,7 +626,7 @@
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "vconfig": {
+    "mconfig": {
       "description": "Vue.config.js",
       "variables": {
         "data": {
@@ -644,11 +639,11 @@
         }
       },
       "context": [
-        "VUE_SCRIPT"
+        "MPX_SCRIPT"
       ]
     },
-    "vclass": {
-      "description": "Vue class binding",
+    "mclass": {
+      "description": "Mpx class binding",
       "variables": {
         "div": {
           "name": "div",
@@ -667,8 +662,8 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vclass-obj": {
-      "description": "Vue class binding",
+    "mclass-obj": {
+      "description": "Mpx class binding",
       "variables": {
         "div": {
           "name": "div",
@@ -687,8 +682,8 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vemit-child": {
-      "description": "Vue Emit from Child Component",
+    "memit-child": {
+      "description": "Mpx Emit from Child Component",
       "variables": {
         "emit": {
           "name": "emit",
@@ -700,11 +695,11 @@
         }
       },
       "context": [
-        "VUE_INSIDE_TAG"
+        "MPX_INSIDE_TAG"
       ]
     },
-    "vemit-parent": {
-      "description": "Vue Emit to Parent Component",
+    "memit-parent": {
+      "description": "Mpx Emit to Parent Component",
       "variables": {
         "event": {
           "name": "event",
@@ -716,11 +711,11 @@
         }
       },
       "context": [
-        "VUE_INSIDE_TAG"
+        "MPX_INSIDE_TAG"
       ]
     },
-    "vclass-obj-mult": {
-      "description": "Vue multiple conditional class bindings",
+    "mclass-obj-mult": {
+      "description": "Mpx multiple conditional class bindings",
       "variables": {
         "div": {
           "name": "div",
@@ -743,7 +738,7 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vroutename": {
+    "mroutename": {
       "description": "Named routing link",
       "variables": {
         "name": {
@@ -759,7 +754,7 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vroutenameparam": {
+    "mroutenameparam": {
       "description": "Named routing link w/ params",
       "variables": {
         "name": {
@@ -783,7 +778,7 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vslot-named": {
+    "mslot-named": {
       "description": "Named slot",
       "variables": {
         "name": {
@@ -799,14 +794,14 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vnuxtl": {
+    "mnuxtl": {
       "description": "Nuxt routing link",
       "variables": {},
       "context": [
         "VUE_TEMPLATE"
       ]
     },
-    "vroutepath": {
+    "mroutepath": {
       "description": "Path routing link",
       "variables": {
         "path": {
@@ -822,8 +817,8 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vstyle": {
-      "description": "Vue inline style binding",
+    "mstyle": {
+      "description": "Mpx inline style binding",
       "variables": {
         "div": {
           "name": "div",
@@ -838,8 +833,8 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vstyle-obj": {
-      "description": "Vue inline style binding, objects",
+    "mstyle-obj": {
+      "description": "Mpx inline style binding, objects",
       "variables": {
         "div": {
           "name": "div",
@@ -858,89 +853,89 @@
         "VUE_TEMPLATE"
       ]
     },
-    "vbase": {
-      "description": "Base for Vue File with SCSS",
+    "mbase": {
+      "description": "Base for Mpx File with SCSS",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-3": {
-      "description": "Base for Vue File Composition API with SCSS",
+    "mbase-3": {
+      "description": "Base for Mpx File Composition API with SCSS",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-3-reactive": {
-      "description": "Base for Vue File Composition API with SCSS",
+    "mbase-3-reactive": {
+      "description": "Base for Mpx File Composition API with SCSS",
       "variables": {},
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-3-ts": {
-      "description": "Base for Vue File Composition API - Typescript",
+    "mbase-3-ts": {
+      "description": "Base for Mpx File Composition API - Typescript",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-3-setup": {
-      "description": "Base for Vue File Setup Composition API with SCSS",
+    "mbase-3-setup": {
+      "description": "Base for Mpx File Setup Composition API with SCSS",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-3-ts-setup": {
-      "description": "Base for Vue File Setup Composition API - Typescript",
+    "mbase-3-ts-setup": {
+      "description": "Base for Mpx File Setup Composition API - Typescript",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-ts-class": {
-      "description": "Base for Vue File with Class based Typescript format",
+    "mbase-ts-class": {
+      "description": "Base for Mpx File with Class based Typescript format",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-css": {
-      "description": "Base for Vue File with CSS",
+    "mbase-css": {
+      "description": "Base for Mpx File with CSS",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-less": {
-      "description": "Base for Vue File with PostCSS",
+    "mbase-less": {
+      "description": "Base for Mpx File with PostCSS",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-ns": {
-      "description": "Base for Vue File with no styles",
+    "mbase-ns": {
+      "description": "Base for Mpx File with no styles",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-sass": {
-      "description": "Base for Vue File with PostCSS",
+    "mbase-sass": {
+      "description": "Base for Mpx File with PostCSS",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-styl": {
-      "description": "Base for Vue File with Stylus",
+    "mbase-styl": {
+      "description": "Base for Mpx File with Stylus",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-ts": {
-      "description": "Base for Vue File with Typescript",
+    "mbase-ts": {
+      "description": "Base for Mpx File with Typescript",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     },
-    "vbase-pcss": {
-      "description": "Base for Vue File with PostCSS",
+    "mbase-pcss": {
+      "description": "Base for Mpx File with PostCSS",
       "context": [
-        "VUE_TOP_LEVEL"
+        "MPX_TOP_LEVEL"
       ]
     }
   }

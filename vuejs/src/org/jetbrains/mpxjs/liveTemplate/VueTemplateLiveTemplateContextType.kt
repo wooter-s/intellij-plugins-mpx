@@ -5,7 +5,7 @@ import com.intellij.codeInsight.template.TemplateContextType
 import com.intellij.psi.PsiFile
 import org.jetbrains.mpxjs.VueBundle
 
-class VueTemplateLiveTemplateContextType : TemplateContextType(VueBundle.message("vue.live.template.context.template")) {
+class VueTemplateLiveTemplateContextType : TemplateContextType(VueBundle.message("mpx.live.template.context.template")) {
   override fun isInContext(file: PsiFile, offset: Int): Boolean {
     return VueBaseLiveTemplateContextType.Util.evaluateContext(file, offset, forTagInsert = true)
   }

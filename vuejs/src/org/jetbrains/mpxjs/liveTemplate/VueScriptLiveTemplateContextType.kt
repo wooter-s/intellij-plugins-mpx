@@ -10,7 +10,7 @@ import org.jetbrains.mpxjs.VueBundle
 import org.jetbrains.mpxjs.liveTemplate.VueBaseLiveTemplateContextType.Util.evaluateContext
 import org.jetbrains.mpxjs.liveTemplate.VueBaseLiveTemplateContextType.Util.isTagEnd
 
-class VueScriptLiveTemplateContextType : TemplateContextType(VueBundle.message("vue.live.template.context.script.tag")) {
+class VueScriptLiveTemplateContextType : TemplateContextType(VueBundle.message("mpx.live.template.context.script.tag")) {
   override fun isInContext(templateActionContext: TemplateActionContext): Boolean {
     return evaluateContext(templateActionContext.file, templateActionContext.startOffset,
                            scriptContextEvaluator = { isTagEnd(it) || it.parent is JSEmbeddedContent && it is JSExpressionStatement },
