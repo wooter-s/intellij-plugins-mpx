@@ -1,0 +1,40 @@
+<template>
+  #[[$END$]]#
+</template>
+
+<script${SCRIPT_LANG_ATTR}>
+#if($USE_DEFINE_COMPONENT)
+import {defineComponent} from '@mpxjs/core'
+
+export default defineComponent({
+name: "${COMPONENT_NAME}"
+})
+#elseif($USE_VUE_EXTEND)
+
+import {
+  createComponent
+} from '@mpxjs/core'
+
+createComponent({
+  setup() {
+    return {
+    }
+  }
+})
+#else
+export default {
+name: "${COMPONENT_NAME}"
+}
+#end
+</script>
+
+<style scoped${STYLE_LANG_ATTR}>
+
+</style>
+
+<script name='json'>
+  module.exports = {
+    component: true,
+    usingComponents: {}
+  }
+</script>
