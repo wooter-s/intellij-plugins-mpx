@@ -5,7 +5,9 @@ import com.intellij.codeInsight.template.TemplateContextType
 import com.intellij.lang.javascript.psi.JSEmbeddedContent
 import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.lang.javascript.psi.JSSourceElement
+import com.intellij.lang.javascript.psi.ecma6.impl.TypeScriptFunctionExpressionImpl
 import com.intellij.lang.javascript.psi.ecma6.impl.TypeScriptFunctionPropertyImpl
+import com.intellij.lang.javascript.psi.impl.JSFunctionExpressionImpl
 import com.intellij.lang.javascript.psi.impl.JSFunctionPropertyImpl
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -39,6 +41,10 @@ class VueBaseLiveTemplateContextType : TemplateContextType(VueBundle.message("mp
           ((parent is TypeScriptFunctionPropertyImpl) && parent.name == "setup")
           || (parent is JSFunctionPropertyImpl<*> && parent.name == "setup")
           ){
+          return true
+        }
+
+        if (parent is TypeScriptFunctionExpressionImpl || parent is JSFunctionExpressionImpl<*>) {
           return true
         }
       }
