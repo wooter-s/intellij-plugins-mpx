@@ -135,26 +135,6 @@
         "VUE_COMPONENT_DESCRIPTOR"
       ]
     },
-    "maftereach": {
-      "description": "Mpx Router global guards afterEach",
-      "context": [
-        "MPX_SCRIPT"
-      ]
-    },
-    "mbeforeeach": {
-      "description": "Mpx Router global guards beforeEach",
-      "variables": {},
-      "context": [
-        "MPX_SCRIPT"
-      ]
-    },
-    "mbeforeenter": {
-      "description": "Mpx Router per-route guard beforeEnter",
-      "variables": {},
-      "context": [
-        "VUE_COMPONENT_DESCRIPTOR"
-      ]
-    },
     "mbeforeresolve": {
       "description": "Mpx Router global guards beforeResolve",
       "variables": {},
@@ -178,12 +158,6 @@
     "mbeforerouteupdate": {
       "description": "Mpx Router component guards beforeRouteUpdate",
       "variables": {},
-      "context": [
-        "VUE_COMPONENT_DESCRIPTOR"
-      ]
-    },
-    "mscrollbehavior": {
-      "description": "Mpx Router scrollBehavior",
       "context": [
         "VUE_COMPONENT_DESCRIPTOR"
       ]

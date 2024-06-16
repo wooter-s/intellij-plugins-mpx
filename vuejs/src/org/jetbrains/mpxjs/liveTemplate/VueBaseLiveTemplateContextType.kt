@@ -3,7 +3,10 @@ package org.jetbrains.mpxjs.liveTemplate
 
 import com.intellij.codeInsight.template.TemplateContextType
 import com.intellij.lang.javascript.psi.JSEmbeddedContent
+import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.lang.javascript.psi.JSSourceElement
+import com.intellij.lang.javascript.psi.ecma6.impl.TypeScriptFunctionPropertyImpl
+import com.intellij.lang.javascript.psi.impl.JSFunctionPropertyImpl
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
@@ -28,6 +31,17 @@ class VueBaseLiveTemplateContextType : TemplateContextType(VueBundle.message("mp
                         forAttributeInsert: Boolean = false): Boolean {
       if (offset < 0) return false
       val element = file.findElementAt(offset) ?: return false
+
+      if (file is JSFile || file is VueFile) {
+        // 在 createPage 和 createComponent 中，并且在setup方法内
+        val parent = element.parent?.parent?.parent?.parent
+        if (
+          ((parent is TypeScriptFunctionPropertyImpl) && parent.name == "setup")
+          || (parent is JSFunctionPropertyImpl<*> && parent.name == "setup")
+          ){
+          return true
+        }
+      }
 
       if (file !is VueFile) {
         return isVueContext(file) && notVueFileType != null && notVueFileType.invoke(element)
