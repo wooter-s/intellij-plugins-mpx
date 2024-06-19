@@ -517,6 +517,126 @@
     </context>
   </template>
 
+  <template name="monload"
+            value="onLoad(() =&gt; {$1$})"
+            description="Mpx onLoad Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monshow"
+            value="onShow(() =&gt; {$1$})"
+            description="Mpx onShow Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monhide"
+            value="onHide(() =&gt; {$1$})"
+            description="Mpx onHide Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monresize"
+            value="onResize((res) =&gt; {$1$})"
+            description="Mpx onResize Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monpulldownrefresh"
+            value="onPullDownRefresh(() =&gt; {$1$})"
+            description="Mpx onPullDownRefresh Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monreachbottom"
+            value="onReachBottom((res) =&gt; {$1$})"
+            description="Mpx onPullDownRefresh Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monshareappmessage"
+            value="onShareAppMessage((res) =&gt; {$1$})"
+            description="Mpx onShareAppMessage Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monsharetimeline"
+            value="onShareTimeline(() =&gt; {$1$})"
+            description="Mpx onShareTimeline Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monaddtofavorites"
+            value="onAddToFavorites((res) =&gt; {$1$})"
+            description="Mpx onAddToFavorites Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monpagescroll"
+            value="onPageScroll((res) =&gt; {$1$})"
+            description="Mpx onPageScroll Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="montabitemtap"
+            value="onTabItemTap((item) =&gt; {$1$})"
+            description="Mpx onTabItemTap Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
+  <template name="monsaveexitstate"
+            value="onSaveExitState(() =&gt; {$1$})"
+            description="Mpx onSaveExitState Lifecycle hook"
+            toReformat="true" toShortenFQNames="true">
+    <variable name="1" expression="" defaultValue="&quot;&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="MPX_SCRIPT" value="true"/>
+    </context>
+  </template>
+
   <template name="mmapactions"
             value="import { mapActions } from &apos;vuex&apos;;&#10;&#10;export default {&#10;	methods: {&#10;		...mapActions([&#10;			$1$, //also supports payload `this.nameOfAction(amount)` &#10;		])&#10;	},&#10;};"
             description="Mapactions inside a vue component"
