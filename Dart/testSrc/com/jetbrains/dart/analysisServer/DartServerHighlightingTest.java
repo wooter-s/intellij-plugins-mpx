@@ -11,7 +11,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
 import com.intellij.testFramework.fixtures.CodeInsightFixtureTestCase;
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl;
 import com.intellij.util.containers.ContainerUtil;
@@ -298,7 +297,7 @@ public class DartServerHighlightingTest extends CodeInsightFixtureTestCase {
     // TestFileEditorManager doesn't notify listeners itself;
     // we need any notification to trigger DartAnalysisserverService.updateVisibleFiles()
     final FileEditorManagerEvent event =
-      new FileEditorManagerEvent(FileEditorManager.getInstance(getProject()), firstFile, null, secondFile, null);
+      new FileEditorManagerEvent(FileEditorManager.getInstance(getProject()), firstFile, null, null, secondFile, null, null);
     getProject().getMessageBus().syncPublisher(FileEditorManagerListener.FILE_EDITOR_MANAGER).selectionChanged(event);
     myFixture.doHighlighting();
 

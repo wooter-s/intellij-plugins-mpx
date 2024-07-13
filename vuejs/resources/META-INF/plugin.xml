@@ -47,7 +47,7 @@
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">
-    <registryKey defaultValue="1.8.25" description="Mpx service version for downloading" restartRequired="true" key="vue.language.server.default.version"/>
+    <registryKey defaultValue="" description="Mpx service version for downloading" key="vue.language.server.default.version"/>
     <dependencySupport kind="javascript" coordinate="npm:vue" displayName="Mpx.js"/>
     <dependencySupport kind="javascript" coordinate="npm:nuxt" displayName="Nuxt"/>
     <css.embeddedCssProvider implementation="org.jetbrains.mpxjs.css.VueEmbeddedCssProvider"/>
@@ -283,6 +283,7 @@
     <webSymbols.webTypes source="web-types/vue@3.4.0.web-types.json" enableByDefault="true"/>
     <webSymbols.webTypes source="web-types/vue-i18n@0.0.0.web-types.json"/>
     <webSymbols.webTypes source="web-types/vue-contexts@0.0.0.web-types.json" enableByDefault="true"/>
+    <webSymbols.webTypes source="web-types/nuxt@0.0.0.web-types.json"/>
 
     <webSymbols.queryConfigurator implementation="org.jetbrains.mpxjs.web.VueWebSymbolsQueryConfigurator" id="mpx"/>
     <webSymbols.queryConfigurator implementation="org.jetbrains.mpxjs.libraries.i18n.VueI18NQueryConfigurator"
@@ -374,8 +375,8 @@
                                             implementationClass="org.jetbrains.mpxjs.codeInsight.VueExprLanguageConfigurableProvider"/>
     <dialectSpecificHandlersFactory language="MpxJS" implementationClass="org.jetbrains.mpxjs.codeInsight.VueJSSpecificHandlersFactory"/>
     <dialectSpecificHandlersFactory language="MpxTS" implementationClass="org.jetbrains.mpxjs.codeInsight.VueTSSpecificHandlersFactory"/>
-    <dialectSpecificHandlersFactory language="Mpx"
-                                    implementationClass="org.jetbrains.mpxjs.codeInsight.VueJSSpecificHandlersFactory"/> <!-- control flow only, refactor -->
+    <!-- control flow only, refactor -->
+    <dialectSpecificHandlersFactory language="Mpx" implementationClass="org.jetbrains.mpxjs.codeInsight.VueJSSpecificHandlersFactory"/>
     <handlersFactory language="MpxJS" implementationClass="org.jetbrains.mpxjs.codeInsight.VueJSHandlersFactory"/>
     <handlersFactory language="MpxTS" implementationClass="org.jetbrains.mpxjs.codeInsight.VueTSHandlersFactory"/>
     <handlersFactory language="Mpx"

@@ -19,7 +19,7 @@ import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CfmlParameterInfoHandler implements ParameterInfoHandler<PsiElement, CfmlFunctionDescription> {
+public final class CfmlParameterInfoHandler implements ParameterInfoHandler<PsiElement, CfmlFunctionDescription> {
   // for test purposes
   private String myText;
 
@@ -70,7 +70,7 @@ public class CfmlParameterInfoHandler implements ParameterInfoHandler<PsiElement
 
   @Override
   public void showParameterInfo(@NotNull PsiElement element, @NotNull CreateParameterInfoContext context) {
-    ResolveResult[] variants = ResolveResult.EMPTY_ARRAY;
+    ResolveResult[] variants;
     if (element instanceof PsiPolyVariantReference) {
       variants = ((PsiPolyVariantReference)element).multiResolve(true);
       if (variants.length != 0) {
@@ -83,8 +83,7 @@ public class CfmlParameterInfoHandler implements ParameterInfoHandler<PsiElement
                 return function.getFunctionInfo();
               }
             }
-            else if (element1 instanceof PsiMethod) {
-              PsiMethod function = (PsiMethod)element1;
+            else if (element1 instanceof PsiMethod function) {
               CfmlFunctionDescription javaMethodDescr =
                 new CfmlFunctionDescription(function.getName(), function.getReturnType().getPresentableText());
               final PsiParameter[] psiParameters = function.getParameterList().getParameters();

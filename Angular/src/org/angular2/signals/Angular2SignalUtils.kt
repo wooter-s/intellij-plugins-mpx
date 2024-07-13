@@ -8,9 +8,14 @@ import com.intellij.lang.javascript.psi.ecma6.TypeScriptFunction
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptInterface
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptTypeAlias
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil
-import com.intellij.lang.javascript.psi.types.*
+import com.intellij.lang.javascript.psi.types.JSAnyType
+import com.intellij.lang.javascript.psi.types.JSCompositeTypeFactory
+import com.intellij.lang.javascript.psi.types.JSGenericTypeImpl
+import com.intellij.lang.javascript.psi.types.JSTypeComparingContextService.LOCATION
+import com.intellij.lang.javascript.psi.types.JSUnionOrIntersectionType
 import com.intellij.lang.javascript.psi.types.recordImpl.ComputedPropertySignatureImpl
 import com.intellij.psi.PsiElement
+import com.intellij.util.ProcessingContext
 import org.angular2.lang.Angular2LangUtil
 
 object Angular2SignalUtils {
@@ -57,13 +62,13 @@ object Angular2SignalUtils {
         else {
           JSResolveUtil.getElementJSType(toCheck)
         }
-          ?.substitute()
+          ?.substitute(toCheck)
           ?.let {
             JSCompositeTypeFactory.optimizeTypeIfComposite(it, JSUnionOrIntersectionType.OptimizedKind.OPTIMIZED_REMOVED_NULL_UNDEFINED)
           }
       if (elementType != null
-          && elementType.asRecordType().findPropertySignature("SIGNAL") is ComputedPropertySignatureImpl
-          && signalType.isDirectlyAssignableType(elementType, null)
+          && elementType.asRecordType(targetElement.containingFile).findPropertySignature("SIGNAL") is ComputedPropertySignatureImpl
+          && signalType.isDirectlyAssignableType(elementType, ProcessingContext().apply { put(LOCATION, toCheck) })
       ) {
         return true
       }
@@ -71,7 +76,7 @@ object Angular2SignalUtils {
     return false
   }
 
-  fun addWritableSignal(context:PsiElement?, propertyType: JSType): JSType {
+  fun addWritableSignal(context: PsiElement?, propertyType: JSType): JSType {
     val signal = writableSignalInterface(context)?.jsType
                  ?: return propertyType
     val source = propertyType.source

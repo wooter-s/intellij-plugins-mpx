@@ -8,10 +8,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.platform.backend.navigation.NavigationTarget
 import com.intellij.psi.PsiElement
+import com.intellij.psi.createSmartPointer
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.Processor
 import com.intellij.util.asSafely
 import com.intellij.webSymbols.*
@@ -39,7 +39,7 @@ class VueBindingShorthandScope(attribute: XmlAttribute)
     val executor = WebSymbolsQueryExecutorFactory.create(dataHolder)
     val attributes = executor
       .runListSymbolsQuery(WebSymbol.HTML_ATTRIBUTES, virtualSymbols = false, expandPatterns = true,
-                           scope = executor.runNameMatchQuery(WebSymbol.HTML_ELEMENTS.withName(tag.name)))
+                           additionalScope = executor.runNameMatchQuery(WebSymbol.HTML_ELEMENTS.withName(tag.name)))
       .associateBy { it.name }
 
     VueTemplateScopesResolver.resolve(tag, Processor { resolveResult ->
@@ -67,7 +67,7 @@ class VueBindingShorthandSymbol(private val context: XmlAttribute,
   : PsiSourcedWebSymbolDelegate<PsiSourcedWebSymbol>(jsSymbol), CompositeWebSymbol {
 
   override val nameSegments: List<WebSymbolNameSegment>
-    get() = listOf(WebSymbolNameSegment(0, delegate.name.length, delegate, attrSymbol))
+    get() = listOf(WebSymbolNameSegment.create(0, delegate.name.length, delegate, attrSymbol))
 
   override val namespace: SymbolNamespace
     get() = VUE_BINDING_SHORTHANDS.namespace

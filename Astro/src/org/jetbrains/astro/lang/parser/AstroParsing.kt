@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.astro.lang.parser
 
 import com.intellij.lang.PsiBuilder
@@ -7,6 +7,7 @@ import com.intellij.lang.html.HtmlParsing
 import com.intellij.lang.javascript.*
 import com.intellij.lang.javascript.ecmascript6.parsing.TypeScriptExpressionParser
 import com.intellij.lang.javascript.ecmascript6.parsing.TypeScriptParser
+import com.intellij.lang.javascript.ecmascript6.parsing.TypeScriptStatementParser
 import com.intellij.lang.javascript.parsing.JSParsingContextUtil
 import com.intellij.lang.javascript.parsing.JSXmlParser
 import com.intellij.lang.javascript.types.JSEmbeddedContentElementType
@@ -20,6 +21,7 @@ import org.jetbrains.astro.AstroBundle
 import org.jetbrains.astro.lang.AstroLanguage
 import org.jetbrains.astro.lang.lexer.AstroLexer
 import org.jetbrains.astro.lang.lexer.AstroTokenTypes
+
 
 class AstroParsing(builder: PsiBuilder) : HtmlParsing(builder), JSXmlParser {
 
@@ -99,7 +101,7 @@ class AstroParsing(builder: PsiBuilder) : HtmlParsing(builder), JSXmlParser {
     // parse frontmatter
     builder.putUserData(JSParsingContextUtil.ASYNC_METHOD_KEY, true)
     while (builder.tokenType.let { it != null && it != AstroTokenTypes.FRONTMATTER_SEPARATOR }) {
-      typeScriptParser.statementParser.parseSourceElement()
+      typeScriptParser.statementParser.parseStatement()
     }
     frontmatterScript.done(AstroStubElementTypes.FRONTMATTER_SCRIPT)
     if (token() === AstroTokenTypes.FRONTMATTER_SEPARATOR) {
@@ -267,7 +269,8 @@ class AstroParsing(builder: PsiBuilder) : HtmlParsing(builder), JSXmlParser {
                       incomplete: Boolean) {
       if (beforeMarker == null) {
         expressionStart.done(JSStubElementTypes.EMBEDDED_EXPRESSION)
-      } else {
+      }
+      else {
         expressionStart.doneBefore(JSStubElementTypes.EMBEDDED_EXPRESSION, beforeMarker)
       }
     }
@@ -277,6 +280,14 @@ class AstroParsing(builder: PsiBuilder) : HtmlParsing(builder), JSXmlParser {
     init {
       myXmlParser = this@AstroParsing
       myExpressionParser = AstroTypeScriptExpressionParser(this)
+      myStatementParser = object : TypeScriptStatementParser(this) {
+        override fun parseBlock(): Boolean {
+          val mark = builder.mark()
+          parseBlockAndAttachStatementsDirectly()
+          mark.done(JSElementTypes.BLOCK_STATEMENT_EAGER)
+          return true
+        }
+      }
     }
   }
 

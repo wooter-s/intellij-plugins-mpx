@@ -12,13 +12,13 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.UserDataHolder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.createSmartPointer
 import com.intellij.psi.search.GlobalSearchScopeUtil
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.asSafely
 import org.jetbrains.mpxjs.codeInsight.getTextIfLiteral
 import org.jetbrains.mpxjs.context.isVueContext
@@ -34,7 +34,7 @@ class VueCompositionApp(override val source: JSCallExpression) : VueDelegatedCon
     get() = delegate.asSafely<VueComponent>()
 
   override val components: Map<String, VueComponent>
-    get() = (delegate?.components ?: emptyMap()) + getEntitiesAnalysis().components
+    get() = (delegate?.takeUnless { it is VueComponent }?.components ?: emptyMap()) + getEntitiesAnalysis().components
 
   override val directives: Map<String, VueDirective>
     get() = (delegate?.directives ?: emptyMap()) + getEntitiesAnalysis().directives

@@ -1,7 +1,6 @@
 package org.jetbrains.idea.perforce.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.icons.ExpUiIcons
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.util.NlsSafe
@@ -42,7 +41,7 @@ class PerforceToolbarWidgetHelper {
       val color = ColorUtil.toHex(UIUtil.getErrorForeground())
       val builder = HtmlBuilder().append(
         HtmlChunk.html().addText("$text ").child(HtmlChunk.font(color)
-                                                        .addText(PerforceBundle.message("connection.status.offline"))))
+                                                   .addText(PerforceBundle.message("connection.status.offline"))))
       return builder.toString()
     }
 
@@ -53,7 +52,7 @@ class PerforceToolbarWidgetHelper {
         return PerforceBundle.message("connection.no.valid.connections")
 
       if (workspace != null)
-        return PerforceBundle.message("action.Perforce.Toolbar.WorkspaceAction.description", workspace)
+        return PerforceBundle.message("action.Perforce.Toolbar.WorkspaceAction.description.template", workspace)
 
       return PerforceBundle.message("action.Perforce.Toolbar.multiple.workspaces.description")
     }
@@ -62,12 +61,10 @@ class PerforceToolbarWidgetHelper {
       if (isNoConnections || !settings.ENABLED)
         return AllIcons.General.Warning
 
-      if (isNewUi)
-        return ExpUiIcons.General.Vcs
       return AllIcons.Vcs.Branch
     }
 
-    private fun getWorkspaceLabel(@NlsSafe workspace: String, @NlsSafe workspaceDir: String) : @NlsSafe String {
+    private fun getWorkspaceLabel(@NlsSafe workspace: String, @NlsSafe workspaceDir: String): @NlsSafe String {
       val color = ColorUtil.toHex(JBColor.GRAY)
       val builder = HtmlBuilder().append(
         HtmlChunk.html().addText("$workspace ").child(HtmlChunk.font(color)

@@ -1,19 +1,24 @@
 // This is a generated file. Not intended for manual editing.
 package org.intellij.prisma.lang.psi.impl;
 
-import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
 import static org.intellij.prisma.lang.psi.PrismaElementTypes.*;
+import org.intellij.prisma.lang.psi.stubs.PrismaModelDeclarationStub;
 import org.intellij.prisma.lang.psi.*;
+import com.intellij.psi.stubs.IStubElementType;
 
-public class PrismaModelDeclarationImpl extends PrismaTableEntityDeclarationMixin implements PrismaModelDeclaration {
+public class PrismaModelDeclarationImpl extends PrismaTableEntityDeclarationMixin<PrismaModelDeclarationStub> implements PrismaModelDeclaration {
 
   public PrismaModelDeclarationImpl(@NotNull ASTNode node) {
     super(node);
+  }
+
+  public PrismaModelDeclarationImpl(@NotNull PrismaModelDeclarationStub stub, @NotNull IStubElementType<?, ?> type) {
+    super(stub, type);
   }
 
   public void accept(@NotNull PrismaVisitor visitor) {
@@ -29,7 +34,7 @@ public class PrismaModelDeclarationImpl extends PrismaTableEntityDeclarationMixi
   @Override
   @Nullable
   public PrismaFieldDeclarationBlock getFieldDeclarationBlock() {
-    return findChildByClass(PrismaFieldDeclarationBlock.class);
+    return PsiTreeUtil.getChildOfType(this, PrismaFieldDeclarationBlock.class);
   }
 
   @Override

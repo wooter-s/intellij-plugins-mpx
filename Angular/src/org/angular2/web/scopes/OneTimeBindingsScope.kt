@@ -5,6 +5,7 @@ import com.intellij.html.webSymbols.WebSymbolsHtmlQueryConfigurator
 import com.intellij.html.webSymbols.elements.WebSymbolElementDescriptor
 import com.intellij.javascript.webSymbols.jsType
 import com.intellij.javascript.webSymbols.types.TypeScriptSymbolTypeSupport
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
 import com.intellij.lang.javascript.psi.JSType
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil
 import com.intellij.lang.javascript.psi.types.JSCompositeTypeFactory
@@ -19,11 +20,11 @@ import com.intellij.model.Symbol
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.navigation.NavigationTarget
 import com.intellij.psi.PsiElement
+import com.intellij.psi.createSmartPointer
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.xml.XmlTag
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.ThreeState
 import com.intellij.util.asSafely
 import com.intellij.util.containers.mapSmartSet
@@ -40,6 +41,7 @@ import org.angular2.web.NG_DIRECTIVE_INPUTS
 import org.angular2.web.NG_DIRECTIVE_ONE_TIME_BINDINGS
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Supplier
 
 internal class OneTimeBindingsScope(tag: XmlTag) : WebSymbolsScopeWithCache<XmlTag, Unit>(Angular2Framework.ID, tag.project, tag, Unit) {
 
@@ -52,9 +54,9 @@ internal class OneTimeBindingsScope(tag: XmlTag) : WebSymbolsScopeWithCache<XmlT
                   ?.symbol?.let { listOf(it) }
                 ?: emptyList()
     val attributeSelectors = queryExecutor
-      .runListSymbolsQuery(NG_DIRECTIVE_ATTRIBUTE_SELECTORS, expandPatterns = true, scope = scope)
+      .runListSymbolsQuery(NG_DIRECTIVE_ATTRIBUTE_SELECTORS, expandPatterns = true, additionalScope = scope)
       .plus(queryExecutor
-              .runListSymbolsQuery(WebSymbol.HTML_ATTRIBUTES, expandPatterns = false, virtualSymbols = false, scope = scope)
+              .runListSymbolsQuery(WebSymbol.HTML_ATTRIBUTES, expandPatterns = false, virtualSymbols = false, additionalScope = scope)
               .filterIsInstance<WebSymbolsHtmlQueryConfigurator.StandardHtmlSymbol>()
       )
       .filter { it.attributeValue?.required == false }
@@ -62,7 +64,7 @@ internal class OneTimeBindingsScope(tag: XmlTag) : WebSymbolsScopeWithCache<XmlT
 
     val isStrictTemplates = isStrictTemplates(dataHolder)
     for (input in queryExecutor
-      .runListSymbolsQuery(NG_DIRECTIVE_INPUTS, expandPatterns = false, scope = scope)) {
+      .runListSymbolsQuery(NG_DIRECTIVE_INPUTS, expandPatterns = false, additionalScope = scope)) {
       if (input.pattern != null) continue
       val isOneTimeBinding = isOneTimeBindingProperty(input)
       if (isStrictTemplates) {
@@ -103,13 +105,15 @@ internal class OneTimeBindingsScope(tag: XmlTag) : WebSymbolsScopeWithCache<XmlT
         CachedValueProvider.Result.create(ConcurrentHashMap<WebSymbol, Boolean>(),
                                           PsiModificationTracker.MODIFICATION_COUNT)
       }.getOrPut(property) {
-        expandStringLiteralTypes(type).isDirectlyAssignableType(
-          STRING_TYPE, JSTypeComparingContextService.createProcessingContextWithCache(source))
+        JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(source, Supplier {
+          expandStringLiteralTypes(type).isDirectlyAssignableType(
+            STRING_TYPE, JSTypeComparingContextService.createProcessingContextWithCache(source))
+        })
       }
     }
 
     private fun expandStringLiteralTypes(type: JSType): JSType =
-      TypeScriptTypeRelations.expandAndOptimizeTypeRecursive(type)
+      TypeScriptTypeRelations.expandAndOptimizeTypeRecursive(type, null)
         .transformTypeHierarchy { toApply -> if (toApply is JSPrimitiveType) STRING_TYPE else toApply }
   }
 
@@ -147,7 +151,7 @@ internal class OneTimeBindingsScope(tag: XmlTag) : WebSymbolsScopeWithCache<XmlT
         )
       }
       else {
-        val isBoolean = TypeScriptSymbolTypeSupport.isBoolean(jsType)
+        val isBoolean = TypeScriptSymbolTypeSupport.isBoolean(jsType, psiContext)
         when {
           isBoolean != ThreeState.NO -> {
             WebSymbolHtmlAttributeValue.create(

@@ -6,14 +6,15 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.refactoring.suggested.createSmartPointer
+import com.intellij.psi.util.PsiModificationTracker
+import com.intellij.psi.createSmartPointer
 import com.intellij.webSymbols.*
 import com.intellij.webSymbols.WebSymbol.Companion.NAMESPACE_HTML
-import com.intellij.webSymbols.utils.psiModificationCount
 import org.jetbrains.astro.AstroFramework
 import org.jetbrains.astro.webSymbols.ASTRO_COMPONENTS
 import org.jetbrains.astro.webSymbols.AstroProximity
 import org.jetbrains.astro.webSymbols.PROP_ASTRO_PROXIMITY
+import org.jetbrains.astro.webSymbols.UI_FRAMEWORK_COMPONENT_PROPS
 
 class AstroComponent(file: PsiFile)
   : PsiSourcedWebSymbol, WebSymbolsScopeWithCache<PsiFile, Unit>(AstroFramework.ID, file.project, file, Unit) {
@@ -37,7 +38,7 @@ class AstroComponent(file: PsiFile)
     get() = mapOf(Pair(PROP_ASTRO_PROXIMITY, AstroProximity.OUT_OF_SCOPE))
 
   override fun provides(qualifiedKind: WebSymbolQualifiedKind): Boolean =
-    qualifiedKind == WebSymbol.HTML_ATTRIBUTES
+    qualifiedKind == UI_FRAMEWORK_COMPONENT_PROPS
 
   override fun initialize(consumer: (WebSymbol) -> Unit, cacheDependencies: MutableSet<Any>) {
     consumer(AstroComponentWildcardAttribute)
@@ -45,7 +46,7 @@ class AstroComponent(file: PsiFile)
   }
 
   override fun getModificationCount(): Long =
-    project.psiModificationCount
+    PsiModificationTracker.getInstance(project).modificationCount
 
   override fun createPointer(): Pointer<AstroComponent> {
     val filePtr = dataHolder.createSmartPointer()
@@ -53,5 +54,4 @@ class AstroComponent(file: PsiFile)
       filePtr.dereference()?.let { AstroComponent(it) }
     }
   }
-
 }

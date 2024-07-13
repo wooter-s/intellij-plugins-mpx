@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.mpxjs.codeInsight.imports
 
 import com.intellij.javascript.web.js.WebJSResolveUtil.disableIndexUpToDateCheckIn
@@ -29,7 +29,6 @@ import com.intellij.psi.xml.XmlElement
 import com.intellij.psi.xml.XmlFile
 import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.xml.XmlText
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.asSafely
 import org.jetbrains.mpxjs.VueBundle
 import org.jetbrains.mpxjs.codeInsight.imports.VueTemplateExpressionsCopyPasteProcessor.VueTemplateExpressionsImportsTransferableData
@@ -185,9 +184,7 @@ class VueTemplateExpressionsCopyPasteProcessor : ES6CopyPasteProcessorBase<VueTe
                                      destinationModule: PsiElement,
                                      imports: Collection<Pair<ES6ImportPsiUtil.CreateImportExportInfo, PsiElement>>,
                                      pasteContextLanguage: Language) {
-    WriteAction.run<RuntimeException> {
-      ES6CreateImportUtil.addRequiredImports(destinationModule, VueJSLanguage.INSTANCE, imports)
-    }
+    ES6CreateImportUtil.addRequiredImports(destinationModule, VueJSLanguage.INSTANCE, imports)
   }
 
   class VueTemplateExpressionsImportsTransferableData(list: ArrayList<ImportedElement>) : ES6ImportsTransferableDataBase(list) {

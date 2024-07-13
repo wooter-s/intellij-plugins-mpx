@@ -181,6 +181,10 @@ private class PerforceConfigPanel(private val myProject: Project, private val my
       checkBox(PerforceBundle.message("label.configure.perforce.use.p4.for.ignore"))
         .bindSelected({ !mySettings.USE_PATTERN_MATCHING_IGNORE }, { mySettings.USE_PATTERN_MATCHING_IGNORE = !it })
     }
+    row {
+      checkBox(PerforceBundle.message("label.configure.perforce.forcefully.sync.changelists"))
+        .bindSelected(mySettings::FORCE_SYNC_CHANGELISTS)
+    }
 
     onReset {
       updateEnv()
@@ -494,5 +498,5 @@ private class PerforceConfigPanel(private val myProject: Project, private val my
 internal class PerforceConfigurable(val myProject: Project, private val cs: CoroutineScope) :
   BoundConfigurable(PerforceVcs.NAME, "project.propVCSSupport.VCSs.Perforce") {
 
-  override fun createPanel(): DialogPanel = PerforceConfigPanel(myProject, disposable!!, cs.childScope(CoroutineName("PerforceConfigPanel"))).createPanel()
+  override fun createPanel(): DialogPanel = PerforceConfigPanel(myProject, disposable!!, cs.childScope("PerforceConfigPanel")).createPanel()
 }

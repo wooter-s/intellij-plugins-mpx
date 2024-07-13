@@ -5,8 +5,8 @@ import com.intellij.lang.javascript.psi.ecma6.TypeScriptVariable
 import com.intellij.model.Pointer
 import com.intellij.openapi.util.ModificationTracker
 import com.intellij.psi.PsiElement
+import com.intellij.psi.createSmartPointer
 import com.intellij.psi.util.CachedValueProvider.Result
-import com.intellij.refactoring.suggested.createSmartPointer
 import org.angular2.Angular2DecoratorUtil.EXPORTS_PROP
 import org.angular2.entities.*
 import org.angular2.lang.Angular2Bundle

@@ -6,7 +6,7 @@ import com.intellij.lang.javascript.psi.JSType
 import com.intellij.lang.javascript.psi.types.JSAnyType
 import com.intellij.model.Pointer
 import com.intellij.psi.PsiElement
-import com.intellij.refactoring.suggested.createSmartPointer
+import com.intellij.psi.createSmartPointer
 import org.jetbrains.mpxjs.codeInsight.resolveIfImportSpecifier
 import org.jetbrains.mpxjs.model.VueComponent
 import org.jetbrains.mpxjs.model.VueEntitiesContainer

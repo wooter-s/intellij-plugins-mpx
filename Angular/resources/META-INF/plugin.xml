@@ -262,6 +262,9 @@
     <localInspection implementationClass="org.angular2.inspections.AngularDeferBlockOnTriggerInspection"
                      groupKey="angular.inspection.group.name" enabledByDefault="true" language="Angular2Html"
                      level="ERROR" key="angular.inspection.defer-block-on-trigger.name" bundle="messages.Angular2Bundle"/>
+    <localInspection implementationClass="org.angular2.inspections.AngularUnresolvedPipeInspection"
+                     groupKey="angular.inspection.group.name" enabledByDefault="true" language="HtmlCompatible"
+                     level="ERROR" key="angular.inspection.unresolved-pipe.name" bundle="messages.Angular2Bundle"/>
     <errorQuickFixProvider implementation="org.angular2.inspections.Angular2ErrorQuickFixProvider"/>
     <idIndexer filetype="Angular2Html" implementationClass="org.angular2.lang.html.index.Angular2HtmlIdIndexer"/>
     <todoIndexer filetype="Angular2Html" implementationClass="org.angular2.lang.html.index.Angular2HtmlTodoIndexer"/>
@@ -282,6 +285,7 @@
     <platform.backend.documentation.linkHandler implementation="org.angular2.codeInsight.documentation.Angular2DocumentationLinkHandler"/>
 
     <webSymbols.webTypes enableByDefault="false" source="web-types/angular@2.0.0.web-types.json"/>
+    <webSymbols.webTypes enableByDefault="false" source="web-types/angular@10.0.0.web-types.json"/>
     <webSymbols.webTypes enableByDefault="true" source="web-types/angular@16.0.0.web-types.json"/>
     <webSymbols.webTypes enableByDefault="false" source="web-types/angular@17.0.0.web-types.json"/>
     <webSymbols.webTypes enableByDefault="true" source="web-types/angular-hacks.web-types.json"/>
@@ -343,6 +347,15 @@
                              implementationClass="org.angular2.lang.html.psi.impl.Angular2HtmlNgContentSelectorManipulator"/>
     <notificationGroup id="Angular CLI" displayType="BALLOON" isLogByDefault="false"
                        bundle="messages.Angular2Bundle" key="angular.description.angular-cli"/>
+
+    <!-- we store settings under ts since there are only ts server specific options there -->
+    <projectConfigurable parentId="settings.typescriptcompiler"
+                         instance="org.angular2.options.AngularConfigurable"
+                         id="settings.angularservice"
+                         bundle="messages.Angular2Bundle"
+                         key="angular.configurable.service.title"
+                         nonDefaultProject="true"
+    />
   </extensions>
 
   <extensions defaultExtensionNs="JavaScript">
@@ -372,6 +385,7 @@
 
     <!-- Angular2 TypeScript contributions -->
     <frameworkSpecificHandler language="TypeScript" implementationClass="org.angular2.lang.Angular2TSFrameworkSpecificHandler"/>
+    <languageServiceProvider implementation="org.angular2.lang.expr.service.Angular2LanguageServiceProvider" order="first"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.angular2">
@@ -405,6 +419,11 @@
             icon="/icons/angular2.svg"
             class="org.angular2.refactoring.extractComponent.Angular2ExtractComponentAction">
       <add-to-group group-id="IntroduceActionsGroup"/>
+    </action>
+    <action id="Angular2VisualizeGeneratedTcbAction"
+            internal="true"
+            class="org.angular2.lang.html.tcb.Angular2VisualizeGeneratedTcbAction">
+      <add-to-group group-id="Internal"/>
     </action>
   </actions>
 

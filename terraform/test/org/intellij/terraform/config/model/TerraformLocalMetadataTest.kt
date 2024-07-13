@@ -22,7 +22,7 @@ import org.intellij.terraform.config.model.local.LocalSchemaService
 import org.intellij.terraform.config.model.local.TERRAFORM_LOCK_FILE_NAME
 import org.intellij.terraform.config.model.local.TFLocalMetaEntity
 import org.intellij.terraform.config.util.TFCommandLineServiceMock
-import org.intellij.terraform.runtime.TerraformToolProjectSettings
+import org.intellij.terraform.runtime.TerraformPathDetector
 import org.junit.Assert
 import org.junit.Assume
 import java.nio.file.Files
@@ -56,7 +56,8 @@ open class TerraformLocalMetadataTest : BasePlatformTestCase() {
               "provider_schemas": {
                 "registry.terraform.io/digitalocean/digitalocean": {
                   "provider": {
-                    "version": 0
+                    "version": 0,
+                    "block": {}
                   },
                   "resource_schemas": {
                     "digitalocean_droplet": {
@@ -292,7 +293,7 @@ open class TerraformLocalMetadataTest : BasePlatformTestCase() {
   }
 
   private val terraformExe: String
-    get() = TerraformToolProjectSettings.getInstance(project).actualTerraformPath
+    get() = TerraformPathDetector.getInstance(project).actualTerraformPath
 
 }
 

@@ -6,10 +6,9 @@ import com.intellij.lang.javascript.psi.JSPsiNamedElementBase
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptInterface
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.util.childrenOfType
 import com.intellij.util.asSafely
-import org.jetbrains.astro.lang.psi.AstroFrontmatterScript
 import org.jetbrains.astro.lang.psi.AstroContentRoot
+import org.jetbrains.astro.lang.psi.AstroFrontmatterScript
 
 const val ASTRO_PKG = "astro"
 const val ASTRO_GLOBAL_INTERFACE = "AstroGlobal"
@@ -18,11 +17,13 @@ const val ASTRO_IMPLICIT_OBJECT = "Astro"
 const val ASTRO_INLINE_DIRECTIVE = "is:inline"
 const val ASTRO_DEFINE_VARS_DIRECTIVE = "define:vars"
 
+const val ASTRO_CONFIG_NAME = "astro.config"
+
 val ASTRO_CONFIG_FILES = setOf(
-  "astro.config.js",
-  "astro.config.cjs",
-  "astro.config.mjs",
-  "astro.config.ts",
+  "$ASTRO_CONFIG_NAME.js",
+  "$ASTRO_CONFIG_NAME.cjs",
+  "$ASTRO_CONFIG_NAME.mjs",
+  "$ASTRO_CONFIG_NAME.ts",
 )
 
 fun PsiElement.astroContentRoot(): AstroContentRoot? =
@@ -32,7 +33,7 @@ fun PsiElement.frontmatterScript(): AstroFrontmatterScript? =
   containingFile?.astroContentRoot()?.frontmatterScript()
 
 fun PsiFile.astroContentRoot(): AstroContentRoot? =
-  this.childrenOfType<AstroContentRoot>().firstOrNull()
+  children.firstNotNullOfOrNull { it as? AstroContentRoot }
 
 fun AstroContentRoot.frontmatterScript(): AstroFrontmatterScript? =
   children.firstNotNullOfOrNull { it as? AstroFrontmatterScript }

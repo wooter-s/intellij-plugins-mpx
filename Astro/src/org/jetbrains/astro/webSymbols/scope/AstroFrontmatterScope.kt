@@ -5,22 +5,25 @@ import com.intellij.lang.javascript.psi.JSPsiNamedElementBase
 import com.intellij.lang.javascript.psi.ecmal4.JSClass
 import com.intellij.lang.javascript.psi.util.JSStubBasedPsiTreeUtil
 import com.intellij.model.Pointer
-import com.intellij.refactoring.suggested.createSmartPointer
+import com.intellij.psi.createSmartPointer
 import com.intellij.webSymbols.WebSymbol
 import com.intellij.webSymbols.WebSymbolQualifiedKind
 import com.intellij.webSymbols.WebSymbolsScopeWithCache
 import org.jetbrains.astro.AstroFramework
 import org.jetbrains.astro.codeInsight.astroContentRoot
 import org.jetbrains.astro.codeInsight.frontmatterScript
+import org.jetbrains.astro.codeInsight.resolveIfImportSpecifier
 import org.jetbrains.astro.lang.AstroFileImpl
 import org.jetbrains.astro.webSymbols.ASTRO_COMPONENTS
+import org.jetbrains.astro.webSymbols.UI_FRAMEWORK_COMPONENTS
 import org.jetbrains.astro.webSymbols.symbols.AstroLocalComponent
+import org.jetbrains.astro.webSymbols.symbols.UiFrameworkComponent
 
 class AstroFrontmatterScope(val file: AstroFileImpl)
   : WebSymbolsScopeWithCache<AstroFileImpl, Unit>(AstroFramework.ID, file.project, file, Unit) {
 
   override fun provides(qualifiedKind: WebSymbolQualifiedKind): Boolean =
-    qualifiedKind == ASTRO_COMPONENTS
+    qualifiedKind == ASTRO_COMPONENTS || qualifiedKind == UI_FRAMEWORK_COMPONENTS
 
   override fun createPointer(): Pointer<AstroFrontmatterScope> {
     val filePtr = file.createSmartPointer()
@@ -35,8 +38,14 @@ class AstroFrontmatterScope(val file: AstroFileImpl)
         val namedElement = element as? JSPsiNamedElementBase
         val name = namedElement?.name
         if (name?.getOrNull(0)?.isUpperCase() != true) return@processDeclarationsInScope true
-        if (namedElement !is JSClass)
-          consumer(AstroLocalComponent(name, namedElement))
+        if (namedElement !is JSClass) {
+          val symbol = when (namedElement.resolveIfImportSpecifier().containingFile) {
+            is AstroFileImpl -> AstroLocalComponent(name, namedElement)
+            // TODO: Introduce extension point for frameworks to contribute their symbols for Astro.
+            else -> UiFrameworkComponent(name, namedElement)
+          }
+          consumer(symbol)
+        }
         true
       }, false)
     }

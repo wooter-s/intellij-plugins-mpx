@@ -5,6 +5,7 @@ import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.javascript.web.filterOutStandardHtmlSymbols
+import com.intellij.javascript.web.forceReloadProjectRoots
 import com.intellij.lang.javascript.BaseJSCompletionTestCase.*
 import com.intellij.lang.javascript.JSTestUtils
 import com.intellij.lang.javascript.JavaScriptFormatterTestBase
@@ -2148,6 +2149,26 @@ export default {
     myFixture.checkResultByFile("${getTestName(true)}/apps/vue-app/src/App.after.vue")
   }
 
+  fun testAliasedComponentImportOptionsApi() {
+    myFixture.copyDirectoryToProject(getTestName(true), "")
+    myFixture.configureFromTempProjectFile("apps/vue-app/src/App.vue")
+
+    myFixture.type("Co")
+    myFixture.completeBasic()
+
+    myFixture.checkResultByFile("${getTestName(true)}/apps/vue-app/src/App.after.vue")
+  }
+
+  fun testImportComponentUsedInApp() {
+    myFixture.copyDirectoryToProject(getTestName(true), "")
+    myFixture.configureFromTempProjectFile("src/components/CheckImportComponent.vue")
+
+    myFixture.type("orl")
+    myFixture.completeBasic()
+
+    myFixture.checkResultByFile("${getTestName(true)}/src/components/CheckImportComponent.after.vue")
+  }
+
   fun testVueTscComponent() {
     doLookupTest(VueTestModule.VUE_3_2_2, dir = true, renderPriority = true) {
       it.isItemTextBold
@@ -2159,6 +2180,7 @@ export default {
 
     val name = getTestName(true)
     myFixture.copyDirectoryToProject(name, "")
+    forceReloadProjectRoots(project)
     myFixture.configureFromTempProjectFile("$name.vue")
 
     myFixture.completeBasic()

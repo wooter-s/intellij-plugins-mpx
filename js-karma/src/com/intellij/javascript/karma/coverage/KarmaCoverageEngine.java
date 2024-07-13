@@ -4,7 +4,6 @@ package com.intellij.javascript.karma.coverage;
 import com.intellij.coverage.*;
 import com.intellij.coverage.view.CoverageListRootNode;
 import com.intellij.coverage.view.CoverageViewExtension;
-import com.intellij.coverage.view.CoverageViewManager;
 import com.intellij.coverage.view.DirectoryCoverageViewExtension;
 import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.execution.configurations.WrappingRunConfiguration;
@@ -12,7 +11,6 @@ import com.intellij.execution.configurations.coverage.CoverageEnabledConfigurati
 import com.intellij.ide.util.treeView.AbstractTreeNode;
 import com.intellij.javascript.karma.execution.KarmaRunConfiguration;
 import com.intellij.lang.javascript.psi.JSFile;
-import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
@@ -31,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class KarmaCoverageEngine extends CoverageEngine {
@@ -96,7 +95,7 @@ public class KarmaCoverageEngine extends CoverageEngine {
   }
 
   @Override
-  public String getQualifiedName(@NotNull File outputFile, @NotNull PsiFile sourceFile) {
+  protected String getQualifiedName(@NotNull File outputFile, @NotNull PsiFile sourceFile) {
     return getQName(sourceFile);
   }
 
@@ -132,10 +131,8 @@ public class KarmaCoverageEngine extends CoverageEngine {
   }
 
   @Override
-  public CoverageViewExtension createCoverageViewExtension(final Project project,
-                                                           final CoverageSuitesBundle suiteBundle,
-                                                           CoverageViewManager.StateBean stateBean) {
-    return new DirectoryCoverageViewExtension(project, getCoverageAnnotator(project), suiteBundle, stateBean) {
+  public CoverageViewExtension createCoverageViewExtension(final Project project, final CoverageSuitesBundle suiteBundle) {
+    return new DirectoryCoverageViewExtension(project, getCoverageAnnotator(project), suiteBundle) {
       @NotNull
       @Override
       public AbstractTreeNode createRootNode() {
@@ -143,8 +140,9 @@ public class KarmaCoverageEngine extends CoverageEngine {
         if (rootDir == null) {
           rootDir = ProjectUtil.guessProjectDir(myProject);
         }
+        assert rootDir != null;
         PsiDirectory psiRootDir = PsiManager.getInstance(myProject).findDirectory(rootDir);
-        return new CoverageListRootNode(myProject, psiRootDir, mySuitesBundle, myStateBean);
+        return new CoverageListRootNode(myProject, Objects.requireNonNull(psiRootDir), mySuitesBundle);
       }
     };
   }

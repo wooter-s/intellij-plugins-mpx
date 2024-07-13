@@ -6,12 +6,27 @@ import org.intellij.terraform.config.model.*;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.intellij.terraform.config.CompletionTestCase.Matcher.*;
 
 @SuppressWarnings({"ArraysAsListWithZeroOrOneArgument", "RedundantThrows"})
 public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
+
+  private static final int ENTRIES_LIST_SIZE = 1000; //x2 to the default registry value
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    Registry.get("ide.completion.variant.limit").setValue(ENTRIES_LIST_SIZE * 2, getTestRootDisposable());
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
 
   public void testBlockKeywordCompletion() throws Exception {
     doBasicCompletionTest("<caret> {}", TerraformCompletionUtil.INSTANCE.getRootBlockKeywords());
@@ -37,11 +52,13 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
 
   //<editor-fold desc="Resources completion tests">
   public void testResourceTypeCompletion() throws Exception {
-    final TreeSet<String> set = new TreeSet<>();
-    for (ResourceType resource : TypeModelProvider.Companion.getGlobalModel().getResources()) {
-      set.add(resource.getType());
-    }
-    final Predicate<Collection<String>> matcher = getPartialMatcher(new ArrayList<>(set).subList(0, 500));
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(ResourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
     doBasicCompletionTest("resource <caret>", matcher);
     doBasicCompletionTest("resource <caret> {}", matcher);
     doBasicCompletionTest("resource <caret> \"aaa\" {}", matcher);
@@ -51,17 +68,29 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
   }
 
   public void testResourceQuotedTypeCompletion() throws Exception {
-    final TreeSet<String> set = new TreeSet<>();
-    for (ResourceType resource : TypeModelProvider.Companion.getGlobalModel().getResources()) {
-      set.add(resource.getType());
-    }
-    final Predicate<Collection<String>> matcher = getPartialMatcher(new ArrayList<>(set).subList(0, 500));
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(ResourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
     doBasicCompletionTest("resource \"<caret>", matcher);
     doBasicCompletionTest("resource '<caret>", matcher);
     doBasicCompletionTest("resource \"<caret>\n{}", matcher);
     doBasicCompletionTest("resource '<caret>\n{}", matcher);
     doBasicCompletionTest("resource \"<caret>\" {}", matcher);
     doBasicCompletionTest("resource \"<caret>\" \"aaa\" {}", matcher);
+  }
+
+  public void testResourceQuotedKeywordCompletion() throws Exception {
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(ResourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
     doBasicCompletionTest("\"resource\" \"<caret>", matcher);
     doBasicCompletionTest("\"resource\" '<caret>", matcher);
     doBasicCompletionTest("\"resource\" \"<caret>\n{}", matcher);
@@ -126,10 +155,10 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
                                 }
                               }
                             }
-                                                        
+                            
                             resource "aws_instance" "example" {
                               for_each = var.servers
-                                                        
+                            
                               ami           = each.value.<caret>
                               instance_type = each.value.instance_type
                             }
@@ -138,70 +167,70 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
 
   public void testResourceCommonPropertyCompletionFromModel() throws Exception {
     final HashSet<String> base = new HashSet<>(COMMON_RESOURCE_PROPERTIES);
-    final ResourceType type = TypeModelProvider.Companion.getGlobalModel().getResourceType("aws_instance");
+    final ResourceType type = TypeModelProvider.Companion.getGlobalModel().getResourceType("azurerm_linux_virtual_machine", null);
     assertNotNull(type);
     for (PropertyOrBlockType it : type.getProperties().values()) {
       if (it.getConfigurable()) base.add(it.getName());
     }
-    doBasicCompletionTest("resource aws_instance x {\n<caret>\n}", base);
-    doBasicCompletionTest("resource aws_instance x {\n<caret> = \"name\"\n}", "provider", "ami");
-    doBasicCompletionTest("resource aws_instance x {\n<caret> = true\n}", "ebs_optimized", "monitoring");
-    doBasicCompletionTest("resource aws_instance x {\n<caret> {}\n}", "lifecycle");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n<caret>\n}", base);
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n<caret> = \"name\"\n}", "size", "location");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n<caret> = true\n}", "allow_extension_operations", "bypass_platform_safety_checks_on_user_schedule_enabled");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n<caret> {}\n}", "additional_capabilities");
 
-    doBasicCompletionTest("resource aws_instance x {\n\"<caret>\"\n}", base);
-    doBasicCompletionTest("resource aws_instance x {\n\"<caret>\" = \"name\"\n}", "provider", "ami");
-    doBasicCompletionTest("resource aws_instance x {\n\"<caret>\" = true\n}", "ebs_optimized", "monitoring");
-    doBasicCompletionTest("resource aws_instance x {\n\"<caret>\" {}\n}", "lifecycle");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n\"<caret>\"\n}", base);
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n\"<caret>\" = \"name\"\n}", "size", "location");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n\"<caret>\" = true\n}", "allow_extension_operations", "bypass_platform_safety_checks_on_user_schedule_enabled");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n\"<caret>\" {}\n}", "additional_capabilities");
 
     // Should understand interpolation result
-    doBasicCompletionTest("resource aws_instance x {\n<caret> = \"${true}\"\n}", strings -> {
-      then(strings).contains("ebs_optimized", "monitoring").doesNotContain("lifecycle", "provider", "ami");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n<caret> = \"${true}\"\n}", strings -> {
+      then(strings).contains("allow_extension_operations", "bypass_platform_safety_checks_on_user_schedule_enabled").doesNotContain("additional_capabilities", "size", "location");
       return true;
     });
     // Or not
-    doBasicCompletionTest("resource aws_instance x {\n<caret> = \"${}\"\n}", strings -> {
-      then(strings).contains("ebs_optimized", "monitoring", "provider", "ami").doesNotContain("lifecycle");
+    doBasicCompletionTest("resource azurerm_linux_virtual_machine x {\n<caret> = \"${}\"\n}", strings -> {
+      then(strings).contains("allow_extension_operations", "bypass_platform_safety_checks_on_user_schedule_enabled", "size", "location").doesNotContain("additional_capabilities");
       return true;
     });
   }
 
   public void testResourceCommonPropertyAlreadyDefinedNotShownAgain() throws Exception {
-    final ResourceType type = TypeModelProvider.Companion.getGlobalModel().getResourceType("aws_vpc_endpoint");
+    final ResourceType type = TypeModelProvider.Companion.getGlobalModel().getResourceType("azurerm_linux_virtual_machine", null);
     assertNotNull(type);
 
     // Should not add existing props to completion variants
     doBasicCompletionTest("""
-                            resource aws_vpc_endpoint x {
-                              <caret>  service_name = ""
-                              vpc_id = ""
+                            resource azurerm_linux_virtual_machine x {
+                              <caret>  admin_username = ""
+                              location = ""
                             }
-                            """, not("service_name", "vpc_id"));
+                            """, not("admin_username", "location"));
     doBasicCompletionTest("""
-                            resource aws_vpc_endpoint x {
-                              service_name = ""
-                              <caret>  vpc_id = ""
+                            resource azurerm_linux_virtual_machine x {
+                              admin_username = ""
+                              <caret>  location = ""
                             }
-                            """, not("service_name", "vpc_id"));
+                            """, not("admin_username", "location"));
     doBasicCompletionTest("""
-                            resource aws_vpc_endpoint x {
-                              service_name = ""
-                              vpc_id = ""
+                            resource azurerm_linux_virtual_machine x {
+                              admin_username = ""
+                              location = ""
                               <caret>}
-                            """, not("service_name", "vpc_id"));
+                            """, not("admin_username", "location"));
 
     // yet should advice if we stand on it
     doBasicCompletionTest("""
-                            resource aws_vpc_endpoint x {
-                              service_name = ""
-                              <caret>vpc_id = ""
+                            resource azurerm_linux_virtual_machine x {
+                              admin_username = ""
+                              <caret>location = ""
                             }
-                            """, and(not("service_name"), all("vpc_id")));
+                            """, and(not("admin_username"), all("location")));
     doBasicCompletionTest("""
-                            resource aws_vpc_endpoint x {
-                              <caret>service_name = ""
-                              vpc_id = ""
+                            resource azurerm_linux_virtual_machine x {
+                              <caret>admin_username = ""
+                              location = ""
                             }
-                            """, and(not("vpc_id"), all("service_name")));
+                            """, and(not("location"), all("admin_username")));
   }
 
   public void testResourceProviderCompletionFromModel() throws Exception {
@@ -235,18 +264,17 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
   }
 
   public void testResourceTypeCompletionGivenDefinedProvidersOrForNoPropsProviders() throws Exception {
-    Registry.get("ide.completion.variant.limit").setValue(2000, getTestRootDisposable());
-
-    final TreeSet<String> set = new TreeSet<>();
-    final Map<String, Boolean> cache = new HashMap<>();
-    for (ResourceType resource : TypeModelProvider.Companion.getGlobalModel().getResources()) {
-      if (isExcludeProvider(resource.getProvider(), cache)) continue;
-      set.add(resource.getType());
-    }
-    then(set).contains("template_file", "aws_vpc");
-    doBasicCompletionTest("provider aws {}\nresource <caret>", set);
-    doBasicCompletionTest("provider aws {}\nresource <caret> {}", set);
-    doBasicCompletionTest("provider aws {}\nresource <caret> \"aaa\" {}", set);
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(ResourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    then(set).contains("template_file", "vault_kv_secret");
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
+    doBasicCompletionTest("provider aws {}\nresource <caret>", matcher);
+    doBasicCompletionTest("provider aws {}\nresource <caret> {}", matcher);
+    doBasicCompletionTest("provider aws {}\nresource <caret> \"aaa\" {}", matcher);
   }
 
   public void testResourceNonConfigurablePropertyIsNotAdviced() throws Exception {
@@ -259,14 +287,16 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
 
   //<editor-fold desc="Data Sources completion tests">
   public void testDataSourceTypeCompletion() throws Exception {
-    Registry.get("ide.completion.variant.limit").setValue(100000, getTestRootDisposable());
-    final TreeSet<String> set = new TreeSet<>();
-    for (DataSourceType ds : TypeModelProvider.Companion.getGlobalModel().getDataSources()) {
-      set.add(ds.getType());
-    }
-    doBasicCompletionTest("data <caret>", set);
-    doBasicCompletionTest("data <caret> {}", set);
-    doBasicCompletionTest("data <caret> \"aaa\" {}", set);
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(DataSourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
+    doBasicCompletionTest("data <caret>", matcher);
+    doBasicCompletionTest("data <caret> {}", matcher);
+    doBasicCompletionTest("data <caret> \"aaa\" {}", matcher);
   }
 
   public void testCheckBlockCompletion() throws Exception {
@@ -308,18 +338,37 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
   }
 
   public void testDataSourceQuotedTypeCompletion() throws Exception {
-    Registry.get("ide.completion.variant.limit").setValue(100000, getTestRootDisposable());
-    final TreeSet<String> set = new TreeSet<>();
-    for (DataSourceType ds : TypeModelProvider.Companion.getGlobalModel().getDataSources()) {
-      set.add(ds.getType());
-    }
-    doBasicCompletionTest("data \"<caret>", set);
-    doBasicCompletionTest("data '<caret>", set);
-    doBasicCompletionTest("data \"<caret>\n{}", set);
-    doBasicCompletionTest("data '<caret>\n{}", set);
-    doBasicCompletionTest("data \"<caret>\" {}", set);
-    doBasicCompletionTest("data \"<caret>\" \"aaa\" {}", set);
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(DataSourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
+    doBasicCompletionTest("data \"<caret>", matcher);
+    doBasicCompletionTest("data '<caret>", matcher);
+    doBasicCompletionTest("data \"<caret>\n{}", matcher);
+    doBasicCompletionTest("data '<caret>\n{}", matcher);
+    doBasicCompletionTest("data \"<caret>\" {}", matcher);
+    doBasicCompletionTest("data \"<caret>\" \"aaa\" {}", matcher);
   }
+
+  public void testDataSourceQuotedKeywordCompletion() throws Exception {
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(DataSourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
+    doBasicCompletionTest("\"data\" \"<caret>", matcher);
+    doBasicCompletionTest("\"data\" '<caret>", matcher);
+    doBasicCompletionTest("\"data\" \"<caret>\n{}", matcher);
+    doBasicCompletionTest("\"data\" '<caret>\n{}", matcher);
+    doBasicCompletionTest("\"data\" \"<caret>\" {}", matcher);
+    doBasicCompletionTest("\"data\" \"<caret>\" \"aaa\" {}", matcher);
+  }
+
 
   public void testDataSourceCommonPropertyCompletion() throws Exception {
     doBasicCompletionTest("data abc {\n<caret>\n}", COMMON_DATA_SOURCE_PROPERTIES);
@@ -333,23 +382,23 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
 
   public void testDataSourceCommonPropertyCompletionFromModel() throws Exception {
     final HashSet<String> base = new HashSet<>(COMMON_DATA_SOURCE_PROPERTIES);
-    final DataSourceType type = TypeModelProvider.Companion.getGlobalModel().getDataSourceType("aws_ecs_container_definition");
+    final DataSourceType type = TypeModelProvider.Companion.getGlobalModel().getDataSourceType("azurerm_kubernetes_cluster_node_pool", null);
     assertNotNull(type);
     for (PropertyOrBlockType it : type.getProperties().values()) {
       if (it.getConfigurable()) base.add(it.getName());
     }
-    doBasicCompletionTest("data aws_ecs_container_definition x {\n<caret>\n}", base);
-    doBasicCompletionTest("data aws_ecs_container_definition x {\n<caret> = \"name\"\n}",
-                          "container_name",
-                          "task_definition",
+    doBasicCompletionTest("data azurerm_kubernetes_cluster_node_pool x {\n<caret>\n}", base);
+    doBasicCompletionTest("data azurerm_kubernetes_cluster_node_pool x {\n<caret> = \"name\"\n}",
+                          "kubernetes_cluster_name",
+                          "resource_group_name",
                           "provider"
     );
-    doBasicCompletionTest("data aws_elastic_beanstalk_solution_stack x {\n<caret> = true\n}", "most_recent");
-    doBasicCompletionTest("data aws_kms_secret x {\n<caret> {}\n}", "secret");
+    doBasicCompletionTest("data azurerm_storage_account_blob_container_sas x {\n<caret> = true\n}", "https_only");
+    doBasicCompletionTest("data azurerm_storage_account_blob_container_sas x {\n<caret> {}\n}", "lifecycle", "permissions", "timeouts");
 
     // Should understand interpolation result
-    doBasicCompletionTest("data aws_elastic_beanstalk_solution_stack x {\n<caret> = \"${true}\"\n}", strings -> {
-      then(strings).contains("most_recent").doesNotContain("name", "name_regex");
+    doBasicCompletionTest("data  azurerm_storage_account_sas x {\n<caret> = \"${true}\"\n}", strings -> {
+      then(strings).contains("https_only").doesNotContain("connection_string", "services");
       return true;
     });
   }
@@ -377,16 +426,17 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
   }
 
   public void testDataSourceTypeCompletionGivenDefinedProviders() throws Exception {
-    final TreeSet<String> set = new TreeSet<>();
-    final Map<String, Boolean> cache = new HashMap<>();
-    for (DataSourceType ds : TypeModelProvider.Companion.getGlobalModel().getDataSources()) {
-      if (isExcludeProvider(ds.getProvider(), cache)) continue;
-      set.add(ds.getType());
-    }
-    then(set).contains("template_file", "aws_vpc");
-    doBasicCompletionTest("provider aws {}\ndata <caret>", set);
-    doBasicCompletionTest("provider aws {}\ndata <caret> {}", set);
-    doBasicCompletionTest("provider aws {}\ndata <caret> \"aaa\" {}", set);
+    final TreeSet<String> set = StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
+        false)
+      .map(DataSourceType::getType)
+      .collect(Collectors.toCollection(TreeSet::new));
+    then(set).contains("template_file", "vault_kv_secret");
+    final Predicate<Collection<String>> matcher =
+      getPartialMatcher(new ArrayList<>(set).subList(0, Math.min(ENTRIES_LIST_SIZE, set.size())));
+    doBasicCompletionTest("provider aws {}\ndata <caret>", matcher);
+    doBasicCompletionTest("provider aws {}\ndata <caret> {}", matcher);
+    doBasicCompletionTest("provider aws {}\ndata <caret> \"aaa\" {}", matcher);
   }
   //</editor-fold>
 
@@ -646,10 +696,10 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
                                  })
                                })
                              }
-                             
+                            
                              module "test" {
                                source = "./"
-                             
+                            
                                obj-var = {
                                  var1 = ""
                                  var2 = []
@@ -718,7 +768,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
         id = "terraform"
         to = module.submodule.<caret>
       }
-            
+      
       module "submodule" {
         source = "./submodule"
       }
@@ -729,7 +779,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
   public void testCompleteResourceFromMovedBlock() {
     myFixture.addFileToProject("modules/compute/main.tf", """ 
       resource "aws_instance" "example1" { }
-            
+      
       resource "aws_instance" "example" { }
       """);
     myFixture.configureByText("main.tf", """
@@ -738,29 +788,12 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
         security_group = module.web_security_group.security_group_id
         public_subnets = module.vpc.public_subnets
       }
-            
+      
       moved {
         from = aws_instance.example
         to = module.ec2_instance.aws<caret>
       }
       """);
     myFixture.testCompletionVariants("main.tf", "aws_instance.example", "aws_instance.example1");
-  }
-
-
-  private static boolean isExcludeProvider(ProviderType provider, Map<String, Boolean> cache) {
-    String key = provider.getType();
-    Boolean cached = cache.get(key);
-    if (cached == null) {
-      cached = true;
-      if (provider.getType().equals("aws")) {
-        cached = false;
-      }
-      else if (provider.getProperties().equals(TypeModel.AbstractProvider.getProperties())) {
-        cached = false;
-      }
-      cache.put(key, cached);
-    }
-    return cached;
   }
 }

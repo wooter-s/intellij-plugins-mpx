@@ -1,5 +1,6 @@
 package com.intellij.lang.javascript.frameworks.nextjs
 
+import com.intellij.codeInsight.daemon.impl.analysis.HtmlUnknownTargetInspection
 import com.intellij.lang.javascript.JSDaemonAnalyzerLightTestCase
 import com.intellij.lang.javascript.inspections.JSUnusedGlobalSymbolsInspection
 import com.intellij.lang.javascript.inspections.JSUnusedLocalSymbolsInspection
@@ -8,7 +9,7 @@ import com.intellij.lang.javascript.inspections.JSUnusedLocalSymbolsInspection
  * Needs to be run with the classpath intellij.idea.ultimate.tests.main
  */
 class NextJsHighlightTest : JSDaemonAnalyzerLightTestCase() {
-  override fun getTestDataPath(): String = NextJsTestUtil.getTestDataPath() + "highlight_nextjs/"
+  override fun getTestDataPath(): String = NextJsTestUtil.getTestDataPath() + "highlight/"
 
   override fun getBasePath(): String = throw IllegalStateException()
 
@@ -21,6 +22,7 @@ class NextJsHighlightTest : JSDaemonAnalyzerLightTestCase() {
   }
 
   fun testUnusedGlobalInspection() {
+    myFixture.addFileToProject("package.json", "{\"dependencies\": {\"next\": \"*\"}}")
     myFixture.addFileToProject("pages/smth/component1.js", "export default function Test1() {return <div></div>}")
     myFixture.testHighlighting("pages/smth/component1.js")
   }
@@ -51,14 +53,22 @@ class NextJsHighlightTest : JSDaemonAnalyzerLightTestCase() {
     myFixture.addFileToProject("package.json", "{\"dependencies\": {\"next\": \"*\"}}")
   }
 
+  fun testGroupAndSlotResolving() {
+    myFixture.enableInspections(HtmlUnknownTargetInspection())
+    val dir = getTestName(true)
+    myFixture.copyDirectoryToProject(dir, "")
+    myFixture.testHighlighting(true, false, true, "app/usage/usage.tsx")
+  }
+
   fun testNextjsProject() {
     myFixture.enableInspections(JSUnusedLocalSymbolsInspection())
     val dir = getTestName(true)
-    myFixture.copyDirectoryToProject(dir, "");
+    myFixture.copyDirectoryToProject(dir, "")
     myFixture.testHighlightingAllFiles(
       true, false, true,
+      "app/layout.tsx",
       "app/page.tsx",
-      "app/route.js",
+      "app/route.ts",
       "otherDir/exportDefault.ts",
       "otherDir/knownFunctionsAndObjects.js",
       "otherDir/middleware.js",

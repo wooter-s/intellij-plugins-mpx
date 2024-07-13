@@ -28,15 +28,21 @@ public class ILTemplateForBlockExpressionImpl extends ILExpressionImpl implement
   }
 
   @Override
-  @Nullable
+  @NotNull
   public EndFor getEndFor() {
-    return findChildByClass(EndFor.class);
+    return findNotNullChildByClass(EndFor.class);
   }
 
   @Override
   @NotNull
-  public ForLoop getForLoop() {
-    return findNotNullChildByClass(ForLoop.class);
+  public ForCondition getForCondition() {
+    return findNotNullChildByClass(ForCondition.class);
+  }
+
+  @Override
+  @Nullable
+  public ILTemplateBlockBody getILTemplateBlockBody() {
+    return findChildByClass(ILTemplateBlockBody.class);
   }
 
   @Override

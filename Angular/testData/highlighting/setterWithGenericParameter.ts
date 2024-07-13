@@ -10,7 +10,7 @@ export abstract class CustomizableComponent<T extends string> {
     return false;
   }
 
-  @Input() set variation(<warning descr="Unused parameter val">val</warning>: T) {
+  @Input() set variation(<warning descr="Unused parameter val"><weak_warning descr="TS6133: 'val' is declared but its value is never read.">val</weak_warning></warning>: T) {
   }
 }
 
@@ -29,7 +29,7 @@ export class VooSectionComponent extends CustomizableComponent<myVariationSectio
   imports: [VooSectionComponent],
   template: `
     <voo-section [variation]="'gift'">Voo</voo-section>
-    <voo-section [variation]="<error descr="Type \"gifts\" is not assignable to type myVariationSectionType...  Type \"gifts\" is not assignable to type \"default\" | \"plus\" | \"gift\" | \"classic-no-padding\" | \"blue-gray-left\"    Type \"gifts\" is not assignable to type \"blue-gray-left\"">'gifts'</error>">Voo</voo-section>
+    <voo-section <error descr="TS2820: Type '\"gifts\"' is not assignable to type 'myVariationSectionType'. Did you mean '\"gift\"'?">[variation]</error>="'gifts'">Voo</voo-section>
   `
 })
 export class AppComponent {

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
-public class DartProjectGenerator extends WebProjectTemplate<DartProjectWizardData> implements Comparable<DartProjectGenerator> {
+public final class DartProjectGenerator extends WebProjectTemplate<DartProjectWizardData> implements Comparable<DartProjectGenerator> {
 
   @Override
   public String getId() {
@@ -22,13 +22,13 @@ public class DartProjectGenerator extends WebProjectTemplate<DartProjectWizardDa
 
   @Override
   @NotNull
-  public final String getName() {
+  public String getName() {
     return DartBundle.message("dart.title");
   }
 
   @Override
   @NotNull
-  public final String getDescription() {
+  public String getDescription() {
     return DartBundle.message("dart.project.description");
   }
 
@@ -44,10 +44,10 @@ public class DartProjectGenerator extends WebProjectTemplate<DartProjectWizardDa
   }
 
   @Override
-  public final void generateProject(@NotNull final Project project,
-                                    @NotNull final VirtualFile baseDir,
-                                    @NotNull final DartProjectWizardData data,
-                                    @NotNull final Module module) {
+  public void generateProject(@NotNull final Project project,
+                              @NotNull final VirtualFile baseDir,
+                              @NotNull final DartProjectWizardData data,
+                              @NotNull final Module module) {
     ApplicationManager.getApplication().runWriteAction(
       () -> {
         final ModifiableRootModel modifiableModel = ModifiableModelsProvider.getInstance().getModuleModifiableModel(module);

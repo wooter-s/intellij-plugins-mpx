@@ -1,0 +1,16 @@
+[
+  {
+    "file-name": "ngAcceptInputTypeOverride.ts",
+    "mappings": [
+      "«foo» [219] => «_t1» [114]} (no diagnostics)",
+      "«foo» [219] => «_t2» [155]} (ignored)",
+      "«[bar]» [230] => «_t3» [236]} (no types)",
+      "«2» [237] => «2» [242]}",
+      "«[boo]» [247] => «boo» [249]} (no types)",
+      "«[boo]» [247] => «_t2.boo» [245]} (no types)",
+      "«3» [254] => «3» [255]}",
+      "0:212 => 0:212 (source)",
+      "271:461 => 271:461 (source)"
+    ]
+  }
+]

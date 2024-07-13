@@ -29,11 +29,14 @@ val PrismaQualifiedReferenceElement.leftmostQualifier: PsiElement
 val PsiElement.isKeyword: Boolean
   get() = elementType in PRISMA_KEYWORDS
 
-fun PsiElement.resolveDatasourceType(): PrismaDatasourceType? =
-  (containingFile as? PrismaFile)?.datasourceType
+fun PsiElement.resolveDatasourceTypes(): Set<PrismaDatasourceType> =
+  (containingFile as? PrismaFile)?.metadata?.datasourceTypes ?: emptySet()
 
 fun PsiElement?.skipWhitespacesForwardWithoutNewLines() =
   PsiTreeUtil.skipMatching(this, { it.nextSibling }, { it is PsiWhiteSpace && !it.textContains('\n') })
 
 fun PsiElement?.skipWhitespacesBackwardWithoutNewLines() =
   PsiTreeUtil.skipMatching(this, { it.prevSibling }, { it is PsiWhiteSpace && !it.textContains('\n') })
+
+fun isFieldExpression(function: PrismaFunctionCall) =
+  function.pathExpression.resolve() is PrismaFieldDeclaration

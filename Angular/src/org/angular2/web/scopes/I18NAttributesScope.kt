@@ -5,9 +5,9 @@ import com.intellij.html.webSymbols.attributes.WebSymbolAttributeDescriptor
 import com.intellij.model.Pointer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.intellij.psi.createSmartPointer
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.containers.Stack
 import com.intellij.webSymbols.*
 import com.intellij.webSymbols.query.WebSymbolsListSymbolsQueryParams
@@ -87,7 +87,7 @@ class I18NAttributesScope(private val tag: XmlTag) : WebSymbolsScope {
 
     override val nameSegments: List<WebSymbolNameSegment> by lazy(LazyThreadSafetyMode.PUBLICATION) {
       (attribute.descriptor as? WebSymbolAttributeDescriptor)?.symbol?.nameSegments
-      ?: listOf(WebSymbolNameSegment(this))
+      ?: listOf(WebSymbolNameSegment.create(this))
     }
 
     override val priority: WebSymbol.Priority
@@ -114,7 +114,5 @@ class I18NAttributesScope(private val tag: XmlTag) : WebSymbolsScope {
         Angular2I18nAttributeSymbol(attribute)
       }
     }
-
   }
-
 }

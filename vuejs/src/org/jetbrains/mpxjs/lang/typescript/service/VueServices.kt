@@ -4,7 +4,7 @@ package org.jetbrains.mpxjs.lang.typescript.service
 import com.intellij.javascript.nodejs.PackageJsonData
 import com.intellij.lang.typescript.compiler.languageService.TypeScriptLanguageServiceUtil
 import com.intellij.lang.typescript.compiler.languageService.TypeScriptServerState
-import com.intellij.lang.typescript.library.TypeScriptLibraryProvider
+import com.intellij.lang.typescript.lsp.JSServiceSetActivationRule
 import com.intellij.lang.typescript.lsp.getTypeScriptServiceDirectory
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -18,8 +18,43 @@ import org.jetbrains.mpxjs.options.VueServiceSettings
 import org.jetbrains.mpxjs.options.getVueSettings
 
 
+object VueServiceSetActivationRule : JSServiceSetActivationRule(VolarExecutableDownloader, null) {
+  override fun isFileAcceptableForLspServer(file: VirtualFile): Boolean {
+    if (!TypeScriptLanguageServiceUtil.IS_VALID_FILE_FOR_SERVICE.value(file)) return false
+
+    return file.isVueFile || TypeScriptLanguageServiceUtil.ACCEPTABLE_TS_FILE.value(file)
+  }
+
+  override fun isProjectContext(project: Project, context: VirtualFile): Boolean {
+    return isVueServiceContext(project, context)
+  }
+
+  override fun isEnabledInSettings(project: Project): Boolean {
+    return when (getVueSettings(project).serviceType) {
+      VueServiceSettings.AUTO, VueServiceSettings.VOLAR -> true
+      VueServiceSettings.TS_SERVICE -> false
+      VueServiceSettings.DISABLED -> false
+    }
+  }
+}
+
 private fun isVueServiceContext(project: Project, context: VirtualFile): Boolean {
   return context.fileType is VueFileType || isVueContext(context, project)
+}
+
+//<editor-fold desc="org.jetbrains.mpxjs.lang.typescript.service.classic.VueClassicTypeScriptService">
+
+/**
+ * Refers to the classic service that predates Volar.
+ */
+fun isVueClassicTypeScriptServiceEnabled(project: Project, context: VirtualFile): Boolean {
+  if (!isVueServiceContext(project, context)) return false
+
+  return when (getVueSettings(project).serviceType) {
+    VueServiceSettings.AUTO, VueServiceSettings.VOLAR -> false
+    VueServiceSettings.TS_SERVICE -> isTypeScriptServiceBefore5Context(project) // with TS 5+ project, nothing will be enabled
+    VueServiceSettings.DISABLED -> false
+  }
 }
 
 private fun isTypeScriptServiceBefore5Context(project: Project): Boolean {
@@ -31,54 +66,4 @@ private fun isTypeScriptServiceBefore5Context(project: Project): Boolean {
   return version.major < 5
 }
 
-/**
- * Refers to the classic service that predates Volar.
- */
-fun isVueTypeScriptServiceEnabled(project: Project, context: VirtualFile): Boolean {
-  if (!isVueServiceContext(project, context)) return false
-
-  return when (getVueSettings(project).serviceType) {
-    VueServiceSettings.AUTO, VueServiceSettings.VOLAR -> false
-    VueServiceSettings.TS_SERVICE -> isTypeScriptServiceBefore5Context(project) // with TS 5+ project, nothing will be enabled
-    VueServiceSettings.DISABLED -> false
-  }
-}
-
-/**
- * If enabled but not available, will launch a background task that will eventually restart the services
- */
-fun isVolarEnabledAndAvailable(project: Project, context: VirtualFile): Boolean {
-  return isVolarFileTypeAcceptable(context) &&
-         isVolarEnabledByContextAndSettings(project, context) &&
-         VolarExecutableDownloader.getExecutableOrRefresh(project) != null
-}
-
-fun isVolarFileTypeAcceptable(file: VirtualFile): Boolean {
-  if (!TypeScriptLanguageServiceUtil.IS_VALID_FILE_FOR_SERVICE.value(file)) return false
-
-  return file.isVueFile || TypeScriptLanguageServiceUtil.ACCEPTABLE_TS_FILE.value(file)
-}
-
-private fun isVolarEnabledByContextAndSettings(project: Project, context: VirtualFile): Boolean {
-  if (ApplicationManager.getApplication().isUnitTestMode && forceEnabled) return true
-
-  if (!TypeScriptLanguageServiceUtil.isServiceEnabled(project)) return false
-  if (!isVueServiceContext(project, context)) return false
-  if (TypeScriptLibraryProvider.isLibraryOrBundledLibraryFile(project, context)) return false
-
-  return when (getVueSettings(project).serviceType) {
-    VueServiceSettings.AUTO, VueServiceSettings.VOLAR -> true
-    VueServiceSettings.TS_SERVICE -> false
-    VueServiceSettings.DISABLED -> false
-  }
-}
-
-private var forceEnabled = false
-
-/**
- * Please don't use unless there's no other choice, e.g., with [TypeScriptLanguageServiceUtil.TypeScriptUseServiceState.USE_FOR_EVALUATION]
- */
-@TestOnly
-fun markVolarForceEnabled(value: Boolean) {
-  forceEnabled = value
-}
+//</editor-fold>

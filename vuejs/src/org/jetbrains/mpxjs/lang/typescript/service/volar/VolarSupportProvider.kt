@@ -3,10 +3,12 @@ package org.jetbrains.mpxjs.lang.typescript.service.volar
 
 import com.intellij.javascript.nodejs.util.NodePackageRef
 import com.intellij.lang.javascript.ecmascript6.TypeScriptUtil
-import com.intellij.lang.typescript.lsp.*
+import com.intellij.lang.typescript.lsp.JSFrameworkLspServerDescriptor
+import com.intellij.lang.typescript.lsp.JSLspServerWidgetItem
+import com.intellij.lang.typescript.lsp.LspServerDownloader
+import com.intellij.lang.typescript.lsp.LspServerPackageDescriptor
 import com.intellij.lang.typescript.resolve.TypeScriptCompilerEvaluationFacade
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lsp.api.LspServer
@@ -15,56 +17,65 @@ import com.intellij.platform.lsp.api.LspServerSupportProvider.LspServerStarter
 import com.intellij.platform.lsp.api.lsWidget.LspServerWidgetItem
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.mpxjs.VuejsIcons
-import org.jetbrains.mpxjs.lang.typescript.service.isVolarEnabledAndAvailable
-import org.jetbrains.mpxjs.lang.typescript.service.isVolarFileTypeAcceptable
+import org.jetbrains.mpxjs.lang.typescript.service.VueServiceSetActivationRule
 import org.jetbrains.mpxjs.options.VueConfigurable
 import org.jetbrains.mpxjs.options.getVueSettings
 import java.io.File
 
-private val volarLspServerPackageDescriptor: () -> LspServerPackageDescriptor = {
-  LspServerPackageDescriptor("@vue/language-server",
-                             Registry.stringValue("vue.language.server.default.version"),
-                             "/bin/vue-language-server.js")
+private object VolarLspServerPackageDescriptor : LspServerPackageDescriptor("@vue/language-server",
+                                                                            "2.0.26",
+                                                                            "/bin/vue-language-server.js") {
+  override val defaultVersion: String get() = Registry.stringValue("vue.language.server.default.version")
 }
 
 class VolarSupportProvider : LspServerSupportProvider {
   override fun fileOpened(project: Project, file: VirtualFile, serverStarter: LspServerStarter) {
-    if (isVolarEnabledAndAvailable(project, file)) {
+    if (VueServiceSetActivationRule.isLspServerEnabledAndAvailable(project, file)) {
       serverStarter.ensureServerStarted(VolarServerDescriptor(project))
     }
   }
 
   override fun createLspServerWidgetItem(lspServer: LspServer, currentFile: VirtualFile?): LspServerWidgetItem =
-    LspServerWidgetItem(lspServer, currentFile, VuejsIcons.Vue, VueConfigurable::class.java)
+    JSLspServerWidgetItem(lspServer, currentFile, VuejsIcons.Vue, VuejsIcons.Vue, VueConfigurable::class.java)
 }
 
-class VolarServerDescriptor(project: Project) : JSFrameworkLspServerDescriptor(project, VolarExecutableDownloader, "Vue") {
-  override fun isSupportedFile(file: VirtualFile): Boolean = isVolarFileTypeAcceptable(file)
+class VolarServerDescriptor(project: Project) : JSFrameworkLspServerDescriptor(project, VueServiceSetActivationRule, "Vue") {
+  override fun createInitializationOptionsWithTS(targetPath: String): Any {
+    @Suppress("unused")
+    return object {
+      val typescript = object {
+        val tsdk = targetPath
+      }
+      val vue = object {
+        val hybridMode = false
+      }
+    }
+  }
 }
 
 @ApiStatus.Experimental
-object VolarExecutableDownloader : LspServerDownloader(volarLspServerPackageDescriptor()) {
+object VolarExecutableDownloader : LspServerDownloader(VolarLspServerPackageDescriptor) {
   override fun getSelectedPackageRef(project: Project): NodePackageRef {
     return getVueSettings(project).packageRef
   }
 
-  override fun getExecutable(project: Project, packageRef: NodePackageRef): String? {
-    val ref = extractRefText(packageRef)
-    if (ref == defaultPackageKey) {
-      if (TypeScriptCompilerEvaluationFacade.getInstance(project) != null) {
-        // work in progress
-        val file = File(TypeScriptUtil.getTypeScriptCompilerFolderFile(),
-                        "typescript/node_modules/tsc-vue/${packageDescriptor.packageRelativePath}")
-        val path = file.absolutePath
-        return path
-      }
-      else {
-        return getLspServerExecutablePath(packageDescriptor.serverPackage, packageDescriptor.packageRelativePath)
-      }
+  override fun getExecutableForDefaultKey(project: Project): String? {
+    if (TypeScriptCompilerEvaluationFacade.getInstance(project) != null) {
+      return getNewEvalExecutable()
     }
 
-    val suffix = FileUtil.toSystemDependentName(packageDescriptor.packageRelativePath)
+    return super.getExecutableForDefaultKey(project)
+  }
 
-    return if (ref.endsWith(suffix)) ref else "$ref$suffix"
+  private fun getNewEvalExecutable(): String {
+    // work in progress
+    val registryValue = Registry.stringValue("vue.language.server.default.version")
+    val version =
+      if (registryValue.startsWith("1")) "tsc-vue1" // explicit Registry value is needed for old Vue LS 1 New Eval
+      else "tsc-vue"
+    val file = File(TypeScriptUtil.getTypeScriptCompilerFolderFile(),
+                    "typescript/node_modules/$version/${packageDescriptor.defaultPackageRelativePath}")
+    val path = file.absolutePath
+    return path
   }
 }

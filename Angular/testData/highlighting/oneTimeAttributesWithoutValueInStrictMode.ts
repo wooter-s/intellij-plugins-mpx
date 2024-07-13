@@ -10,7 +10,7 @@ export declare type BooleanInput = string | boolean | null | undefined;
   template: "",
 })
 class SideNav {
-  private value: boolean
+  private value!: boolean
   get fixedInViewport(): boolean {
     return this.value;
   }
@@ -23,10 +23,9 @@ class SideNav {
 @Directive({
    selector: '[icn-btn]',
    standalone: true,
-   template: "",
  })
 class IcnBtn {
-  private value: boolean
+  private value!: boolean
   get disabled(): boolean {
     return this.value;
   }
@@ -41,14 +40,14 @@ class IcnBtn {
    template: `
       <div>
           <button disabled mat-icon-button></button>
-          <button <error descr="Type \"\" is not assignable to type { foo: string }">disabled</error> icn-btn></button>
-          <app-root <error descr="Type undefined is not assignable to type string">[foo]</error>></app-root>
+          <button <error descr="TS2322: Type 'string' is not assignable to type '{ foo: string; }'.">disabled</error> icn-btn></button>
+          <app-root <error descr="TS2322: Type 'undefined' is not assignable to type 'string'."><warning descr="[foo] requires value">[foo]</warning></error>></app-root>
           <mat-sidenav
             class="sidenav"
             fixedInViewport/>
           <mat-sidenav
             class="sidenav"
-            [fixedInViewport]="<error descr="Type number is not assignable to type BooleanInput  Type number is not assignable to type string | boolean | null | undefined    Type number is not assignable to type boolean">12</error>"/>
+            <error descr="TS2322: Type '12' is not assignable to type 'BooleanInput'.">[fixedInViewport]</error>="12"/>
       </div>
   `,
   standalone: true,

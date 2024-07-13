@@ -6,7 +6,7 @@ type Greeting = {
   hello: string;
 }
 
-type <warning descr="Unused type alias Greeting2">Greeting2</warning> = {
+type <warning descr="Unused type alias Greeting2"><weak_warning descr="TS6196: 'Greeting2' is declared but never used.">Greeting2</weak_warning></warning> = {
   foo: string;
 }
 
@@ -17,7 +17,7 @@ type <warning descr="Unused type alias Greeting2">Greeting2</warning> = {
  template: `
     <ng-container *ngIf="greeting$ | async as greeting">
       {{ greeting.hello }}
-      {{ greeting.<error descr="Unresolved variable foo">foo</error> }}
+      {{ greeting.<error descr="TS2339: Property 'foo' does not exist on type 'Greeting'.">foo</error> }}
     </ng-container>
   `,
 })

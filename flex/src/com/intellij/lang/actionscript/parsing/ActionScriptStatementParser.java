@@ -1,3 +1,4 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.actionscript.parsing;
 
 import com.intellij.lang.PsiBuilder;
@@ -18,21 +19,7 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
     super(parser);
   }
 
-  @Override
-  public void parseSourceElement() {
-    final IElementType tokenType = builder.getTokenType();
-    if (tokenType == JSTokenTypes.PACKAGE_KEYWORD) {
-      parsePackage();
-    }
-    else if (tokenType == JSTokenTypes.AT) {
-      builder.advanceLexer();
-      parseAttributeBody();
-    } else {
-      super.parseSourceElement();
-    }
-  }
-
-  private void parseAttributeBody() {
+  public void parseAttributeBody() {
     final PsiBuilder.Marker attribute = builder.mark();
     if(!checkMatches(builder, JSTokenTypes.IDENTIFIER, "javascript.parser.message.expected.identifier")) {
       attribute.drop();
@@ -41,7 +28,6 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
     myJavaScriptParser.getFunctionParser().parseAttributeBody();
     attribute.done(JSStubElementTypes.ATTRIBUTE);
   }
-
 
   /** advances lexer */
   @Override
@@ -58,8 +44,14 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
   }
 
   @Override
-  protected void doParseStatement() {
+  public void parseStatement() {
     final IElementType firstToken = builder.getTokenType();
+
+    if (firstToken == JSTokenTypes.PACKAGE_KEYWORD) {
+      parsePackage();
+      return;
+    }
+
     if (firstToken == JSTokenTypes.DEFAULT_KEYWORD) {
       parseDefaultNsStatement();
       return;
@@ -96,7 +88,7 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
       }
     }
 
-    super.doParseStatement();
+    super.parseStatement();
   }
 
   void parseIncludeDirective() {
@@ -212,8 +204,9 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
 
     if (builder.getTokenType() != JSTokenTypes.LBRACE) {
       builder.error(JavaScriptBundle.message("javascript.parser.message.expected.name.or.lbrace"));
-    } else {
-      parseBlockOrFunctionBody(BlockType.PACKAGE_OR_CLASS_BODY);
+    }
+    else {
+      parseBlockAndAttachStatementsDirectly();
     }
     _package.done(JSStubElementTypes.PACKAGE_STATEMENT);
   }
@@ -276,7 +269,7 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
         parseReferenceList(JSStubElementTypes.IMPLEMENTS_LIST);
       }
 
-      parseBlockOrFunctionBody(BlockType.PACKAGE_OR_CLASS_BODY);
+      parseBlockAndAttachStatementsDirectly();
       clazz.done(ActionScriptElementTypes.ACTIONSCRIPT_CLASS);
       clazz.setCustomEdgeTokenBinders(INCLUDE_DOC_COMMENT_AT_LEFT, WhitespacesBinders.DEFAULT_RIGHT_BINDER);
     }
@@ -319,7 +312,7 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
   protected boolean parseDialectSpecificSourceElements(PsiBuilder.Marker marker) {
     IElementType tokenType = builder.getTokenType();
     if (tokenType == JSTokenTypes.LBRACE) {
-      parseBlockOrFunctionBody(BlockType.PACKAGE_OR_CLASS_BODY);
+      parseBlockAndAttachStatementsDirectly();
       marker.done(ActionScriptElementTypes.CONDITIONAL_COMPILE_BLOCK_STATEMENT);
       return true;
     }
@@ -330,5 +323,16 @@ public final class ActionScriptStatementParser extends StatementParser<ActionScr
       return true;
     }
     return false;
+  }
+
+  @Override
+  public boolean parseForLoopHeader() {
+    LOG.assertTrue(builder.getTokenType() == JSTokenTypes.FOR_KEYWORD);
+    builder.advanceLexer();
+    final boolean hasEach = builder.getTokenType() == JSTokenTypes.EACH_KEYWORD;
+    if (hasEach) {
+      builder.advanceLexer();
+    }
+    return parseForLoopHeaderCondition();
   }
 }

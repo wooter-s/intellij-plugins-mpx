@@ -3,6 +3,7 @@ package org.intellij.prisma.lang.psi;
 
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.StubBasedPsiElement;
 
 public class PrismaVisitor extends PsiElementVisitor {
 
@@ -23,12 +24,14 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitDatasourceDeclaration(@NotNull PrismaDatasourceDeclaration o) {
-    visitDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitDeclaration(o);
     // visitKeyValueDeclaration(o);
   }
 
   public void visitEnumDeclaration(@NotNull PrismaEnumDeclaration o) {
-    visitDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitDeclaration(o);
     // visitEntityDeclaration(o);
   }
 
@@ -37,7 +40,8 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitEnumValueDeclaration(@NotNull PrismaEnumValueDeclaration o) {
-    visitMemberDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitMemberDeclaration(o);
     // visitFieldAttributeOwner(o);
   }
 
@@ -50,7 +54,8 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitFieldDeclaration(@NotNull PrismaFieldDeclaration o) {
-    visitMemberDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitMemberDeclaration(o);
     // visitTypeOwner(o);
     // visitFieldAttributeOwner(o);
   }
@@ -69,12 +74,14 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitGeneratorDeclaration(@NotNull PrismaGeneratorDeclaration o) {
-    visitDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitDeclaration(o);
     // visitKeyValueDeclaration(o);
   }
 
   public void visitKeyValue(@NotNull PrismaKeyValue o) {
-    visitMemberDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitMemberDeclaration(o);
   }
 
   public void visitKeyValueBlock(@NotNull PrismaKeyValueBlock o) {
@@ -98,7 +105,8 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitModelDeclaration(@NotNull PrismaModelDeclaration o) {
-    visitDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitDeclaration(o);
     // visitEntityDeclaration(o);
     // visitTableEntityDeclaration(o);
   }
@@ -122,12 +130,14 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitTypeAlias(@NotNull PrismaTypeAlias o) {
-    visitDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitDeclaration(o);
     // visitEntityDeclaration(o);
   }
 
   public void visitTypeDeclaration(@NotNull PrismaTypeDeclaration o) {
-    visitDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitDeclaration(o);
     // visitEntityDeclaration(o);
     // visitTableEntityDeclaration(o);
   }
@@ -149,9 +159,14 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitViewDeclaration(@NotNull PrismaViewDeclaration o) {
-    visitDeclaration(o);
+    visitStubBasedPsiElement(o);
+    // visitDeclaration(o);
     // visitEntityDeclaration(o);
     // visitTableEntityDeclaration(o);
+  }
+
+  public void visitStubBasedPsiElement(@NotNull StubBasedPsiElement o) {
+    visitElement(o);
   }
 
   public void visitArgumentsOwner(@NotNull PrismaArgumentsOwner o) {
@@ -159,14 +174,6 @@ public class PrismaVisitor extends PsiElementVisitor {
   }
 
   public void visitBlock(@NotNull PrismaBlock o) {
-    visitElement(o);
-  }
-
-  public void visitDeclaration(@NotNull PrismaDeclaration o) {
-    visitElement(o);
-  }
-
-  public void visitMemberDeclaration(@NotNull PrismaMemberDeclaration o) {
     visitElement(o);
   }
 

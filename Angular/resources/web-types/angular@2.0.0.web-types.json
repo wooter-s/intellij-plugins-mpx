@@ -12,6 +12,17 @@
       ]
     }
   },
+  "contexts-config": {
+    "angular-service-support": {
+      "false": {
+        "enable-when": {
+          "node-packages": [
+            "@angular/core"
+          ]
+        }
+      }
+    }
+  },
   "contributions": {
     "html": {
       "elements": [

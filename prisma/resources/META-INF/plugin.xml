@@ -67,7 +67,6 @@
                         implementationClass="org.intellij.prisma.ide.formatter.PrismaFormattingModelBuilder"/>
         <postFormatProcessor
                 implementation="org.intellij.prisma.ide.formatter.PrismaTrailingSpacesFormatProcessor"/>
-        <formattingService implementation="org.intellij.prisma.ide.formatter.PrismaFormattingService"/>
         <formatOnSaveOptions.defaultsProvider implementation="org.intellij.prisma.ide.formatter.PrismaFormatOnSaveDefaultsProvider"/>
 
         <!-- Documentation -->
@@ -82,10 +81,14 @@
         <!-- Indexing -->
         <additionalLibraryRootsProvider
                 implementation="org.intellij.prisma.ide.indexing.PrismaAdditionalLibraryRootsProvider"/>
+        <stubElementTypeHolder class="org.intellij.prisma.lang.psi.stubs.PrismaStubElementTypes" externalIdPrefix="PRISMA:"/>
+        <stubIndex implementation="org.intellij.prisma.ide.indexing.PrismaEntitiesIndex"/>
+        <stubIndex implementation="org.intellij.prisma.ide.indexing.PrismaKeyValueDeclarationsIndex"/>
 
         <!-- Refactoring -->
         <lang.refactoringSupport language="Prisma"
                                  implementationClass="org.intellij.prisma.ide.refactoring.PrismaRefactoringSupport"/>
+        <refactoring.helper implementation="org.intellij.prisma.ide.refactoring.PrismaFormatRefactoringHelper"/>
 
         <!-- Structure view -->
         <lang.psiStructureViewFactory language="Prisma"
@@ -97,12 +100,20 @@
 
         <!-- LSP -->
         <platform.lsp.serverSupportProvider implementation="org.intellij.prisma.ide.lsp.PrismaLspServerSupportProvider"/>
+        <registryKey defaultValue="" description="Prisma service version for downloading" key="prisma.language.server.default.version"/>
 
         <!-- UI -->
         <notificationGroup id="Prisma"
                            displayType="BALLOON"
                            bundle="messages.PrismaBundle"
                            key="notification.group.prisma"/>
+        <projectConfigurable id="settings.prisma"
+                             groupId="language"
+                             instance="org.intellij.prisma.ide.ui.PrismaSettingsConfigurable"
+                             bundle="messages.PrismaBundle"
+                             key="prisma.settings.configurable.title"
+                             nonDefaultProject="true"
+        />
 
         <!-- Find Usages -->
        <lang.findUsagesProvider language="Prisma" implementationClass="org.intellij.prisma.lang.findUsages.PrismaFindUsagesProvider"/>

@@ -19,12 +19,12 @@ import com.intellij.model.Pointer
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
+import com.intellij.psi.createSmartPointer
 import com.intellij.psi.impl.source.html.HtmlFileImpl
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiUtilCore
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.applyIf
 import com.intellij.util.asSafely
 import org.jetbrains.mpxjs.codeInsight.resolveElementTo
@@ -149,7 +149,8 @@ class VueComponents {
 
       if (decorator is StubBasedPsiElementBase<*>) {
         decorator.stub?.let {
-          return it.findChildStubByType(JSStubElementTypes.OBJECT_LITERAL_EXPRESSION)
+          return (it.findChildStubByType(JSStubElementTypes.CALL_EXPRESSION) ?: it)
+            .findChildStubByType(JSStubElementTypes.OBJECT_LITERAL_EXPRESSION)
             ?.psi
         }
       }

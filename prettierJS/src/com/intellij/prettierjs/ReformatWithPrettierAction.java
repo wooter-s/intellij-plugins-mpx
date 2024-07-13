@@ -173,7 +173,10 @@ public class ReformatWithPrettierAction extends AnAction implements DumbAware {
     return checkNodeAndPackage(file, editor, errorHandler);
   }
 
-  public static void processFileInEditor(@NotNull Project project, @NotNull Editor editor, @NotNull ErrorHandler errorHandler, @Nullable TextRange targetRange) {
+  public static void processFileInEditor(@NotNull Project project,
+                                         @NotNull Editor editor,
+                                         @NotNull ErrorHandler errorHandler,
+                                         @Nullable TextRange targetRange) {
     if (!isAvailable(project, editor, errorHandler)) return;
     PsiFile file = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
     if (file == null) {
@@ -243,7 +246,7 @@ public class ReformatWithPrettierAction extends AnAction implements DumbAware {
 
     Project project = file.getProject();
 
-    if (!checkNodeAndPackage(file, null, PrettierActionOnSave.NOOP_ERROR_HANDLER)) {
+    if (!checkNodeAndPackage(file, null, NOOP_ERROR_HANDLER)) {
       return range;
     }
 
@@ -260,7 +263,7 @@ public class ReformatWithPrettierAction extends AnAction implements DumbAware {
     return range;
   }
 
-  private static void ensureConfigsSaved(@NotNull List<VirtualFile> virtualFiles, @NotNull Project project) {
+  static void ensureConfigsSaved(@NotNull List<VirtualFile> virtualFiles, @NotNull Project project) {
     FileDocumentManager documentManager = FileDocumentManager.getInstance();
     for (VirtualFile config : PrettierUtil.lookupPossibleConfigFiles(virtualFiles, project)) {
       Document document = documentManager.getCachedDocument(config);
@@ -353,9 +356,9 @@ public class ReformatWithPrettierAction extends AnAction implements DumbAware {
   /**
    * @param result (new text length) - (old text length)
    */
-  private static int applyFormatResult(@NotNull Project project,
-                                       @NotNull VirtualFile virtualFile,
-                                       @NotNull PrettierLanguageService.FormatResult result) {
+  static int applyFormatResult(@NotNull Project project,
+                               @NotNull VirtualFile virtualFile,
+                               @NotNull PrettierLanguageService.FormatResult result) {
     Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
     int delta = 0;
     if (document != null && StringUtil.isEmpty(result.error) && !result.ignored && !result.unsupported) {
@@ -372,8 +375,7 @@ public class ReformatWithPrettierAction extends AnAction implements DumbAware {
     return delta;
   }
 
-  @Nullable
-  private static PrettierLanguageService.FormatResult performRequestForFile(@NotNull PsiFile currentFile, @Nullable TextRange range) {
+  static @Nullable PrettierLanguageService.FormatResult performRequestForFile(@NotNull PsiFile currentFile, @Nullable TextRange range) {
     boolean edt = ApplicationManager.getApplication().isDispatchThread();
     if (!edt && ApplicationManager.getApplication().isReadAccessAllowed()) {
       LOG.error("JSLanguageServiceUtil.awaitFuture() under read action may cause deadlock");
@@ -509,6 +511,14 @@ public class ReformatWithPrettierAction extends AnAction implements DumbAware {
       showError(project, editor, text, () -> showErrorDetails(project, details));
     }
   }
+
+  static final ReformatWithPrettierAction.ErrorHandler NOOP_ERROR_HANDLER = new ReformatWithPrettierAction.ErrorHandler() {
+    @Override
+    public void showError(@NotNull Project project, @Nullable Editor editor, @NotNull String text, @Nullable Runnable onLinkClick) {
+      // No need to show any notification in case of 'Prettier on save' failure.
+      // Most likely the file is simply not syntactically valid at the moment.
+    }
+  };
 
   private static class DefaultErrorHandler implements ErrorHandler {
     @Override

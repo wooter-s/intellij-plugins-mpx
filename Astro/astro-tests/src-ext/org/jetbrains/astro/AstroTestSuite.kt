@@ -2,6 +2,8 @@
 package org.jetbrains.astro
 
 import org.jetbrains.astro.codeInsight.*
+import org.jetbrains.astro.codeInsight.highlighting.AstroHighlightingTest
+import org.jetbrains.astro.codeInsight.highlighting.AstroSuppressedInspectionsHighlightingTest
 import org.jetbrains.astro.lang.AstroHighlightingLexerTest
 import org.jetbrains.astro.lang.AstroLexerTest
 import org.jetbrains.astro.lang.AstroParserTest
@@ -15,12 +17,16 @@ import org.junit.runners.Suite
   AstroParserTest::class,
   AstroCompletionTest::class,
   AstroHighlightingTest::class,
+  AstroSuppressedInspectionsHighlightingTest::class,
   AstroDocumentationTest::class,
   AstroInspectionsTest::class,
   AstroTypingTest::class,
   AstroFormattingTest::class,
   AstroCopyPasteTest::class,
   AstroHtmlFormatterTest::class,
-  AstroCommenterTest::class
+  AstroCommenterTest::class,
+  AstroGotoDeclarationTest::class,
+  AstroFindUsagesTest::class,
+  AstroRenameTest::class,
 )
 class AstroTestSuite

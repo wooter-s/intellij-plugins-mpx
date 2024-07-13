@@ -18,7 +18,7 @@ import com.intellij.psi.css.impl.CssElementTypes
 import com.intellij.psi.css.reference.CssReference
 import com.intellij.psi.impl.source.resolve.reference.impl.PsiPolyVariantCachingReference
 import com.intellij.util.ProcessingContext
-import org.apache.commons.text.WordUtils
+import org.apache.commons.lang3.text.WordUtils
 import org.jetbrains.mpxjs.codeInsight.attributes.isVBindClassAttribute
 import org.jetbrains.mpxjs.codeInsight.template.VueTemplateScopesResolver
 import org.jetbrains.mpxjs.lang.expr.VueJSLanguage

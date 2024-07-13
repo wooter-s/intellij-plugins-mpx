@@ -1,6 +1,13 @@
 package org.intellij.prisma.lang.psi
 
-import com.intellij.psi.tree.IFileElementType
+import com.intellij.psi.tree.IStubFileElementType
 import org.intellij.prisma.lang.PrismaLanguage
+import org.intellij.prisma.lang.psi.stubs.PrismaFileStub
 
-object PrismaFileElementType : IFileElementType("PRISMA_FILE", PrismaLanguage)
+private const val STUB_VERSION = 2
+
+object PrismaFileElementType : IStubFileElementType<PrismaFileStub>("PRISMA_FILE", PrismaLanguage) {
+  override fun getExternalId(): String = "${language.id}.file"
+
+  override fun getStubVersion(): Int = super.getStubVersion() + STUB_VERSION
+}

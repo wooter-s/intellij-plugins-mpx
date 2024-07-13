@@ -19,7 +19,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiUtilCore
 import com.intellij.psi.xml.XmlTag
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.asSafely
 import com.intellij.xml.util.XmlTagUtil
 import org.angular2.Angular2DecoratorUtil
@@ -52,7 +51,7 @@ class Angular2DeclarationsCopyPasteProcessor : JSCopyPasteProcessorBase<Angular2
   }
 
   override fun isAcceptablePasteContext(context: PsiElement): Boolean =
-    context.containingFile.let { it is Angular2HtmlFile || (it is JSFile && it.language == Angular2Language.INSTANCE) }
+    context.containingFile.let { it is Angular2HtmlFile || (it is JSFile && it.language == Angular2Language) }
 
   override fun hasUnsupportedContentInCopyContext(parent: PsiElement, textRange: TextRange): Boolean =
     false

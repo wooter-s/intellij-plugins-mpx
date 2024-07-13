@@ -98,7 +98,6 @@ abstract class TerraformInspectionFixtureTestCase : InspectionFixtureTestCase() 
   open fun skipCheckPreview(intentionAction: IntentionAction): Boolean = intentionAction.text in skipPreview
 
   private val skipQuickFix = setOf(
-    "Save  to dictionary",
     "Navigate to  duplicate",
     "View duplicates like this",
     "Run Terraform init",

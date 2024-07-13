@@ -1,24 +1,27 @@
 package org.intellij.prisma.completion
 
-import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.TestLookupElementPresentation
+import com.intellij.webSymbols.checkLookupItems
+import com.intellij.webSymbols.noAutoComplete
 import junit.framework.TestCase
 import org.intellij.prisma.PrismaTestCase
 import org.intellij.prisma.ide.documentation.PrismaDocumentationProvider
+import org.intellij.prisma.lang.PrismaConstants
 import org.intellij.prisma.lang.PrismaFileType
+import org.intellij.prisma.reformatDocumentation
 
-abstract class PrismaCompletionTestBase : PrismaTestCase() {
-
+abstract class PrismaCompletionTestBase(testCasePath: String) : PrismaTestCase(testCasePath) {
   protected fun completeSelected(
     source: String,
     expected: String,
     selected: String,
+    additionalFile: String? = null,
   ): Array<LookupElement> {
-    return completeAndGetLookupElements(source, expected, selected)
+    return completeAndGetLookupElements(source, expected, selected, additionalFile)
   }
 
   protected fun getLookupElements(source: String): Array<LookupElement> {
@@ -28,10 +31,14 @@ abstract class PrismaCompletionTestBase : PrismaTestCase() {
   private fun completeAndGetLookupElements(
     source: String,
     expected: String,
-    selected: String? = null
+    selected: String? = null,
+    additionalFile: String? = null,
   ): Array<LookupElement> {
-    return withoutAutoCompletion {
+    return noAutoComplete {
       myFixture.configureByText(PrismaFileType, source)
+      if (!additionalFile.isNullOrEmpty()) {
+        myFixture.addFileToProject("additionalSchema.prisma", additionalFile)
+      }
       val lookupElements = myFixture.completeBasic()
       TestCase.assertNotNull(lookupElements)
       if (selected != null) {
@@ -62,19 +69,28 @@ abstract class PrismaCompletionTestBase : PrismaTestCase() {
   protected fun checkLookupDocumentation(lookupElement: LookupElement?) {
     val element = lookupElement?.psiElement
     assertNotNull(element)
-    val doc = PrismaDocumentationProvider().generateDoc(element!!, null)
-    assertNotNull(doc)
-    assertSameLinesWithFile("${testDataPath}/${getTestName("html")}", doc!!)
+    val doc = PrismaDocumentationProvider().generateDoc(element!!, null)?.let {
+      assertNotNull(it)
+      reformatDocumentation(project, it)
+    }
+    assertSameLinesWithFile("${testDataPath}/${getTestFileName("html")}", doc!!)
   }
 
-  protected fun <T> withoutAutoCompletion(block: () -> T): T {
-    val before = CodeInsightSettings.getInstance().AUTOCOMPLETE_ON_CODE_COMPLETION
-    CodeInsightSettings.getInstance().AUTOCOMPLETE_ON_CODE_COMPLETION = false
-    try {
-      return block()
-    }
-    finally {
-      CodeInsightSettings.getInstance().AUTOCOMPLETE_ON_CODE_COMPLETION = before
+  protected fun checkLookupElementsInSplitSchema(fileDir: String? = null, includePrimitive: Boolean = false) {
+    doConfiguredTest(dir = true, configureFileDir = fileDir) {
+      checkLookupItems(
+        renderPriority = true,
+        renderTypeText = true,
+        expectedDataLocation = testName,
+        lookupItemFilter = {
+          if (!includePrimitive) {
+            it.lookupString !in PrismaConstants.PrimitiveTypes.ALL
+          }
+          else {
+            true
+          }
+        }
+      )
     }
   }
 

@@ -19,10 +19,10 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DartCoverageEngine extends CoverageEngine {
+public final class DartCoverageEngine extends CoverageEngine {
 
   public static DartCoverageEngine getInstance() {
-    return CoverageEngine.EP_NAME.findExtensionOrFail(DartCoverageEngine.class);
+    return EP_NAME.findExtensionOrFail(DartCoverageEngine.class);
   }
 
   @Override
@@ -99,7 +99,7 @@ public class DartCoverageEngine extends CoverageEngine {
 
   @NotNull
   @Override
-  public String getQualifiedName(@NotNull File outputFile, @NotNull PsiFile sourceFile) {
+  protected String getQualifiedName(@NotNull File outputFile, @NotNull PsiFile sourceFile) {
     return getQName(sourceFile);
   }
 

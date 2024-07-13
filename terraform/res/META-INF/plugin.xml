@@ -33,6 +33,26 @@
   <!--suppress PluginXmlValidity -->
   <change-notes>
     <![CDATA[
+    2024.2
+    <ul>
+      <li>AI Full Line Completion for Terraform is now available, running locally on your machine without using external services. It is disabled by default but can be enabled for use. We appreciate your feedback to help improve the model (note that we do not learn from your data).</li>
+      <li>Basic operations, syntax highlighting, and code completion for Terraform are now available immediately, without waiting for indexing. You can start working right away.</li>
+      <li>Enhanced the quick help view for HCL in Terraform, making it more readable and informative.</li>
+      <li>Added a documentation tooltip that appears when hovering over a Terraform resource or attribute.</li>
+      <li>Enhanced performance of the Documentation tool window for faster updates and better visibility of progress.</li>
+      <li>Included the ability to use terraform fmt as an alternative to the default formatter.</li>
+      <li>Added support for composite extensions for .tfpl files. This allows automatic detection of the data language for templates based on composite extensions. For example, if a file has the extension .js.tftpl, the file will be recognized with JavaScript as the data language and tftpl as the primary language.</li>
+      <li>Added support for Terraform resource imports, allowing users to add and manage imported resources directly within the IDE, with automatic detection and matching of resource addresses.</li>
+      <li>Provided support for resolving and finding usages for included variables in Terraform projects. This feature allows users to see the final values of variables, navigate through variable references, and view environment-specific values. Additionally, it provides convenient navigation and refactoring options, enabling users to add or change values across all environments and generate necessary binding variables efficiently.</li>
+      <li>Added support for working with projects in the WSL context. If a project is located in WSL and opened from IntelliJ IDEA, the Terraform installed in the WSL distribution where the project resides is used.</li>
+      <li>Included support for optional parameters in Terraform variable definitions and module usage, including code completion and documentation.</li>
+      <li>Introduced "Deep search for variables" option in Settings | Advanced Settings to enable searching for variables in nested directories (with the ability to disable this behavior).</li>
+      <li>Added the ability to use Move Statement Up/Down for multiple selected blocks.</li>
+      <li>You can now specify tfvars in the Run configuration.</li>
+      <li>Terraform code completion for providers and HCL now scales with the tooltip window, fixing the issue of truncated documentation and enhancing the usefulness of quick documentation.</li>
+      <li>Added highlighting for corresponding parentheses in HCL, enhancing code readability and convenience.</li>
+      <li>The Terraform path in Settings now defaults automatically if the field is left empty, ensuring seamless execution of Terraform commands.</li>
+    </ul>
     2024.1
     <ul>
       <li>Improves code completion for a wide range of third-party Terraform providers from the Terraform Registry, supporting efficient coding.</li>
@@ -75,13 +95,12 @@
 
   <dependencies>
     <plugin id="com.intellij.modules.lang"/>
+    <module name="intellij.platform.vcs.impl"/>
   </dependencies>
 
   <resource-bundle>messages.HCLBundle</resource-bundle>
 
   <extensions defaultExtensionNs="com.intellij">
-    <iconMapper mappingFile="TerraformIconMappings.json"/>
-
     <fileType name="HCL" language="HCL" extensions="hcl;nomad" implementationClass="org.intellij.terraform.hcl.HCLFileType" fieldName="INSTANCE"/>
     <lang.parserDefinition language="HCL" implementationClass="org.intellij.terraform.hcl.HCLParserDefinition"/>
 
@@ -129,6 +148,7 @@
     <codeStyleSettingsProvider implementation="org.intellij.terraform.hcl.formatter.HCLCodeStyleSettingsProvider"/>
     <langCodeStyleSettingsProvider implementation="org.intellij.terraform.hcl.formatter.HCLLanguageCodeStyleSettingsProvider"/>
     <lang.formatter language="HCL" implementationClass="org.intellij.terraform.hcl.formatter.HCLFormattingBuilderModel"/>
+    <formattingService implementation="org.intellij.terraform.hcl.formatter.TfAsyncFormattingService"/>
     <lang.quoteHandler language="HCL" implementationClass="org.intellij.terraform.hcl.formatter.HCLQuoteHandler"/>
 
     <!-- Handles autoinsert '}' after '${' in string literals (Issue https://github.com/VladRassokhin/intellij-hcl/issues/63>)-->
@@ -137,7 +157,7 @@
     <!--Spellchecking -->
     <spellchecker.support language="HCL" implementationClass="org.intellij.terraform.hcl.spellchecker.HCLSpellcheckerStrategy"/>
     <spellchecker.bundledDictionaryProvider implementation="org.intellij.terraform.TerraformBundledDictionaryProvider"/>
-    <spellchecker.support language="HCL" implementationClass="org.intellij.terraform.config.spellchecker.TerraformSpellcheckingStrategy"/>
+    <extendWordSelectionHandler implementation="org.intellij.terraform.hcl.editor.HCLHILStringLiteralSelectionHandler"/>
 
     <!-- Fixture for todos indexing -->
     <indexPatternBuilder implementation="org.intellij.terraform.hcl.search.HCLIndexPatternBuilder"/>
@@ -159,7 +179,6 @@
     <psi.referenceContributor language="HIL" implementation="org.intellij.terraform.hil.psi.ILReferenceContributor"/>
     <psi.referenceContributor language="HCL" implementation="org.intellij.terraform.hil.psi.ILReferenceContributor"/>
     <completion.contributor language="HIL" implementationClass="org.intellij.terraform.hil.codeinsight.HILCompletionContributor"/>
-    <completion.contributor language="HCL" implementationClass="org.intellij.terraform.hil.codeinsight.HILCompletionContributor"/>
     <lang.elementManipulator forClass="org.intellij.terraform.hil.psi.ILVariable"
                              implementationClass="org.intellij.terraform.hil.psi.ILVariableManipulator"/>
     <lang.elementManipulator forClass="org.intellij.terraform.hil.psi.ILLiteralExpression"
@@ -201,7 +220,7 @@
 
     <registryKey key="terraform.registry.metadata.parallelism" defaultValue="4"
                  description="Specifies number of max parallel building metadata"
-                 restartRequired="true"/>
+                 restartRequired="false"/>
 
     <statementUpDownMover implementation="org.intellij.terraform.config.HCLStatementMover" id="HCL_SM" order="before line"/>
 
@@ -218,6 +237,7 @@
 
     <vfs.asyncListener implementation="org.intellij.terraform.config.model.local.LocalSchemaVfsListener"/>
     <projectFileScanner implementation="org.intellij.terraform.config.model.local.LocalSchemaIndexableFileScanner"/>
+    <postStartupActivity implementation="org.intellij.terraform.runtime.TerraformPathDetector$DetectOnStart" />
 
     <!-- Code Inspections -->
     <!-- HCL used instead HCL-Terraform, to apply to all psi elements. .hcl files filtered out in #buildVisito method -->
@@ -232,10 +252,10 @@
                      groupKey="terraform.files.inspection.group.display.name" enabledByDefault="true" level="ERROR"
                      suppressId="ConflictingProperties"
                      implementationClass="org.intellij.terraform.config.inspection.HCLBlockConflictingPropertiesInspection"/>
-    <localInspection language="HCL" applyToDialects="true" shortName="HCLUnknownBlockType" bundle="messages.HCLBundle"
+    <localInspection language="HCL" applyToDialects="true" shortName="TfUnknownBlockType" bundle="messages.HCLBundle"
                      key="unknown.block.type.inspection.display.name"
                      groupKey="terraform.files.inspection.group.display.name" enabledByDefault="true" level="WARNING"
-                     implementationClass="org.intellij.terraform.config.inspection.HCLUnknownBlockTypeInspection"/>
+                     implementationClass="org.intellij.terraform.config.inspection.TfUnknownBlockTypeInspection"/>
     <localInspection language="HCL" applyToDialects="true" shortName="HCLDeprecatedElement" bundle="messages.HCLBundle"
                      key="deprecated.element.inspection.display.name"
                      groupKey="terraform.files.inspection.group.display.name" enabledByDefault="true" level="WEAK WARNING"
@@ -268,6 +288,14 @@
                      groupKey="terraform.files.inspection.group.display.name" enabledByDefault="true" level="ERROR"
                      suppressId="LiteralValidness"
                      implementationClass="org.intellij.terraform.config.inspection.HCLLiteralValidnessInspection"/>
+    <localInspection language="HCL" applyToDialects="true" shortName="TfUnknownProperty" bundle="messages.HCLBundle"
+                     key="unknown.property.in.block.inspection.display.name"
+                     groupKey="terraform.files.inspection.group.display.name" enabledByDefault="true" level="WARNING"
+                     implementationClass="org.intellij.terraform.config.inspection.TfUnknownPropertyInspection"/>
+    <localInspection language="HCL" applyToDialects="true" shortName="TfUnknownResource" bundle="messages.HCLBundle"
+                     key="unknown.resource.identifier.inspection.display.name"
+                     groupKey="terraform.files.inspection.group.display.name" enabledByDefault="true" level="WARNING"
+                     implementationClass="org.intellij.terraform.config.inspection.TfUnknownResourceInspection"/>
 
     <!--region TF Duplicates-->
     <localInspection language="HCL" applyToDialects="true" shortName="TFDuplicatedProvider" bundle="messages.HCLBundle"
@@ -355,9 +383,14 @@
                      bundle="messages.HCLBundle"
                      descriptionKey="terraform.variables.deep.search"/>
 
-    <projectService serviceImplementation="org.intellij.terraform.runtime.TerraformToolProjectSettings"/>
+    <advancedSetting id="org.intellij.terraform.config.formatting"
+                     default="false"
+                     groupKey="advanced.setting.terraform"
+                     bundle="messages.HCLBundle"
+                     descriptionKey="terraform.formatting"/>
+
     <projectConfigurable groupId="tools" instance="org.intellij.terraform.runtime.TerraformToolConfigurable"
-                         id="reference.settingsdialog.project.terraform"
+                         id="reference.settings.dialog.project.terraform"
                          key="terraform.name" bundle="messages.HCLBundle"/>
 
     <configurationType implementation="org.intellij.terraform.runtime.TerraformConfigurationType"/>
@@ -370,26 +403,14 @@
     <checkinHandlerFactory implementation="org.intellij.terraform.config.actions.TFFmtCheckinFactory" order="last"/>
     <macro implementation="org.intellij.terraform.macros.TerraformExecutableMacro"/>
 
-    <fileTypeStatisticProvider implementation="org.intellij.terraform.hcl.TerraformFileTypeStatisticProvider"/>
     <notificationGroup id="Terraform Execution" displayType="TOOL_WINDOW" toolWindowId="Run" bundle="messages.HCLBundle" key="notification.group.terraform.execution"/>
 
     <dependencySupport kind="executable" coordinate="terraform"/>
   </extensions>
 
   <actions>
-    <!-- Generate actions -->
-    <group id="TF.GenerateGroup">
-      <action id="GenerateTFResource" class="org.intellij.terraform.config.generate.GenerateResource"/>
-      <action id="GenerateTFDataSource" class="org.intellij.terraform.config.generate.GenerateDataSource"/>
-      <action id="GenerateTFVariable" class="org.intellij.terraform.config.generate.GenerateVariable"/>
-      <action id="GenerateTFOutput" class="org.intellij.terraform.config.generate.GenerateOutput"/>
-      <action id="GenerateTFProvider" class="org.intellij.terraform.config.generate.GenerateProvider"/>
-      <action id="GenerateTFModule" class="org.intellij.terraform.config.generate.GenerateModule"/>
-      <!--<action id="GenerateTF" text="..." class=""/>-->
-      <add-to-group group-id="GenerateGroup" anchor="first"/>
-    </group>
-
     <action icon="AllIcons.General.Warning" id="TFInitRequiredAction" class="org.intellij.terraform.config.actions.TFInitRequiredAction"/>
+    <action id="Terraform.InstallTerraform" class="org.intellij.terraform.install.InstallTerraformAction"/>
 
     <group id="TFTools" popup="true" icon="org.intellij.terraform.TerraformIcons.Terraform"
            class="com.intellij.ide.actions.NonTrivialActionGroup">
@@ -403,6 +424,5 @@
       <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
       <add-to-group group-id="EditorLangPopupMenu" anchor="last"/>
     </group>
-
   </actions>
 </idea-plugin>

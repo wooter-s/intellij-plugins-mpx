@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Person} from "../Person";
 
 @Component({
@@ -14,7 +14,7 @@ export class ChildComponent implements OnInit {
 
     @Input() titleContent: string;
 
-    @Input() section: any;
+    @Input() section: number;
 
     @Input() inputElement: HTMLInputElement;
 

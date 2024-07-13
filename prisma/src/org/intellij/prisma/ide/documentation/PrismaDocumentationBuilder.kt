@@ -44,8 +44,9 @@ class PrismaDocumentationBuilder(private val element: PsiElement) {
     val schema = PrismaSchemaProvider.getEvaluatedSchema(PrismaSchemaEvaluationContext.forElement(element))
     val schemaElement = schema.match(element) ?: return null
     val declaration = schemaElement as? PrismaSchemaDeclaration
-    val file = element.containingFile as? PrismaFile
-    val params = declaration?.getAvailableParams(file?.datasourceType, false) ?: emptyList()
+    val file = element.containingFile as? PrismaFile ?: return null
+    val datasourceTypes = file.metadata.datasourceTypes
+    val params = declaration?.getAvailableParams(datasourceTypes, false) ?: emptyList()
     val definition = declaration?.signature ?: buildDefinitionFromSchema(schemaElement, params)
 
     return buildString {
@@ -119,17 +120,12 @@ class PrismaDocumentationBuilder(private val element: PsiElement) {
 
     sections {
       for ((i, param) in params.withIndex()) {
-        val header = if (i == 0) {
-          PrismaBundle.message("prisma.doc.section.params")
-        }
-        else {
-          ""
-        }
+        val header = if (i == 0) PrismaBundle.message("prisma.doc.section.params") else ""
 
         section(header) {
-          pre(param.label)
-          cellWithLeftPadding()
-          append(documentationMarkdownToHtml(param.documentation) ?: "")
+          cell { pre(param.label) }
+          cellDivider()
+          cell(noWrap = false) { append(documentationMarkdownToHtml(param.documentation) ?: "") }
         }
       }
     }
@@ -143,29 +139,37 @@ class PrismaDocumentationBuilder(private val element: PsiElement) {
   }
 
   private fun StringBuilder.tableEntityMembers(element: PrismaTableEntityDeclaration) {
-    sections {
-      val block = element.getFieldDeclarationBlock() ?: return@sections
+    val block = element.getFieldDeclarationBlock() ?: return
 
+    sections {
       val fields = block.fieldDeclarationList
       if (fields.isNotEmpty()) {
         section(PrismaBundle.message("prisma.doc.section.fields")) {
-          fields.joinTo(this, separator = "<p>") {
-            psiRenderer.pre(it.identifier)
+          cell {
+            fields.forEach {
+              append(psiRenderer.pre(it.identifier).wrapWith(HtmlChunk.p()))
+            }
           }
-          cellWithLeftPadding()
-          fields.joinTo(this, separator = "<p>") {
-            psiRenderer.pre(it.fieldType)
+          cellDivider()
+          cell {
+            fields.forEach {
+              append(psiRenderer.span(it.fieldType).wrapWith(HtmlChunk.p()))
+            }
           }
         }
       }
 
       val attributeList = block.blockAttributeList
       if (attributeList.isNotEmpty()) {
-        section(
-          PrismaBundle.message("prisma.doc.section.attributes"),
-          DocumentationMarkup.SECTION_CONTENT_CELL.attr("colspan", 2).style("white-space: nowrap")
-        ) {
-          attributeList.joinTo(this, separator = "<p>") { psiRenderer.pre(it) }
+        section(PrismaBundle.message("prisma.doc.section.attributes")) {
+          DocumentationMarkup.SECTION_CONTENT_CELL.style(NO_WRAP)
+            .let { if (fields.isNotEmpty()) it.attr("colspan", 3) else it }
+            .let { cell ->
+              cell.children(attributeList.map { attr ->
+                psiRenderer.pre(attr).wrapWith(HtmlChunk.p())
+              })
+            }
+            .let { append(it) }
         }
       }
     }
@@ -179,18 +183,30 @@ class PrismaDocumentationBuilder(private val element: PsiElement) {
 
     sections {
       section(PrismaBundle.message("prisma.doc.section.attributes")) {
-        attributeList.joinTo(this, separator = "<p>") { psiRenderer.pre(it) }
+        cell {
+          attributeList.forEach {
+            append(psiRenderer.pre(it, noWrap = false).wrapWith(HtmlChunk.p()))
+          }
+        }
       }
     }
   }
 
-  private fun StringBuilder.cellWithLeftPadding() {
-    append(DocumentationMarkup.SECTION_CONTENT_CELL.style("padding-left: 15px"))
+  private fun StringBuilder.cellDivider() {
+    append(DocumentationMarkup.SECTION_CONTENT_CELL.style("padding-left: 10px"))
   }
 
-  private fun PrismaPsiRenderer.pre(element: PsiElement?) =
-    HtmlChunk.text(build(element)).code().toString()
+  private fun PrismaPsiRenderer.span(element: PsiElement?, noWrap: Boolean = true): HtmlChunk.Element =
+    preformatted(build(element), noWrap, "span")
 
-  private fun StringBuilder.pre(@NlsSafe source: String) =
-    append(HtmlChunk.text(source).code().toString())
+  private fun PrismaPsiRenderer.pre(element: PsiElement?, noWrap: Boolean = true): HtmlChunk.Element =
+    preformatted(build(element), noWrap)
+
+  private fun StringBuilder.pre(@NlsSafe source: String, noWrap: Boolean = true): java.lang.StringBuilder? =
+    append(preformatted(source, noWrap))
+
+  private fun preformatted(@NlsSafe source: String, noWrap: Boolean = true, tagName: String = "code"): HtmlChunk.Element {
+    val code = HtmlChunk.tag(tagName).let { if (noWrap) it.style(NO_WRAP) else it }
+    return HtmlChunk.text(source).wrapWith(code)
+  }
 }

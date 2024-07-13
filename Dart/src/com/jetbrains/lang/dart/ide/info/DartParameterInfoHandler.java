@@ -19,7 +19,7 @@ import org.jetbrains.annotations.TestOnly;
 
 import java.util.List;
 
-public class DartParameterInfoHandler implements ParameterInfoHandler<PsiElement, DartFunctionDescription> {
+public final class DartParameterInfoHandler implements ParameterInfoHandler<PsiElement, DartFunctionDescription> {
   private String myParametersListPresentableText = "";
 
   @Nullable
@@ -54,7 +54,7 @@ public class DartParameterInfoHandler implements ParameterInfoHandler<PsiElement
     else if (element instanceof DartNewExpression newExpression) {
       final DartType type = newExpression.getType();
       final DartClassResolveResult classResolveResult = DartResolveUtil.resolveClassByType(type);
-      List<DartReferenceExpression> expressionList = ((DartNewExpression)element).getReferenceExpressionList();
+      List<DartReferenceExpression> expressionList = newExpression.getReferenceExpressionList();
       DartReference psiElement = expressionList.isEmpty() && type != null ? type.getReferenceExpression()
                                                                           : ContainerUtil.getLastItem(expressionList);
       final PsiElement target = psiElement != null ? psiElement.resolve() : null;
@@ -106,7 +106,7 @@ public class DartParameterInfoHandler implements ParameterInfoHandler<PsiElement
       return;
     }
     myParametersListPresentableText = p.getParametersListPresentableText();
-    if (myParametersListPresentableText != null && myParametersListPresentableText.length() == 0) {
+    if (myParametersListPresentableText != null && myParametersListPresentableText.isEmpty()) {
       myParametersListPresentableText = CodeInsightBundle.message("parameter.info.no.parameters");
     }
     context.setupUIComponentPresentation(

@@ -17,18 +17,21 @@ interface DenoEntity : WorkspaceEntity {
   val denoTypes: VirtualFileUrl?
 
   //region generated code
-  @GeneratedCodeApiVersion(2)
-  interface Builder : DenoEntity, WorkspaceEntity.Builder<DenoEntity> {
+  @GeneratedCodeApiVersion(3)
+  interface Builder : WorkspaceEntity.Builder<DenoEntity> {
     override var entitySource: EntitySource
-    override var depsFile: VirtualFileUrl?
-    override var denoTypes: VirtualFileUrl?
+    var depsFile: VirtualFileUrl?
+    var denoTypes: VirtualFileUrl?
   }
 
   companion object : EntityType<DenoEntity, Builder>() {
     @JvmOverloads
     @JvmStatic
     @JvmName("create")
-    operator fun invoke(entitySource: EntitySource, init: (Builder.() -> Unit)? = null): DenoEntity {
+    operator fun invoke(
+      entitySource: EntitySource,
+      init: (Builder.() -> Unit)? = null,
+    ): Builder {
       val builder = builder()
       builder.entitySource = entitySource
       init?.invoke(builder)
@@ -39,6 +42,10 @@ interface DenoEntity : WorkspaceEntity {
 }
 
 //region generated code
-fun MutableEntityStorage.modifyEntity(entity: DenoEntity, modification: DenoEntity.Builder.() -> Unit): DenoEntity = modifyEntity(
-  DenoEntity.Builder::class.java, entity, modification)
+fun MutableEntityStorage.modifyDenoEntity(
+  entity: DenoEntity,
+  modification: DenoEntity.Builder.() -> Unit,
+): DenoEntity {
+  return modifyEntity(DenoEntity.Builder::class.java, entity, modification)
+}
 //endregion

@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.codeInsight.config
 
+import com.intellij.javascript.web.js.WebJSResolveUtil
 import com.intellij.json.psi.JsonObject
 import com.intellij.lang.typescript.tsconfig.TypeScriptConfig
 import com.intellij.lang.typescript.tsconfig.TypeScriptConfigCustomizer
@@ -9,6 +10,8 @@ import com.intellij.lang.typescript.tsconfig.TypeScriptConfigService
 import com.intellij.lang.typescript.tsconfig.TypeScriptConfigUtil
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
+import org.angular2.codeInsight.config.Angular2TypeCheckingConfig.ControlFlowPreventingContentProjectionKind
+import org.angular2.lang.html.tcb.R3Identifiers
 
 private val STRICT_INJECTION_PARAMETERS = Key.create<Boolean>("angularCompilerOptions.strictInjectionParameters")
 private val STRICT_TEMPLATES = Key.create<Boolean>("angularCompilerOptions.strictTemplates")
@@ -40,37 +43,73 @@ object Angular2Compiler {
     getConfigForPsiElement(psi)
       ?.getCustomOption(STRICT_INPUT_ACCESS_MODIFIERS) == true
 
-  fun isStrictInputTypes(psi: PsiElement?): Boolean =
-    getConfigForPsiElement(psi)
-      .isStrictTemplateOption(STRICT_INPUT_TYPES)
-
   fun isStrictNullInputTypes(psi: PsiElement?): Boolean =
     getConfigForPsiElement(psi)
       .isStrictTemplateOption(STRICT_NULL_INPUT_TYPES)
 
-  fun isStrictAttributeTypes(psi: PsiElement?): Boolean =
-    getConfigForPsiElement(psi)
-      .isStrictTemplateOption(STRICT_ATTRIBUTE_TYPES)
-
-  fun isStrictSafeNavigationTypes(psi: PsiElement?): Boolean =
-    getConfigForPsiElement(psi)
-      .isStrictTemplateOption(STRICT_SAFE_NAVIGATION_TYPES)
-
-  fun isStrictDomLocalRefTypes(psi: PsiElement?): Boolean =
-    getConfigForPsiElement(psi)
-      .isStrictTemplateOption(STRICT_DOM_LOCAL_REF_TYPES)
-
-  fun isStrictDomEventTypes(psi: PsiElement?): Boolean =
-    getConfigForPsiElement(psi)
-      .isStrictTemplateOption(STRICT_DOM_EVENT_TYPES)
-
-  fun isStrictContextGenerics(psi: PsiElement?): Boolean =
-    getConfigForPsiElement(psi)
-      .isStrictTemplateOption(STRICT_CONTEXT_GENERICS)
-
-  fun isStrictLiteralTypes(psi: PsiElement?): Boolean =
-    getConfigForPsiElement(psi)
-      .isStrictTemplateOption(STRICT_LITERAL_TYPES)
+  fun getTypeCheckingConfig(psi: PsiElement?): Angular2TypeCheckingConfig =
+    with(getConfigForPsiElement(psi)) {
+      val isStrictTemplates = this?.getCustomOption(STRICT_TEMPLATES) == true
+      val allowSignalsInTwoWayBindings = WebJSResolveUtil.resolveSymbolFromNodeModule(
+        psi, R3Identifiers.unwrapWritableSignal.moduleName,
+        R3Identifiers.unwrapWritableSignal.name, PsiElement::class.java
+      ) != null /* Angular 17.2.0+ */
+      if (this == null
+          || !isStrictTemplates /* Workaround to generate proper TCB in non-strict mode */)
+        Angular2TypeCheckingConfig(
+          checkTypeOfInputBindings = true,
+          honorAccessModifiersForInputBindings = true,
+          strictNullInputBindings = true,
+          checkTypeOfAttributes = true,
+          checkTypeOfDomBindings = true,
+          checkTypeOfOutputEvents = true,
+          checkTypeOfAnimationEvents = true,
+          checkTypeOfDomEvents = true,
+          checkTypeOfDomReferences = true,
+          checkTypeOfNonDomReferences = true,
+          enableTemplateTypeChecker = true,
+          checkTypeOfPipes = true,
+          applyTemplateContextGuards = true,
+          strictSafeNavigationTypes = true,
+          checkTemplateBodies = true,
+          alwaysCheckSchemaInTemplateBodies = true,
+          controlFlowPreventingContentProjection = ControlFlowPreventingContentProjectionKind.Warning,
+          useContextGenericType = true,
+          strictLiteralTypes = true,
+          useInlineTypeConstructors = false,
+          suggestionsForSuboptimalTypeInference = true,
+          allowSignalsInTwoWayBindings = allowSignalsInTwoWayBindings,
+          checkControlFlowBodies = true,
+        )
+      else {
+        @Suppress("KotlinConstantConditions")
+        Angular2TypeCheckingConfig(
+          allowSignalsInTwoWayBindings = allowSignalsInTwoWayBindings,
+          alwaysCheckSchemaInTemplateBodies = isStrictTemplates,
+          applyTemplateContextGuards = getCustomOption(STRICT_INPUT_TYPES) ?: isStrictTemplates,
+          checkControlFlowBodies = isStrictTemplates,
+          checkTemplateBodies = isStrictTemplates,
+          checkTypeOfAnimationEvents = getCustomOption(STRICT_OUTPUT_EVENT_TYPES) ?: isStrictTemplates,
+          checkTypeOfAttributes = getCustomOption(STRICT_ATTRIBUTE_TYPES) ?: isStrictTemplates,
+          checkTypeOfDomBindings = false,
+          checkTypeOfDomEvents = getCustomOption(STRICT_DOM_EVENT_TYPES) ?: isStrictTemplates,
+          checkTypeOfDomReferences = getCustomOption(STRICT_DOM_LOCAL_REF_TYPES) ?: isStrictTemplates,
+          checkTypeOfInputBindings = getCustomOption(STRICT_INPUT_TYPES) ?: isStrictTemplates,
+          checkTypeOfNonDomReferences = isStrictTemplates,
+          checkTypeOfOutputEvents = getCustomOption(STRICT_OUTPUT_EVENT_TYPES) ?: isStrictTemplates,
+          checkTypeOfPipes = isStrictTemplates,
+          controlFlowPreventingContentProjection = ControlFlowPreventingContentProjectionKind.Warning,
+          enableTemplateTypeChecker = true,
+          honorAccessModifiersForInputBindings = getCustomOption(STRICT_INPUT_ACCESS_MODIFIERS) ?: false,
+          strictLiteralTypes = getCustomOption(STRICT_LITERAL_TYPES) ?: isStrictTemplates,
+          strictNullInputBindings = getCustomOption(STRICT_NULL_INPUT_TYPES) ?: isStrictTemplates,
+          strictSafeNavigationTypes = getCustomOption(STRICT_SAFE_NAVIGATION_TYPES) ?: isStrictTemplates,
+          suggestionsForSuboptimalTypeInference = !isStrictTemplates,
+          useContextGenericType = getCustomOption(STRICT_CONTEXT_GENERICS) ?: isStrictTemplates,
+          useInlineTypeConstructors = false,
+        )
+      }
+    }
 
   private fun getConfigForPsiElement(psi: PsiElement?): TypeScriptConfig? =
     psi?.let {
@@ -79,7 +118,7 @@ object Angular2Compiler {
     }
 
   private fun TypeScriptConfig?.isStrictTemplateOption(key: Key<Boolean>) =
-    this != null && getCustomOption(STRICT_TEMPLATES) == true && getCustomOption(key) != false
+    this != null && (getCustomOption(key) ?: (getCustomOption(STRICT_TEMPLATES) == true))
 
 }
 

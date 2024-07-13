@@ -183,7 +183,7 @@ public class HILParserTest extends ParsingTestCase {
   public void testUnfinishedConditional6() throws Exception {
     doCodeTest("?:", """
       HILFile: a.hil
-        PsiErrorElement:'%{' expected, got '?'
+        PsiErrorElement:${ or TEMPLATE_START expected, got '?'
           PsiElement(?)('?')
         PsiElement(:)(':')""");
   }
@@ -230,10 +230,6 @@ public class HILParserTest extends ParsingTestCase {
 
   public void testObjectAsMethodCallParameter() throws IOException {
     doCodeTest("${foo({a=true\nb=false})}");
-  }
-
-  public void testTemplateForIncomplete() throws IOException {
-    doCodeTest("%{for a, b in var.test~}");
   }
 
   public void testTemplateFor() throws IOException {

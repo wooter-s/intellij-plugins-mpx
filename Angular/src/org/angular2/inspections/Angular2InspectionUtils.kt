@@ -2,6 +2,8 @@
 package org.angular2.inspections
 
 import com.intellij.codeInspection.ProblemHighlightType
+import com.intellij.lang.javascript.ecmascript6.TypeScriptAnnotatorCheckerProvider
+import com.intellij.psi.PsiElement
 import org.angular2.codeInsight.Angular2DeclarationsScope
 import org.angular2.entities.Angular2Directive
 
@@ -13,4 +15,11 @@ object Angular2InspectionUtils {
     else
       ProblemHighlightType.WEAK_WARNING
   }
+
+  internal fun getTypeScriptInspectionHighlightType(context: PsiElement): ProblemHighlightType =
+    if (TypeScriptAnnotatorCheckerProvider.getCheckerProvider(context).skipErrors(context))
+      ProblemHighlightType.INFORMATION
+    else
+      ProblemHighlightType.GENERIC_ERROR_OR_WARNING
+
 }

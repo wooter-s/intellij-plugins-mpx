@@ -64,12 +64,16 @@ public class TerraformInspectionsTest extends TerraformInspectionFixtureTestCase
   }
 
   public void testKnownBlockNameFromModel() {
-    doTest("unknown_block_name", new HCLUnknownBlockTypeInspection());
+    doTest("unknown_block_name", new TfUnknownBlockTypeInspection());
+  }
+
+  public void testUnknownPropertyInResource() {
+    doTest("unknown_property_in_resource", new TfUnknownPropertyInspection());
   }
 
   // Test for issue #198
   public void testNoUnknownBlocksForNomad() {
-    doTest("no_unknown_blocks_for_nomad", new HCLUnknownBlockTypeInspection());
+    doTest("no_unknown_blocks_for_nomad", new TfUnknownBlockTypeInspection());
   }
 
   public void testIncorrectTFVARS() {
@@ -152,4 +156,9 @@ public class TerraformInspectionsTest extends TerraformInspectionFixtureTestCase
   public void testStringLiteral() {
     doTest("check_string_literal",  new HCLLiteralValidnessInspection());
   }
+
+  public void testUnknownResource() {
+    doTest("unknown_resource",  new TfUnknownResourceInspection());
+  }
+
 }

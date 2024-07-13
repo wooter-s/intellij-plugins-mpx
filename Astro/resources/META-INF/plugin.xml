@@ -1,4 +1,4 @@
-<idea-plugin url="https://github.com/JetBrains/intellij-plugins/tree/master/astro" package="org.jetbrains.astro">
+<idea-plugin url="https://github.com/JetBrains/intellij-plugins/tree/master/Astro" package="org.jetbrains.astro">
   <!--suppress PluginXmlCapitalization -->
   <name>Astro</name>
   <id>org.jetbrains.plugins.astro</id>
@@ -31,7 +31,8 @@
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">
-    <registryKey defaultValue="2.0.17" description="Astro service version for downloading" restartRequired="true" key="astro.language.server.default.version"/>
+    <registryKey defaultValue="" description="Astro service version for downloading" key="astro.language.server.default.version"/>
+    <registryKey description="Limit of Astro LS completion items" key="astro.language.server.completion.serviceItemsLimit" defaultValue="2000"/>
     <dependencySupport kind="javascript" coordinate="npm:astro" displayName="Astro"/>
 
     <internalFileTemplate name="Astro Component"/>
@@ -53,6 +54,7 @@
 
     <stubElementTypeHolder class="org.jetbrains.astro.lang.parser.AstroStubElementTypes" externalIdPrefix="ASTRO:"/>
     <implicitUsageProvider implementation="org.jetbrains.astro.codeInsight.refs.AstroImplicitUsageProvider"/>
+    <implicitUsageProvider implementation="org.jetbrains.astro.codeInsight.refs.AstroConfigImplicitUsageProvider"/>
 
     <html.compatibleLanguage language="Astro"/>
     <xml.xmlExtension implementation="org.jetbrains.astro.codeInsight.AstroHtmlExtension" order="before html, before web-symbols-react"
@@ -61,6 +63,11 @@
     <xml.fileNSInfoProvider implementation="org.jetbrains.astro.codeInsight.AstroNSInfoProvider"/>
     <lang.documentationProvider language="Astro" implementationClass="com.intellij.xml.util.documentation.HtmlDocumentationProvider"
                                 id="html"/>
+    <completion.contributor language="AstroFrontmatter"
+                            implementationClass="org.jetbrains.astro.codeInsight.completion.AstroServiceCompletionContributor"/>
+    <completion.contributor language="Astro"
+                            implementationClass="org.jetbrains.astro.codeInsight.completion.AstroServiceCompletionContributor"/>
+
     <lang.formatter language="Astro" implementationClass="org.jetbrains.astro.lang.formatter.AstroFormattingModelBuilder"/>
     <lang.refactoringSupport language="Astro" implementationClass="org.jetbrains.astro.refactoring.AstroRefactoringSupportProvider"/>
     <lang.refactoringSupport language="AstroFrontmatter" implementationClass="org.jetbrains.astro.refactoring.AstroRefactoringSupportProvider"/>
@@ -72,6 +79,7 @@
     <webSymbols.webTypes enableByDefault="true" source="web-types/astro.web-types.json"/>
     <webSymbols.queryConfigurator implementation="org.jetbrains.astro.webSymbols.AstroQueryConfigurator"/>
     <webSymbols.queryResultsCustomizerFactory implementation="org.jetbrains.astro.webSymbols.AstroWebSymbolsQueryResultsCustomizer$Provider"/>
+    <webSymbols.codeCompletionItemCustomizer implementation="org.jetbrains.astro.webSymbols.AstroCodeCompletionItemCustomizer" />
 
     <html.embeddedContentSupport implementation="org.jetbrains.astro.lang.parser.AstroEmbeddedContentSupport" />
 
@@ -82,10 +90,15 @@
                      implementationClass="org.jetbrains.astro.inspections.AstroMissingComponentImportInspection"
                      key="astro.inspection.display.name.missing.component.import" bundle="messages.AstroBundle"/>
 
-    <implicitUsageProvider implementation="org.jetbrains.astro.inspections.AstroImplicitUsageProvider" />
-
     <platform.lsp.serverSupportProvider implementation="org.jetbrains.astro.service.AstroLspServerSupportProvider" />
-    <registryKey key="astro.enable.lsp" defaultValue="false" description="Enable Astro Language Tools service"/>
+    <projectConfigurable parentId="settings.typescriptcompiler"
+                         instance="org.jetbrains.astro.service.settings.AstroServiceConfigurable"
+                         id="settings.astroservice"
+                         bundle="messages.AstroBundle"
+                         key="astro.service.configurable.title"
+                         nonDefaultProject="true"
+    />
+
     <include.provider implementation="org.jetbrains.astro.AstroFileIncludeProvider"/>
     <codeInsight.codeVisionSettingsPreviewLanguage language="Astro" modelId="component.usage"/>
   </extensions>
@@ -102,6 +115,7 @@
     <inheritedLanguagesConfigurableProvider language="AstroFrontmatter"
                                             implementationClass="org.jetbrains.astro.lang.frontmatter.AstroFrontmatterConfigurableProvider"/>
     <analysisHandlersFactory language="AstroFrontmatter" implementationClass="org.jetbrains.astro.inspections.AstroFrontmatterAnalysisHandlersFactory" />
+    <analysisHandlersFactory language="Astro" implementationClass="org.jetbrains.astro.inspections.AstroAnalysisHandlersFactory"/>
     <elementScopeProvider implementation="org.jetbrains.astro.AstroElementResolveScopeProvider"/>
     <componentUsageProvider language="Astro" implementationClass="org.jetbrains.astro.codeInsight.AstroComponentUsageProvider"/>
   </extensions>

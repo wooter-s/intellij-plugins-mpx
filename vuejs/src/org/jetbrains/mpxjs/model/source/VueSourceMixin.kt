@@ -3,7 +3,7 @@ package org.jetbrains.mpxjs.model.source
 
 import com.intellij.lang.javascript.psi.stubs.JSImplicitElement
 import com.intellij.model.Pointer
-import com.intellij.refactoring.suggested.createSmartPointer
+import com.intellij.psi.createSmartPointer
 import org.jetbrains.mpxjs.model.VueEntitiesContainer
 import org.jetbrains.mpxjs.model.VueMixin
 
@@ -19,5 +19,4 @@ class VueSourceMixin(source: JSImplicitElement, descriptor: VueSourceEntityDescr
       VueSourceMixin(source, descriptor)
     }
   }
-
 }

@@ -9,8 +9,12 @@ import com.intellij.lang.typescript.lsp.BaseLspTypeScriptService
 import com.intellij.lang.typescript.lsp.JSFrameworkLsp4jServer
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import org.jetbrains.mpxjs.VueBundle
-import org.jetbrains.mpxjs.lang.typescript.service.isVolarEnabledAndAvailable
+import org.jetbrains.mpxjs.lang.expr.VueJSLanguage
+import org.jetbrains.mpxjs.lang.expr.VueTSLanguage
+import org.jetbrains.mpxjs.lang.typescript.service.VueServiceSetActivationRule
 
 class VolarTypeScriptService(project: Project) : BaseLspTypeScriptService(project, VolarSupportProvider::class.java) {
   override val name: String
@@ -18,7 +22,7 @@ class VolarTypeScriptService(project: Project) : BaseLspTypeScriptService(projec
   override val prefix: String
     get() = VueBundle.message("vue.service.prefix")
 
-  override fun isAcceptable(file: VirtualFile) = isVolarEnabledAndAvailable(project, file)
+  override fun isAcceptable(file: VirtualFile) = VueServiceSetActivationRule.isLspServerEnabledAndAvailable(project, file)
 
   override suspend fun getIdeType(args: TypeScriptGetElementTypeRequestArgs): JsonElement? {
     val server = getServer() ?: return null
@@ -34,4 +38,13 @@ class VolarTypeScriptService(project: Project) : BaseLspTypeScriptService(projec
     val server = getServer() ?: return null
     return server.sendRequest { (it as JSFrameworkLsp4jServer).getTypeProperties(args) }
   }
+
+  override fun supportsTypeEvaluation(virtualFile: VirtualFile, element: PsiElement): Boolean {
+    return virtualFile.extension == "vue" || super.supportsTypeEvaluation(virtualFile, element)
+  }
+
+  override fun supportsInjectedFile(file: PsiFile): Boolean {
+    return file.language is VueJSLanguage || file.language is VueTSLanguage
+  }
+
 }

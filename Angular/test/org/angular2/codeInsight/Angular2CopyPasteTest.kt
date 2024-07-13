@@ -1,12 +1,12 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.codeInsight
 
-import com.intellij.webSymbols.configureAndCopyPaste
-import com.intellij.webSymbols.performCopyPaste
+import com.intellij.javascript.web.configureAndCopyPaste
+import com.intellij.javascript.web.performCopyPaste
 import org.angular2.Angular2TestCase
 import org.angular2.Angular2TestModule
 
-class Angular2CopyPasteTest : Angular2TestCase("copyPaste") {
+class Angular2CopyPasteTest : Angular2TestCase("copyPaste", false) {
 
   fun testBasic() {
     doTest("html", "html")

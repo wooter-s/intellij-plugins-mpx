@@ -47,21 +47,21 @@ object Angular2SourceUtil {
   fun getNgContentSelectors(template: PsiFile?): List<Angular2DirectiveSelector> =
     if (template is PsiFileImpl) {
       val result = SmartList<Angular2DirectiveSelector>()
-      val root = template.greenStub
-      if (root != null) {
-        for (el in root.childrenStubs) {
-          if (el.stubType === Angular2HtmlStubElementTypes.NG_CONTENT_SELECTOR) {
-            result.add((el.psi as Angular2HtmlNgContentSelector).selector)
+      template.withGreenStubOrAst(
+        { stub ->
+          for (el in stub.childrenStubs) {
+            if (el.stubType === Angular2HtmlStubElementTypes.NG_CONTENT_SELECTOR) {
+              result.add((el.psi as Angular2HtmlNgContentSelector).selector)
+            }
           }
+        }, {
+          template.accept(object : Angular2HtmlRecursiveElementWalkingVisitor() {
+            override fun visitNgContentSelector(ngContentSelector: Angular2HtmlNgContentSelector) {
+              result.add(ngContentSelector.selector)
+            }
+          })
         }
-      }
-      else {
-        template.accept(object : Angular2HtmlRecursiveElementWalkingVisitor() {
-          override fun visitNgContentSelector(ngContentSelector: Angular2HtmlNgContentSelector) {
-            result.add(ngContentSelector.selector)
-          }
-        })
-      }
+      )
       result
     }
     else
@@ -250,8 +250,8 @@ object Angular2SourceUtil {
   @JvmStatic
   fun findComponentClasses(templateContext: PsiElement): List<TypeScriptClass> {
     val file = templateContext.containingFile
-    if (file == null || !(file.language.isKindOf(Angular2HtmlLanguage.INSTANCE)
-                          || file.language.`is`(Angular2Language.INSTANCE)
+    if (file == null || !(file.language.isKindOf(Angular2HtmlLanguage)
+                          || file.language.`is`(Angular2Language)
                           || isStylesheet(file))) {
       return Collections.emptyList()
     }

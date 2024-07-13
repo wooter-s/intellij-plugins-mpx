@@ -26,7 +26,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
                                          private val myIsAction: Boolean,
                                          private val myIsSimpleBinding: Boolean,
                                          private val myIsJavaScript: Boolean)
-  : JavaScriptParser<Angular2ExpressionParser, Angular2StatementParser, FunctionParser<*>, JSPsiTypeParser<*>>(DialectOptionHolder.JS_1_5,
+  : JavaScriptParser<Angular2ExpressionParser, Angular2StatementParser, FunctionParser<*>, JSPsiTypeParser<*>>(JavascriptLanguage.INSTANCE,
                                                                                                                builder) {
   constructor(builder: PsiBuilder) : this(builder, false, false, true)
 
@@ -49,7 +49,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       while (!builder.eof()) {
         count++
         val expression = builder.mark()
-        if (!expressionParser!!.parseExpressionOptional(false, false)) {
+        if (!expressionParser!!.parseExpressionOptional(false)) {
           builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
           builder.advanceLexer()
           expression.drop()

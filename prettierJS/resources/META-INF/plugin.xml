@@ -39,6 +39,7 @@
       bundle="messages.PrettierBundle"
       key="configurable.PrettierConfigurable.display.name"
       instance="com.intellij.prettierjs.PrettierConfigurable"/>
+    <directoryProjectConfigurator implementation="com.intellij.prettierjs.PrettierProjectConfigurator" />
     <actionOnSaveInfoProvider id="PrettierOnSaveInfoProvider"
                               implementation="com.intellij.prettierjs.PrettierConfigurable$PrettierOnSaveInfoProvider"
                               order="after FormatOnSaveInfoProvider, after EsLintOnSaveInfoProvider, before BuildOnSaveInfoProvider, before FileWatcherOnSaveInfoProvider, before UploadOnSaveInfoProvider"/>
@@ -57,6 +58,8 @@
     <prettierjs.codeStyleInstaller implementation="com.intellij.prettierjs.codeStyle.JSPrettierCodeStyleInstaller"/>
     <prettierjs.codeStyleInstaller implementation="com.intellij.prettierjs.codeStyle.HtmlPrettierCodeStyleInstaller"/>
     <eslint.ruleMappersFactory implementation="com.intellij.prettierjs.eslint.PrettierEslintRuleMappersFactory"/>
+    <implicitUsageProvider implementation="com.intellij.prettierjs.codeInsight.PrettierConfigImplicitUsageProvider"/>
+    <statistics.counterUsagesCollector implementationClass="com.intellij.prettierjs.PrettierConfigurationCollector"/>
   </extensions>
   <actions>
     <action id="ReformatWithPrettierAction" class="com.intellij.prettierjs.ReformatWithPrettierAction">

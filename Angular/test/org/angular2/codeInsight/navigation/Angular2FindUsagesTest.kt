@@ -3,7 +3,7 @@ package org.angular2.codeInsight.navigation
 
 import org.angular2.Angular2TestCase
 
-class Angular2FindUsagesTest : Angular2TestCase("navigation/findUsages") {
+class Angular2FindUsagesTest : Angular2TestCase("navigation/findUsages", false) {
 
   fun testPrivateComponentField() = checkUsages()
 
@@ -22,5 +22,7 @@ class Angular2FindUsagesTest : Angular2TestCase("navigation/findUsages") {
   fun testExportAs() = checkUsages()
 
   fun testHostDirectiveOneTimeBinding() = checkUsages(fileName = "mouseenter.directive.ts")
+
+  fun testDollarSymbolInInlineTemplate() = checkUsages(fileName = "hello1.service.ts")
 
 }

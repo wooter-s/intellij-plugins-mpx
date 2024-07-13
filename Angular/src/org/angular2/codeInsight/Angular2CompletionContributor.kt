@@ -12,6 +12,7 @@ import com.intellij.lang.javascript.completion.JSImportCompletionUtil.IMPORT_PRI
 import com.intellij.lang.javascript.completion.JSLookupPriority.*
 import com.intellij.lang.javascript.ecmascript6.types.JSTypeSignatureChooser
 import com.intellij.lang.javascript.ecmascript6.types.OverloadStrictness
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
 import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.JSTypeUtils.isNullOrUndefinedType
 import com.intellij.lang.javascript.psi.ecma6.JSTypeDeclaration
@@ -51,20 +52,21 @@ import org.angular2.lang.expr.psi.Angular2PipeExpression
 import org.angular2.lang.expr.psi.Angular2PipeReferenceExpression
 import org.angular2.signals.Angular2SignalUtils
 import org.jetbrains.annotations.NonNls
+import java.util.function.Supplier
 
 class Angular2CompletionContributor : CompletionContributor() {
   init {
 
     extend(CompletionType.BASIC,
-           psiElement().with(language(Angular2Language.INSTANCE)),
+           psiElement().with(language(Angular2Language)),
            CssInBindingExpressionCompletionProvider())
 
     extend(CompletionType.BASIC,
-           psiElement().with(language(Angular2Language.INSTANCE)),
+           psiElement().with(language(Angular2Language)),
            TemplateExpressionCompletionProvider())
 
     extend(CompletionType.BASIC,
-           psiElement(Angular2TokenTypes.BLOCK_PARAMETER_NAME).with(language(Angular2Language.INSTANCE)),
+           psiElement(Angular2TokenTypes.BLOCK_PARAMETER_NAME).with(language(Angular2Language)),
            Angular2BlockParameterNameCompletionProvider())
 
     // Disable regular completions in after and minimum parameters
@@ -72,7 +74,7 @@ class Angular2CompletionContributor : CompletionContributor() {
            psiElement(JSTokenTypes.IDENTIFIER)
              .withParent(psiElement(Angular2BlockParameter::class.java)
                            .withName("after", "minimum"))
-             .with(language(Angular2Language.INSTANCE)),
+             .with(language(Angular2Language)),
            EmptyCompletionProvider())
 
     extend(CompletionType.BASIC,
@@ -104,9 +106,21 @@ class Angular2CompletionContributor : CompletionContributor() {
 
   private class TemplateExpressionCompletionProvider : CompletionProvider<CompletionParameters>() {
 
-    override fun addCompletions(parameters: CompletionParameters,
-                                context: ProcessingContext,
-                                result: CompletionResultSet) {
+    override fun addCompletions(
+      parameters: CompletionParameters,
+      context: ProcessingContext,
+      result: CompletionResultSet,
+    ) {
+      JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(parameters.originalFile) {
+        addCompletionsUnderEvalLocation(parameters, context, result)
+      }
+    }
+
+    private fun addCompletionsUnderEvalLocation(
+      parameters: CompletionParameters,
+      context: ProcessingContext,
+      result: CompletionResultSet,
+    ) {
       var ref = parameters.position.containingFile.findReferenceAt(parameters.offset)
       if (ref is PsiMultiReference) {
         ref = ref.references.find { it is Angular2PipeReferenceExpression || it is JSReferenceExpressionImpl }
@@ -148,7 +162,7 @@ class Angular2CompletionContributor : CompletionContributor() {
             val transformTypes = transformMembers
               .asSequence()
               .mapNotNull { transform ->
-                (transform as? JSTypeOwner)?.jsType?.substitute()
+                (transform as? JSTypeOwner)?.jsType?.substitute(parameters.originalFile)
                   ?.asSafely<JSFunctionType>()?.let { Pair(transform, it) }
               }
               .toMap()
@@ -186,7 +200,7 @@ class Angular2CompletionContributor : CompletionContributor() {
                         ?: return@resolve true
           val name = element.name
           if (name != null && !NG_LIFECYCLE_HOOKS.contains(name)
-              && contributedElements.add(name + "#" + JSLookupUtilImpl.getTypeAndTailTexts(element, null).tailAndType)) {
+              && contributedElements.add(name + "#" + JSLookupUtilImpl.getTypeAndTailTexts(element, JSLookupContext(parameters.originalFile)).tailAndType)) {
             localNames.add(name)
             result.consume(JSCompletionUtil.withJSLookupPriority(
               JSLookupUtilImpl.createLookupElement(element, name)
@@ -218,16 +232,18 @@ class Angular2CompletionContributor : CompletionContributor() {
         val componentContext = componentClass?.context
         if (componentContext != null) {
           val sink = CompletionResultSink(ref, result.prefixMatcher, localNames, false, false)
-          JSStubBasedPsiTreeUtil.processDeclarationsInScope(componentContext, { element, state ->
-            if (element != componentClass)
-              sink.addResult(element, state, null)
-            else true
-          }, true)
-          sink.resultsAsObjects.forEach { lookupElement ->
-            localNames.add(lookupElement.lookupString)
-            result.addElement(
-              JSCompletionUtil.withJSLookupPriority(wrapWithImportInsertHandler(lookupElement, ref), RELEVANT_NO_SMARTNESS_PRIORITY))
-          }
+          JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(componentClass, Supplier {
+            JSStubBasedPsiTreeUtil.processDeclarationsInScope(componentContext, { element, state ->
+              if (element != componentClass)
+                sink.addResult(element, state, null)
+              else true
+            }, true)
+            sink.resultsAsObjects.forEach { lookupElement ->
+              localNames.add(lookupElement.lookupString)
+              result.addElement(
+                JSCompletionUtil.withJSLookupPriority(wrapWithImportInsertHandler(lookupElement, ref), RELEVANT_NO_SMARTNESS_PRIORITY))
+            }
+          })
         }
 
         // Exports, global symbols and keywords, plus any smart code completions

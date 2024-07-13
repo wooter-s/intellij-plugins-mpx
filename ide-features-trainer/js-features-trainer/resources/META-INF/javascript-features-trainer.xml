@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <idea-plugin>
   <extensions defaultExtensionNs="training">
-    <ift.language.extension language="JavaScript" defaultProductName="WebStorm"
-                            implementationClass="com.intellij.javascript.ift.JavaScriptLangSupport"/>
-    <ift.learning.course language="JavaScript" implementationClass="com.intellij.javascript.ift.JavaScriptMainLearningCourse"/>
-    <ifs.suggesterSupport language="JavaScript" implementationClass="com.intellij.javascript.ifs.JavaScriptSuggesterSupport"/>
+    <!--<ift.language.extension language="JavaScript" defaultProductName="WebStorm"-->
+    <!--                        implementationClass="com.intellij.javascript.ift.JavaScriptLangSupport"/>-->
+    <!--<ift.learning.course language="JavaScript" implementationClass="com.intellij.javascript.ift.JavaScriptMainLearningCourse"/>-->
+    <!--<ifs.suggesterSupport language="JavaScript" implementationClass="com.intellij.javascript.ifs.JavaScriptSuggesterSupport"/>-->
   </extensions>
 
   <extensions defaultExtensionNs="com.intellij">
@@ -12,5 +12,6 @@
                  description="Whether IFT show feedback link in the modules panel for JavaScript course."
                  defaultValue="TRUE"
                  restartRequired="false"/>
+    <lang.documentationProvider language="JavaScript" implementationClass="com.intellij.javascript.ift.JavaScriptOnboardingTipsDocumentationProvider" order="first"/>
   </extensions>
 </idea-plugin>

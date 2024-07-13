@@ -10,7 +10,6 @@ import com.intellij.util.containers.Stack
 import com.intellij.webSymbols.*
 import com.intellij.webSymbols.query.WebSymbolsNameMatchQueryParams
 import com.intellij.webSymbols.utils.MappedWebSymbol
-import com.intellij.webSymbols.utils.psiModificationCount
 import com.intellij.webSymbols.utils.qualifiedName
 import org.angular2.Angular2Framework
 import org.angular2.codeInsight.template.isTemplateTag
@@ -65,7 +64,7 @@ class DirectiveAttributeSelectorsScope(val project: Project) : WebSymbolsScope {
       get() = WebSymbol.KIND_HTML_ELEMENTS
 
     override fun getModificationCount(): Long =
-      project.psiModificationCount
+      PsiModificationTracker.getInstance(project).modificationCount
 
     override fun createPointer(): Pointer<HtmlAttributeDirectiveAttributeSelectorsExtension> =
       Pointer.hardPointer(this)
@@ -130,7 +129,7 @@ class DirectiveAttributeSelectorsScope(val project: Project) : WebSymbolsScope {
                 consumer(Angular2DirectiveSymbolWrapper.create(candidate, attr))
                 if (kind.isStructural && isTemplateTag && !inputs.containsKey(attrName)) {
                   // Add fake input
-                  consumer(MappedWebSymbol(NG_DIRECTIVE_INPUTS, attrName, attr.origin, attr.qualifiedName))
+                  consumer(MappedWebSymbol.create(NG_DIRECTIVE_INPUTS, attrName, attr.origin, attr.qualifiedName))
                 }
               }
             }

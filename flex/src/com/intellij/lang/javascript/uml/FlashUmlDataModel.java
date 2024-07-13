@@ -63,7 +63,7 @@ public final class FlashUmlDataModel extends DiagramDataModel<Object> {
     spManager = SmartPointerManager.getInstance(project);
     if (element instanceof JSClass psiClass) {
       initialPackage = null;
-      myInitialElement = spManager.createSmartPsiElementPointer((JSClass)element);
+      myInitialElement = spManager.createSmartPsiElementPointer(psiClass);
       classesAddedByUser.put(psiClass.getQualifiedName(), (SmartPsiElementPointer<JSClass>)myInitialElement);
       final Collection<JSClass> classes = JSInheritanceUtil.findAllParentsForClass(psiClass, true);
       for (JSClass aClass : classes) {
@@ -569,8 +569,7 @@ public final class FlashUmlDataModel extends DiagramDataModel<Object> {
 
 
     myNodes.remove(node);
-    if (element instanceof JSClass) {
-      final JSClass psiClass = (JSClass)element;
+    if (element instanceof JSClass psiClass) {
       classesRemovedByUser.put(psiClass.getQualifiedName(), spManager.createSmartPsiElementPointer(psiClass));
       classesAddedByUser.remove(psiClass.getQualifiedName());
     }
@@ -598,7 +597,7 @@ public final class FlashUmlDataModel extends DiagramDataModel<Object> {
     if (findNode(element) != null) return null;
 
     if (element instanceof JSClass psiClass) {
-      if (!isAllowedToShow((JSClass)element)) {
+      if (!isAllowedToShow(psiClass)) {
         return null;
       }
 
@@ -610,7 +609,7 @@ public final class FlashUmlDataModel extends DiagramDataModel<Object> {
 
       setupScopeManager(psiClass, true);
 
-      return new FlashUmlClassNode((JSClass)element, getProvider());
+      return new FlashUmlClassNode(psiClass, getProvider());
     }
     else if (element instanceof String aPackage) {
       packages.add(aPackage);

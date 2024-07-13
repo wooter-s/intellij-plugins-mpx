@@ -10,6 +10,7 @@ import com.intellij.lang.documentation.DocumentationMarkup.*
 import com.intellij.lang.documentation.QuickDocHighlightingHelper.getStyledCodeFragment
 import com.intellij.lang.javascript.documentation.*
 import com.intellij.lang.javascript.documentation.JSDocSimpleInfoPrinter.addSections
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
 import com.intellij.lang.javascript.highlighting.TypeScriptHighlighter
 import com.intellij.lang.javascript.psi.JSFunctionItem
 import com.intellij.lang.javascript.psi.JSType
@@ -26,7 +27,7 @@ import com.intellij.platform.backend.documentation.DocumentationResult
 import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.platform.backend.presentation.TargetPresentation
 import com.intellij.psi.PsiElement
-import com.intellij.refactoring.suggested.createSmartPointer
+import com.intellij.psi.createSmartPointer
 import com.intellij.ui.ColorUtil
 import com.intellij.util.applyIf
 import com.intellij.util.asSafely
@@ -43,6 +44,7 @@ import org.angular2.web.NG_DIRECTIVE_INPUTS
 import org.angular2.web.NG_DIRECTIVE_IN_OUTS
 import org.angular2.web.NG_DIRECTIVE_OUTPUTS
 import org.jetbrains.annotations.Nls
+import java.util.function.Supplier
 
 class Angular2ElementDocumentationTarget private constructor(
   @NlsSafe val name: String,
@@ -81,11 +83,7 @@ class Angular2ElementDocumentationTarget private constructor(
         val adjustedSections = doc
           .replace(moduleRegex, "")
           .replace("<table class='$CLASS_SECTIONS'></table>", "")
-        val addSeparator = adjustedSections.contains("<div class='$CLASS_CONTENT")
-                           || adjustedSections.contains(SECTIONS_START)
-        if (addSeparator) result.append("<div class='$CLASS_SEPARATED'>")
         result.append(adjustedSections)
-        if (addSeparator) result.append("</div>")
       }
       else {
         result.append(doc)
@@ -96,16 +94,6 @@ class Angular2ElementDocumentationTarget private constructor(
         }
       }
       result.append("\n")
-    }
-    if (!result.contains(SECTIONS_START) && !result.contains(CONTENT_START)) {
-      var prevIndex = result.lastIndexOf(DEFINITION_START)
-      var curIndex = result.lastIndexOf(DEFINITION_START, prevIndex - 1)
-      while (curIndex >= 0) {
-        result.insert(prevIndex, "</div>")
-        result.insert(curIndex, "<div class='$CLASS_SEPARATED'>")
-        prevIndex = curIndex
-        curIndex = result.lastIndexOf(DEFINITION_START, prevIndex - 1)
-      }
     }
     return DocumentationResult.documentation(result.toString())
   }
@@ -120,12 +108,14 @@ class Angular2ElementDocumentationTarget private constructor(
         is Angular2DirectiveExportAs -> null
         else -> element.sourceElement.takeIf { it !is TypeScriptClass }
       }
-      return (buildDefinition() + Angular2ElementDocProvider(buildAdditionalSections()).renderDocComment(source))
-        .applyIf(element is Angular2Entity) {
-          // remove self links
-          val link = Regex.escape(DocumentationManagerProtocol.PSI_ELEMENT_PROTOCOL + (element as Angular2Entity).entitySourceName)
-          replace(Regex("<span\\s+style='[^']*'><a\\s+href=['\"]$link['\"]\\s*>(.*?)</a\\s*></span>"), "$1")
-        }
+      return JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(source, Supplier {
+        (buildDefinition() + Angular2ElementDocProvider(buildAdditionalSections()).renderDocComment(source))
+          .applyIf(element is Angular2Entity) {
+            // remove self links
+            val link = Regex.escape(DocumentationManagerProtocol.PSI_ELEMENT_PROTOCOL + (element as Angular2Entity).entitySourceName)
+            replace(Regex("<span\\s+style='[^']*'><a\\s+href=['\"]$link['\"]\\s*>(.*?)</a\\s*></span>"), "$1")
+          }
+      })
     }
 
     private fun buildAdditionalSections(): List<Pair<String, String>> {

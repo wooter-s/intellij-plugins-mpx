@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.SortedMap;
 
-public class DartCoverageRunner extends CoverageRunner {
+public final class DartCoverageRunner extends CoverageRunner {
   private static final String ID = "DartCoverageRunner";
   private static final Logger LOG = Logger.getInstance(DartCoverageRunner.class.getName());
 
@@ -106,7 +106,7 @@ public class DartCoverageRunner extends CoverageRunner {
         }
         SortedMap<Integer, Integer> lineHits = entry.getValue();
         ClassData classData = projectData.getOrCreateClassData(filePath);
-        if (lineHits.size() == 0) {
+        if (lineHits.isEmpty()) {
           classData.setLines(new LineData[1]);
           continue;
         }

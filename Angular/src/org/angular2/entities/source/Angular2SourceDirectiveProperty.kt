@@ -2,9 +2,9 @@
 package org.angular2.entities.source
 
 import com.intellij.javascript.webSymbols.apiStatus
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
 import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptClass
-import com.intellij.lang.javascript.psi.types.TypeScriptTypeParser
 import com.intellij.lang.javascript.psi.types.guard.JSTypeGuardUtil
 import com.intellij.lang.javascript.psi.util.JSStubBasedPsiTreeUtil.isStubBased
 import com.intellij.model.Pointer
@@ -13,7 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.platform.backend.navigation.NavigationTarget
 import com.intellij.psi.PsiElement
-import com.intellij.refactoring.suggested.createSmartPointer
+import com.intellij.psi.createSmartPointer
 import com.intellij.util.applyIf
 import com.intellij.util.asSafely
 import com.intellij.webSymbols.PsiSourcedWebSymbol
@@ -26,8 +26,10 @@ import org.angular2.Angular2DecoratorUtil
 import org.angular2.entities.Angular2ClassBasedDirectiveProperty
 import org.angular2.entities.Angular2EntityUtils
 import org.angular2.entities.source.Angular2SourceDirective.Companion.getPropertySources
+import org.angular2.lang.types.Angular2TypeUtils
 import org.angular2.web.NG_DIRECTIVE_OUTPUTS
 import java.util.*
+import java.util.function.Supplier
 
 abstract class Angular2SourceDirectiveProperty(
   override val owner: TypeScriptClass,
@@ -39,10 +41,12 @@ abstract class Angular2SourceDirectiveProperty(
 ) : Angular2ClassBasedDirectiveProperty {
 
   companion object {
-    fun create(owner: TypeScriptClass,
-               signature: JSRecordType.PropertySignature,
-               qualifiedKind: WebSymbolQualifiedKind,
-               info: Angular2PropertyInfo): Angular2SourceDirectiveProperty =
+    fun create(
+      owner: TypeScriptClass,
+      signature: JSRecordType.PropertySignature,
+      qualifiedKind: WebSymbolQualifiedKind,
+      info: Angular2PropertyInfo,
+    ): Angular2SourceDirectiveProperty =
       if (info.declarationRange == null || info.declaringElement == null)
         Angular2SourceFieldDirectiveProperty(
           owner, signature, qualifiedKind, info.name, info.required, info.declarationSource?.takeIf { isStubBased(it) }
@@ -58,9 +62,15 @@ abstract class Angular2SourceDirectiveProperty(
     get() = signature.memberName
 
   val transformParameterType: JSType?
-    get() = objectInitializer?.findProperty(Angular2DecoratorUtil.TRANSFORM_PROP)?.jsType?.asRecordType()?.callSignatures
+    get() = objectInitializer?.findProperty(Angular2DecoratorUtil.TRANSFORM_PROP)
+      ?.jsType
+      ?.asRecordType(owner)
+      ?.callSignatures
       ?.firstNotNullOfOrNull { signature -> signature.functionType.parameters.takeIf { it.size > 0 }?.get(0) }
       ?.inferredType
+
+  override val isCoerced: Boolean
+    get() = super.isCoerced || objectInitializer?.findProperty(Angular2DecoratorUtil.TRANSFORM_PROP) != null
 
   override val type: JSType?
     get() = if (qualifiedKind == NG_DIRECTIVE_OUTPUTS)
@@ -71,7 +81,9 @@ abstract class Angular2SourceDirectiveProperty(
   override val rawJsType: JSType?
     get() = typeFromSignal
             ?: transformParameterType
-            ?: (signature.setterJSType ?: signature.jsType)?.applyIf(signature.isOptional) {
+            ?: JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(owner, Supplier {
+              signature.setterJSType ?: signature.jsType
+            })?.applyIf(signature.isOptional) {
               JSTypeGuardUtil.wrapWithUndefined(this, this.getSource())!!
             }
 
@@ -121,11 +133,13 @@ abstract class Angular2SourceDirectiveProperty(
               ?.context?.asSafely<JSObjectLiteralExpression>()
 
   @Suppress("NonAsciiCharacters")
-  public val typeFromSignal: JSType? =
-    signature.jsType
-      ?.asRecordType()
-      ?.findPropertySignature("ɵINPUT_SIGNAL_BRAND_WRITE_TYPE")
-      ?.jsTypeWithOptionality
+  val typeFromSignal: JSType?
+    get() = JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(owner, Supplier {
+      signature.jsType
+        ?.asRecordType()
+        ?.findPropertySignature("ɵINPUT_SIGNAL_BRAND_WRITE_TYPE")
+        ?.jsTypeWithOptionality
+    })
 
   private class Angular2SourceFieldDirectiveProperty(
     owner: TypeScriptClass,
@@ -157,8 +171,8 @@ abstract class Angular2SourceDirectiveProperty(
         val source = sourcePtr.dereference()
                      ?: return@Pointer null
         val declarationSource = declarationSourcePtr?.let { it.dereference() ?: return@Pointer null }
-        val propertySignature = TypeScriptTypeParser
-                                  .buildTypeFromClass(source, false)
+        val propertySignature = Angular2TypeUtils
+                                  .buildTypeFromClass(source)
                                   .findPropertySignature(propertyName)
                                 ?: return@Pointer null
         Angular2SourceFieldDirectiveProperty(source, propertySignature, qualifiedKind, name, required, declarationSource)
@@ -201,8 +215,8 @@ abstract class Angular2SourceDirectiveProperty(
         val sourceElement = sourceElementPtr.dereference()
                             ?: return@Pointer null
         val declarationSource = declarationSourcePtr?.let { it.dereference() ?: return@Pointer null }
-        val propertySignature = TypeScriptTypeParser
-                                  .buildTypeFromClass(owner, false)
+        val propertySignature = Angular2TypeUtils
+                                  .buildTypeFromClass(owner)
                                   .findPropertySignature(propertyName)
                                 ?: return@Pointer null
         Angular2SourceMappedDirectiveProperty(owner, propertySignature, qualifiedKind, name, required, declarationSource,

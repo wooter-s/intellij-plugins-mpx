@@ -12,17 +12,15 @@ import com.intellij.lang.javascript.psi.JSType
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptClass
 import com.intellij.model.Pointer
 import com.intellij.openapi.project.Project
+import com.intellij.psi.createSmartPointer
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.util.siblings
-import com.intellij.refactoring.suggested.createSmartPointer
 import com.intellij.util.asSafely
 import com.intellij.util.containers.Stack
 import com.intellij.webSymbols.*
 import com.intellij.webSymbols.WebSymbol.Companion.JS_STRING_LITERALS
-import com.intellij.webSymbols.WebSymbol.Companion.KIND_JS_STRING_LITERALS
-import com.intellij.webSymbols.WebSymbol.Companion.NAMESPACE_JS
 import com.intellij.webSymbols.query.WebSymbolsListSymbolsQueryParams
 import com.intellij.webSymbols.query.WebSymbolsNameMatchQueryParams
 import com.intellij.webSymbols.utils.ReferencingWebSymbol
@@ -141,9 +139,8 @@ class DirectivePropertyMappingCompletionScope(element: JSElement)
       Angular2Framework.ID
   }
 
-  private val inputOutputReference = ReferencingWebSymbol(
-    NAMESPACE_JS,
-    KIND_JS_STRING_LITERALS,
+  private val inputOutputReference = ReferencingWebSymbol.create(
+    JS_STRING_LITERALS,
     "Directive property",
     AngularEmptyOrigin,
     NG_DIRECTIVE_INPUTS,
@@ -186,6 +183,5 @@ class DirectivePropertyMappingCompletionScope(element: JSElement)
         Angular2FieldPropertySymbol(delegate, qualifiedKind, project, owner)
       }
     }
-
   }
 }
