@@ -37,6 +37,8 @@ class VueAttributeNameParser private constructor() {
       }
       else if (attributeName.startsWith(ATTR_ARGUMENT_PREFIX)
         || attributeName.startsWith("bind")
+        || attributeName.startsWith("mut-bind")
+        || attributeName.startsWith("capture-bind")
         || attributeName.startsWith("catch")
         ) {
         name = "bind"
