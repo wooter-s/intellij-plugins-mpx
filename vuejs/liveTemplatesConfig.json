@@ -4,7 +4,7 @@
     "vue-script-vuex": "VUE_COMPONENT_DESCRIPTOR",
     "vue-script-router": "MPX_SCRIPT",
     "vue-script": "MPX_SCRIPT",
-    "vue-template": "VUE_TEMPLATE",
+    "vue-template": "MPX_TEMPLATE",
     "vue": "MPX_TOP_LEVEL"
   },
   "templates": {
@@ -633,7 +633,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mclass-obj": {
@@ -653,7 +653,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "memit-child": {
@@ -709,7 +709,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mroutename": {
@@ -725,7 +725,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mroutenameparam": {
@@ -749,7 +749,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mslot-named": {
@@ -765,14 +765,14 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mnuxtl": {
       "description": "Nuxt routing link",
       "variables": {},
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mroutepath": {
@@ -788,7 +788,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mstyle": {
@@ -804,7 +804,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mstyle-obj": {
@@ -824,7 +824,7 @@
         }
       },
       "context": [
-        "VUE_TEMPLATE"
+        "MPX_TEMPLATE"
       ]
     },
     "mbase": {

@@ -773,7 +773,7 @@
     <variable name="className" expression="" defaultValue="&quot;className&quot;" alwaysStopAt="true"/>
     <variable name="data" expression="" defaultValue="&quot;data&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -785,7 +785,7 @@
     <variable name="classNameA" expression="" defaultValue="&quot;classNameA&quot;" alwaysStopAt="true"/>
     <variable name="classNameB" expression="" defaultValue="&quot;classNameB&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -796,7 +796,7 @@
     <variable name="component" expression="" defaultValue="&quot;component&quot;" alwaysStopAt="true"/>
     <variable name="propName" expression="" defaultValue="&quot;propName&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -829,7 +829,7 @@
     <variable name="fileName" expression="" defaultValue="&quot;fileName&quot;" alwaysStopAt="true"/>
     <variable name="altText" expression="" defaultValue="&quot;altText&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -842,7 +842,7 @@
     <variable name="classNameB" expression="" defaultValue="&quot;classNameB&quot;" alwaysStopAt="true"/>
     <variable name="condition" expression="" defaultValue="&quot;condition&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -853,7 +853,7 @@
     <variable name="name" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true"/>
     <variable name="LinkTitle" expression="" defaultValue="&quot;LinkTitle&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -866,7 +866,7 @@
     <variable name="malue" expression="" defaultValue="&quot;value&quot;" alwaysStopAt="true"/>
     <variable name="LinkTitle" expression="" defaultValue="&quot;LinkTitle&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -877,7 +877,7 @@
     <variable name="name" expression="" defaultValue="&quot;name&quot;" alwaysStopAt="true"/>
     <variable name="defaultcontent" expression="" defaultValue="&quot;defaultcontent&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -887,7 +887,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="page" expression="" defaultValue="&quot;page&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -898,7 +898,7 @@
     <variable name="path" expression="" defaultValue="&quot;path&quot;" alwaysStopAt="true"/>
     <variable name="LinkTitle" expression="" defaultValue="&quot;LinkTitle&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -909,7 +909,7 @@
     <variable name="div" expression="" defaultValue="&quot;div&quot;" alwaysStopAt="true"/>
     <variable name="data" expression="" defaultValue="&quot;data&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -921,7 +921,7 @@
     <variable name="styleObjectA" expression="" defaultValue="&quot;styleObjectA&quot;" alwaysStopAt="true"/>
     <variable name="styleObjectB" expression="" defaultValue="&quot;styleObjectB&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -930,7 +930,7 @@
             description="Mpx transition component with JavaScript hooks"
             toReformat="true" toShortenFQNames="true">
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -941,7 +941,7 @@
     <variable name="div" expression="" defaultValue="&quot;div&quot;" alwaysStopAt="true"/>
     <variable name="item" expression="" defaultValue="&quot;item&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -951,7 +951,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="data" expression="" defaultValue="&quot;data&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 
@@ -961,7 +961,7 @@
             toReformat="true" toShortenFQNames="true">
     <variable name="numData" expression="" defaultValue="&quot;numData&quot;" alwaysStopAt="true"/>
     <context>
-      <option name="VUE_TEMPLATE" value="true"/>
+      <option name="MPX_TEMPLATE" value="true"/>
     </context>
   </template>
 

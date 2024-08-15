@@ -216,7 +216,7 @@
                          implementation="org.jetbrains.mpxjs.liveTemplate.VueScriptLiveTemplateContextType"/>
     <liveTemplateContext contextId="VUE_COMPONENT_DESCRIPTOR" baseContextId="Mpx"
                          implementation="org.jetbrains.mpxjs.liveTemplate.VueComponentDescriptorLiveTemplateContextType"/>
-    <liveTemplateContext contextId="VUE_TEMPLATE" baseContextId="Mpx"
+    <liveTemplateContext contextId="MPX_TEMPLATE" baseContextId="Mpx"
                          implementation="org.jetbrains.mpxjs.liveTemplate.VueTemplateLiveTemplateContextType"/>
     <liveTemplateContext contextId="MPX_INSIDE_TAG" baseContextId="Mpx"
                          implementation="org.jetbrains.mpxjs.liveTemplate.VueInsideTagLiveTemplateContextType"/>
