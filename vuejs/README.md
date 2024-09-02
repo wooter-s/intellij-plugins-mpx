@@ -1,16 +1,16 @@
-# Vue.js for IntelliJ IDEA-based IDEs
-
-This plugin provides support for [Vue.js](https://vuejs.org) in IntelliJ IDEA Ultimate, WebStorm, PhpStorm, PyCharm Professional and RubyMine.
-
-It provides intelligent Vue-specific code completion, navigation, and refactoring.
-
-The plugin bundles a collection of [Vue.js code templates](https://github.com/sdras/vue-vscode-snippets) by [Sarah Drasner](https://github.com/sdras).
+# Mpx.js for IntelliJ IDEA-based IDEs
 
 ## Getting started
 
-1. If you’re using IntelliJ IDEA Ultimate, PhpStorm, PyCharm, or RubyMine, install Vue.js plugin in Preferences | Plugins - Install JetBrains plugins.
-2. Open your Vue project.
-3. Make sure that you have Vue.js library files in your project (for example, in the node_modules folder).
+1. If you’re using IntelliJ IDEA Ultimate, PhpStorm, PyCharm, or RubyMine, install Mpx.js plugin in Preferences | Plugins - Install JetBrains plugins.
+2. Open your Mpx project.
+3. Make sure that you have Mpx.js library files in your project (for example, in the node_modules folder).
 
-## Reporting issue
-Please report any issues on [https://youtrack.jetbrains.com/issues/WEB](https://youtrack.jetbrains.com/issues/WEB).
+
+## 特性
+1. 支持mpx语法高亮
+2. 支持小程序组件和指令代码提示
+3. 支持小程序组件文件导航跳转
+
+![小程序组件](https://plugins.jetbrains.com/files/23480/screenshot_53c4f95f-2ca1-45fb-be28-52d30222d784)
+![小程序指令](https://plugins.jetbrains.com/files/23480/screenshot_8d37e73c-6bd7-4049-958d-7ddd51880a5f)
