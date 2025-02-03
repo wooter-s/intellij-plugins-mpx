@@ -23,13 +23,17 @@ import com.intellij.psi.util.CachedValueProvider
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.io.HttpRequests
 import org.jetbrains.annotations.NonNls
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.*
 import java.util.function.Supplier
 import kotlin.Pair
+import kotlin.Throws
 
 class AngularCliSchematicsRegistryServiceImpl : AngularCliSchematicsRegistryService() {
 
@@ -156,7 +160,7 @@ class AngularCliSchematicsRegistryServiceImpl : AngularCliSchematicsRegistryServ
         }
         cacheComputation = myCacheComputation!!
       }
-      var result: T? = JSLanguageServiceUtil.awaitFuture(cacheComputation, timeout, 10, null, false, null)
+      var result: T? = JSLanguageServiceUtil.awaitFuture(cacheComputation, timeout, 10, false, null)
       synchronized(this) {
         if (myCacheComputation != null && myCacheComputation!!.isDone) {
           try {
@@ -293,7 +297,7 @@ class AngularCliSchematicsRegistryServiceImpl : AngularCliSchematicsRegistryServ
     private fun checkForNgAddSupport(packageName: String, versionOrRange: String): Boolean {
       try {
         val indicator = ProgressManager.getInstance().progressIndicator
-        val pkgJson = NpmRegistryService.getInstance().fetchPackageJson(packageName, versionOrRange, indicator)
+        val pkgJson = NpmRegistryService.instance.fetchPackageJson(packageName, versionOrRange, indicator)
         return pkgJson?.get(SCHEMATICS_PROP) != null
       }
       catch (e: Exception) {

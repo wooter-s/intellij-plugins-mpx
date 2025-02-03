@@ -3,7 +3,6 @@ package org.intellij.terraform.hcl.psi
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.impl.DebugUtil
@@ -56,6 +55,12 @@ open class HCLElementGenerator(private val project: Project) {
     return block.`object`!!
   }
 
+  fun createObject(properties: Map<String, String> = emptyMap()): HCLObject {
+    val propertiesString = properties.map { (name, value) -> createPropertyString(name, value) }.joinToString("\n")
+    return createObject(propertiesString)
+  }
+
+
   /**
    * Create HCL string literal from supplied *unescaped* content.
 
@@ -80,15 +85,20 @@ open class HCLElementGenerator(private val project: Project) {
   }
 
   fun createProperty(name: String, value: String): HCLProperty {
-    val s: String
-    if (isIdentifier(name)) {
-      s = "$name = $value"
-    }
-    else {
-      s = "\"$name\" = $value"
-    }
+    val s: String = createPropertyString(name, value)
     val file = createDummyFile(s)
     return file.firstChild as HCLProperty
+  }
+
+  fun createPropertyString(name: String, value: String): String {
+    val s: String
+    if (!isIdentifier(name)) {
+      s = "\"$name\" = $value"
+    }
+    else {
+      s = "$name = $value"
+    }
+    return s
   }
 
   protected fun isIdentifier(name: String): Boolean {
@@ -99,11 +109,6 @@ open class HCLElementGenerator(private val project: Project) {
     val start = if (!isIdentifier(name)) '"' + name + '"' else name
     val file = createDummyFile("$start {}")
     return file.firstChild as HCLBlock
-  }
-
-  fun createComma(): PsiElement {
-    val array = createValue<HCLArray>("[1, 2]")
-    return array.elements[0].nextSibling
   }
 
   fun createIdentifier(name: String): HCLIdentifier {

@@ -11,21 +11,24 @@ import com.intellij.util.containers.toArray
 import org.intellij.terraform.config.Constants.HCL_DATASOURCE_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_PROVIDER_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_RESOURCE_IDENTIFIER
-import org.intellij.terraform.config.TerraformFileType
+import org.intellij.terraform.config.actions.AddProviderAction
 import org.intellij.terraform.config.actions.TFInitAction
+import org.intellij.terraform.config.model.BlockType
+import org.intellij.terraform.config.model.TypeModel
 import org.intellij.terraform.config.model.TypeModelProvider
 import org.intellij.terraform.hcl.HCLBundle
 import org.intellij.terraform.hcl.psi.HCLBlock
 import org.intellij.terraform.hcl.psi.HCLElementVisitor
-import org.intellij.terraform.hcl.psi.HCLFile
 import org.intellij.terraform.hcl.psi.getNameElementUnquoted
-import kotlin.String
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 import kotlin.collections.listOfNotNull
 
 internal class TfUnknownResourceInspection : LocalInspectionTool() {
 
+  private val allowedIdentifiers = listOf(HCL_RESOURCE_IDENTIFIER, HCL_DATASOURCE_IDENTIFIER, HCL_PROVIDER_IDENTIFIER)
+
   override fun isAvailableForFile(file: PsiFile): Boolean {
-    return file.fileType == TerraformFileType
+    return isTerraformCompatiblePsiFile(file)
   }
 
   override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
@@ -35,44 +38,40 @@ internal class TfUnknownResourceInspection : LocalInspectionTool() {
   inner class TfBlockVisitor(val holder: ProblemsHolder) : HCLElementVisitor() {
     override fun visitBlock(block: HCLBlock) {
       ProgressIndicatorProvider.checkCanceled()
-      val blockType = block.getNameElementUnquoted(0)?.lowercase() ?: ""
-      val type = block.getNameElementUnquoted(1)
-      if (block !is HCLFile && !type.isNullOrEmpty() && blockType in allowedBlockTypes) {
-        doCheck(block, holder, type, blockType)
+      val blockTypeString = getBlockTypeString(block, allowedIdentifiers) ?: return
+      val identifier = block.getNameElementUnquoted(1) ?: return
+
+      val model = TypeModelProvider.getModel(block)
+      val provider = model.getProviderType(identifier, block)
+      if (provider == null) {
+        holder.registerProblem(block,
+                               HCLBundle.message("unknown.resource.identifier.inspection.error.message", blockTypeString, identifier),
+                               *listOfNotNull(
+                                 TFInitAction.createQuickFixNotInitialized(block),
+                                 AddProviderAction(block)
+                               ).toArray(LocalQuickFix.EMPTY_ARRAY)
+        )
+      }
+      else if (getTypeForBlock(blockTypeString, identifier, block, model) == null) {
+        holder.registerProblem(block,
+                               HCLBundle.message("unknown.resource.identifier.for.known.provider", blockTypeString, identifier, provider.fullName),
+                               *listOfNotNull(
+                                 TFInitAction.createQuickFixNotInitialized(block)
+                               ).toArray(LocalQuickFix.EMPTY_ARRAY)
+        )
       }
     }
   }
 
-  private fun doCheck(block: HCLBlock, holder: ProblemsHolder, type: String, blockType: String) {
-    val typeModel = TypeModelProvider.getModel(block)
-    val provider = when (blockType) {
-      HCL_RESOURCE_IDENTIFIER -> typeModel.getResourceType(type, block)?.provider
-      HCL_DATASOURCE_IDENTIFIER -> typeModel.getDataSourceType(type, block)?.provider
-      HCL_PROVIDER_IDENTIFIER -> typeModel.getProviderType(type, block)
-      else -> null
-    }
-    if (provider == null) {
-      holder.registerProblem(block,
-                             HCLBundle.message("unknown.resource.identifier.inspection.error.message", getBlockTypeString(block), type),
-                             *listOfNotNull(TFInitAction.createQuickFixNotInitialized(block)).toArray(LocalQuickFix.EMPTY_ARRAY)
-      )
-    }
+  private fun getTypeForBlock(blockType: String, identifier: String, block: HCLBlock, model: TypeModel): BlockType? = when (blockType) {
+    HCL_RESOURCE_IDENTIFIER -> model.getResourceType(identifier, block)
+    HCL_DATASOURCE_IDENTIFIER -> model.getDataSourceType(identifier, block)
+    HCL_PROVIDER_IDENTIFIER -> model.getProviderType(identifier, block)
+    else -> null
   }
 
-  companion object {
 
-    val allowedBlockTypes = setOf(HCL_RESOURCE_IDENTIFIER, HCL_DATASOURCE_IDENTIFIER, HCL_PROVIDER_IDENTIFIER)
-
-    @JvmStatic
-    fun getBlockTypeString(block: HCLBlock): String? {
-      val blockType = block.getNameElementUnquoted(0)?.lowercase() ?: ""
-      return when (blockType) {
-        HCL_RESOURCE_IDENTIFIER -> "resource"
-        HCL_DATASOURCE_IDENTIFIER -> "datasource"
-        HCL_PROVIDER_IDENTIFIER -> "provider"
-        else -> ""
-      }
-    }
-  }
+  private fun getBlockTypeString(block: HCLBlock, allowedIdentifiers: List<String>): String? =
+    block.getNameElementUnquoted(0)?.lowercase()?.takeIf { it in allowedIdentifiers }
 
 }

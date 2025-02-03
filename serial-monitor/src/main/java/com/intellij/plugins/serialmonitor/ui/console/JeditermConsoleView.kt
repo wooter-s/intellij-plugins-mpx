@@ -15,11 +15,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.plugins.serialmonitor.SerialProfileService.NewLine
 import com.intellij.plugins.serialmonitor.service.SerialPortService
+import com.intellij.plugins.serialmonitor.ui.SerialMonitorBundle
 import com.intellij.terminal.JBTerminalSystemSettingsProviderBase
 import com.intellij.terminal.JBTerminalWidget
 import com.jediterm.terminal.*
 import com.jediterm.terminal.emulator.JediEmulator
 import com.jediterm.terminal.model.JediTerminal
+import com.jediterm.terminal.model.TerminalTextBuffer
 import org.apache.commons.io.input.buffer.CircularByteBuffer
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -47,6 +49,7 @@ class JeditermConsoleView(project: Project, connection: SerialPortService.Serial
   @Volatile
   var paused: Boolean = false
 
+  fun isTimestamped() = emulator?.isTimestamped == true
 
   private val bytesStream = object : InputStream() {
     override fun read(): Int {
@@ -61,7 +64,13 @@ class JeditermConsoleView(project: Project, connection: SerialPortService.Serial
     override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
       synchronized(lock) {
         while (!Thread.interrupted() && !bytesBuffer.hasBytes()) {
-          lock.wait()
+          try {
+            lock.wait()
+          }
+          catch(_ : InterruptedException) {
+            Thread.currentThread().interrupt()
+            break
+          }
         }
         val toRead = min(length, bytesBuffer.currentNumberOfBytes)
         bytesBuffer.read(buffer, offset, toRead)
@@ -190,6 +199,8 @@ class JeditermConsoleView(project: Project, connection: SerialPortService.Serial
     }
   }
 
+  fun getTerminalTextBuffer(): TerminalTextBuffer = widget.terminalTextBuffer
+
   val scrollToTheEndToolbarAction = object : ToggleAction(
     ActionsBundle.messagePointer("action.EditorConsoleScrollToTheEnd.text"),
     ActionsBundle.messagePointer("action.EditorConsoleScrollToTheEnd.text"),
@@ -211,5 +222,19 @@ class JeditermConsoleView(project: Project, connection: SerialPortService.Serial
     }
   }
 
+  val printTimestampsToggleAction = object : ToggleAction(
+    SerialMonitorBundle.message("action.print.timestamps.text"),
+    SerialMonitorBundle.message("action.print.timestamps.description"),
+    AllIcons.Scope.Scratches) {
 
+    override fun update(e: AnActionEvent) {
+      e.presentation.isEnabled = widget.isShowing
+    }
+
+    override fun isSelected(e: AnActionEvent): Boolean = isTimestamped()
+    override fun setSelected(e: AnActionEvent, isSelected: Boolean) {
+      emulator?.isTimestamped = isSelected
+    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+  }
 }

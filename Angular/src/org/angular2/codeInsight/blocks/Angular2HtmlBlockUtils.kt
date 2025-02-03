@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.codeInsight.blocks
 
+import com.intellij.lang.javascript.JSKeywordSets
 import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.lang.javascript.psi.JSReferenceExpression
 import com.intellij.psi.PsiElement
@@ -9,8 +10,11 @@ import com.intellij.psi.util.*
 import com.intellij.util.asSafely
 import com.intellij.webSymbols.WebSymbol
 import com.intellij.webSymbols.query.WebSymbolsQueryExecutorFactory
+import org.angular2.codeInsight.template.getTemplateElementsScopeFor
 import org.angular2.lang.expr.lexer.Angular2TokenTypes
+import org.angular2.lang.expr.psi.Angular2Action
 import org.angular2.lang.expr.psi.Angular2BlockParameter
+import org.angular2.lang.expr.psi.Angular2EmbeddedExpression
 import org.angular2.lang.expr.psi.impl.Angular2BlockParameterVariableImpl
 import org.angular2.lang.html.psi.Angular2HtmlBlock
 import org.angular2.web.NG_BLOCKS
@@ -27,16 +31,19 @@ const val BLOCK_DEFER = "defer"
 const val BLOCK_ERROR = "error"
 const val BLOCK_PLACEHOLDER = "placeholder"
 const val BLOCK_LOADING = "loading"
+const val BLOCK_LET = "let"
 
-val BLOCKS_WITH_PRIMARY_EXPRESSION = setOf(BLOCK_IF, BLOCK_ELSE_IF, BLOCK_SWITCH, BLOCK_CASE, BLOCK_FOR)
+val BLOCKS_WITH_PRIMARY_EXPRESSION = setOf(BLOCK_IF, BLOCK_ELSE_IF, BLOCK_SWITCH, BLOCK_CASE, BLOCK_FOR, BLOCK_LET)
 
 const val PARAMETER_AS = "as"
 const val PARAMETER_LET = "let"
 const val PARAMETER_ON = "on"
 const val PARAMETER_WHEN = "when"
+const val PARAMETER_NEVER = "never"
 const val PARAMETER_TRACK = "track"
 
 const val PARAMETER_PREFIX_PREFETCH = "prefetch"
+const val PARAMETER_PREFIX_HYDRATE = "hydrate"
 
 object Angular2HtmlBlockUtils {
 
@@ -83,6 +90,17 @@ fun getAngular2HtmlBlocksConfig(location: PsiElement): Angular2HtmlBlocksConfig 
   }
 }
 
+fun isDeferOnReferenceExpression(element: PsiElement): Boolean =
+/* Identifier within JSReferenceExpression or JSReferenceExpression itself */
+  (element.asSafely<JSReferenceExpression>()
+   ?: element.takeIf { JSKeywordSets.IDENTIFIER_NAMES.contains(it.elementType) }
+     ?.parent
+     ?.asSafely<JSReferenceExpression>()
+  )
+    ?.parent
+    ?.asSafely<Angular2BlockParameter>()
+    ?.name == PARAMETER_ON
+
 fun getDeferOnTriggerDefinition(parameter: Angular2BlockParameter): WebSymbol? {
   val triggerName = parameter
     .takeIf { it.name == PARAMETER_ON }
@@ -91,6 +109,17 @@ fun getDeferOnTriggerDefinition(parameter: Angular2BlockParameter): WebSymbol? {
     ?.referenceName
   return parameter.definition?.triggers?.find { it.name == triggerName }
 }
+
+fun isLetDeclarationVariable(node: PsiElement): Boolean =
+  node is Angular2BlockParameterVariableImpl
+  && node.parentOfType<Angular2HtmlBlock>()?.definition?.name == BLOCK_LET
+
+fun isLetReferenceBeforeDeclaration(ref: JSReferenceExpression, declaration: PsiElement): Boolean =
+  isLetDeclarationVariable(declaration)
+  && declaration is Angular2BlockParameterVariableImpl
+  && declaration.endOffset >= ref.startOffset
+  && ref.parentOfType<Angular2EmbeddedExpression>() !is Angular2Action
+  && getTemplateElementsScopeFor(ref) == getTemplateElementsScopeFor(declaration)
 
 class Angular2HtmlBlocksConfig(private val definitions: Map<String, Angular2HtmlBlockSymbol>) {
 

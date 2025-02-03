@@ -1,13 +1,13 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex;
 
 import com.intellij.javascript.flex.refactoring.extractSuper.FlexExtractInterfaceDialog;
 import com.intellij.javascript.flex.refactoring.extractSuper.FlexExtractSuperClassDialog;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.javascript.flex.refactoring.introduceConstant.FlexIntroduceConstantHandler;
 import com.intellij.lang.javascript.refactoring.JavascriptRefactoringSupportProvider;
 import com.intellij.lang.javascript.refactoring.extractMethod.ActionScriptExtractFunctionHandler;
 import com.intellij.lang.javascript.refactoring.extractSuper.JSExtractInterfaceHandler;
 import com.intellij.lang.javascript.refactoring.extractSuper.JSExtractSuperClassHandler;
-import com.intellij.lang.javascript.refactoring.introduceConstant.FlexIntroduceConstantHandler;
 import com.intellij.lang.javascript.refactoring.introduceField.JSIntroduceFieldHandler;
 import com.intellij.lang.javascript.refactoring.introduceVariable.ActionScriptIntroduceVariableHandler;
 import com.intellij.lang.javascript.refactoring.memberPullUp.JSPullUpHandler;
@@ -23,7 +23,7 @@ public final class ActionScriptRefactoringSupportProvider extends JavascriptRefa
   @Override
   public boolean isAvailable(@NotNull PsiElement context) {
     PsiFile containingFile = context.getContainingFile();
-    return containingFile != null && containingFile.getLanguage().is(JavaScriptSupportLoader.ECMA_SCRIPT_L4);
+    return containingFile != null && containingFile.getLanguage().is(FlexSupportLoader.ECMA_SCRIPT_L4);
   }
 
   @Override

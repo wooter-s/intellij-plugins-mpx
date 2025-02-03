@@ -1,9 +1,8 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.projectStructure.ui;
 
 import com.intellij.lang.javascript.flex.FlexUtils;
 import com.intellij.lang.javascript.flex.projectStructure.model.AirSigningOptions;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -70,15 +69,12 @@ public class SigningOptionsForm {
       }
     });
 
-    myProvisioningProfileTextWithBrowse
-      .addBrowseFolderListener(null, null, project, FlexUtils.createFileChooserDescriptor("mobileprovision"));
+    myProvisioningProfileTextWithBrowse.addBrowseFolderListener(project, FlexUtils.createFileChooserDescriptor("mobileprovision"));
 
-    myIosSdkTextWithBrowse
-      .addBrowseFolderListener(null, null, project, FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myIosSdkTextWithBrowse.addBrowseFolderListener(project, FileChooserDescriptorFactory.createSingleFolderDescriptor());
 
-    final FileChooserDescriptor d = mode == Mode.iOS ? FlexUtils.createFileChooserDescriptor("p12")
-                                                     : FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor();
-    myKeystoreFileTextWithBrowse.addBrowseFolderListener(null, null, project, d);
+    var d = mode == Mode.iOS ? FlexUtils.createFileChooserDescriptor("p12") : FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor();
+    myKeystoreFileTextWithBrowse.addBrowseFolderListener(project, d);
 
     myAdtOptionsComponent.setDialogCaption("Additional ADT Options");
 
@@ -179,8 +175,7 @@ public class SigningOptionsForm {
     }
   }
 
-  @NotNull
-  private String getArch() {
+  private @NotNull String getArch() {
     if (myArchX86RadioButton.isSelected()) return AirSigningOptions.ARCH_X86;
     if (myArchArmv8RadioButton.isSelected()) return AirSigningOptions.ARCH_ARMV8;
     return AirSigningOptions.ARCH_ARMV7;

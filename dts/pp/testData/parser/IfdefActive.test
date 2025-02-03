@@ -1,0 +1,9 @@
+#define I_AM_DEFINED
+
+I am
+
+#ifdef I_AM_DEFINED
+  a
+#endif
+
+sentence.

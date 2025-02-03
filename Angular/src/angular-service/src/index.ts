@@ -1,6 +1,7 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 
 import type * as ts from "./tsserverlibrary.shim";
+import {type TypeScriptServiceScript} from "@volar/typescript"
 import {createLanguageServicePlugin} from "@volar/typescript/lib/quickstart/createLanguageServicePlugin"
 import {Language, LanguagePlugin} from "@volar/language-core"
 import {AngularVirtualCode} from "./code"
@@ -9,9 +10,9 @@ import {
   decorateIdeLanguageServiceExtensions,
   decorateNgLanguageServiceExtensions,
 } from "./decorateLanguageService"
-import {CodegenContext, TypeScriptServiceScript} from "@volar/language-core/lib/types"
+import {CodegenContext} from "@volar/language-core/lib/types"
 import {AngularSourceMap} from "./ngSourceMap"
-import {Angular2TcbMappingInfo} from "./mappings"
+import {ngTranspiledTemplates, registerProtocolHandlers} from "./ngCommands"
 
 function loadLanguagePlugins(ts: typeof import('tsc-ide-plugin/tsserverlibrary.shim'),
                              info: ts.server.PluginCreateInfo): {
@@ -19,7 +20,6 @@ function loadLanguagePlugins(ts: typeof import('tsc-ide-plugin/tsserverlibrary.s
   setup?: (language: Language<string>) => void;
 } {
   addNgCommands(ts, info);
-  let ngTcbBlocks = new Map<string, AngularVirtualCode>()
   return {
     languagePlugins: [{
       getLanguageId(scriptId: string): string | undefined {
@@ -30,22 +30,19 @@ function loadLanguagePlugins(ts: typeof import('tsc-ide-plugin/tsserverlibrary.s
       },
       createVirtualCode(scriptId: string, languageId: string, snapshot: ts.IScriptSnapshot, ctx: CodegenContext<string>): AngularVirtualCode | undefined {
         if (languageId === "typescript" && !scriptId.endsWith(".d.ts") && scriptId.indexOf("/node_modules/") < 0) {
-          let virtualCode = ngTcbBlocks.get(scriptId)
-          if (!virtualCode) {
-            virtualCode = new AngularVirtualCode(scriptId, ctx, ts.sys.useCaseSensitiveFileNames)
-            ngTcbBlocks.set(scriptId, virtualCode)
-          }
-          return virtualCode.sourceFileUpdated(snapshot)
+          const normalizedScriptId = ts.server.toNormalizedPath(scriptId)
+          let virtualCode = new AngularVirtualCode(normalizedScriptId)
+          return virtualCode.sourceFileUpdated(ts, snapshot, ctx, ngTranspiledTemplates.get(normalizedScriptId))
         }
         return undefined
       },
       updateVirtualCode(scriptId: string, virtualCode: AngularVirtualCode, newSnapshot: ts.IScriptSnapshot, ctx: CodegenContext<string>): AngularVirtualCode | undefined {
-        return virtualCode.sourceFileUpdated(newSnapshot)
+        return virtualCode.sourceFileUpdated(ts, newSnapshot, ctx, ngTranspiledTemplates.get(ts.server.toNormalizedPath(scriptId)))
       },
       typescript: {
         extraFileExtensions: [{
           extension: "html",
-          scriptKind: ts.ScriptKind.External,
+          scriptKind: ts.ScriptKind.Deferred,
           isMixedContent: true,
         }],
         getServiceScript(rootVirtualCode: AngularVirtualCode): TypeScriptServiceScript | undefined {
@@ -69,9 +66,6 @@ function loadLanguagePlugins(ts: typeof import('tsc-ide-plugin/tsserverlibrary.s
   }
 }
 
-const ngTranspiledTemplateCommand = "ngTranspiledTemplate";
-const ngGetGeneratedElementTypeCommand = "ngGetGeneratedElementType";
-
 function addNgCommands(ts: typeof import('tsc-ide-plugin/tsserverlibrary.shim'), info: ts.server.PluginCreateInfo) {
   let projectService = info.project.projectService;
   projectService.logger.info("Angular: called handler processing");
@@ -89,69 +83,9 @@ function addNgCommands(ts: typeof import('tsc-ide-plugin/tsserverlibrary.shim'),
   if ((session as any).webStormNgCommandsAdded) return
 
   (session as any).webStormNgCommandsAdded = true
-  session.addProtocolHandler(ngTranspiledTemplateCommand, ngTranspiledTemplateHandler.bind(null, ts, session, projectService));
-  session.addProtocolHandler(ngGetGeneratedElementTypeCommand, ngGetGeneratedElementTypeHandler.bind(null, ts, session, projectService));
-
+  registerProtocolHandlers(session, ts, projectService)
   projectService.logger.info("Angular specific commands are successfully added.");
 }
-
-type TranspiledTemplateArguments = {
-  file: string;
-  transpiledContent: string;
-  sourceCode: { [key: string]: string }
-  mappings: Angular2TcbMappingInfo[];
-}
-
-type GetGeneratedElementTypeArguments = {
-  file: string;
-  startOffset: number,
-  endOffset: number,
-  forceReturnType: boolean,
-}
-
-const ngTranspiledTemplateHandler = (ts: typeof import('tsc-ide-plugin/tsserverlibrary.shim'),
-                                     session: ts.server.Session,
-                                     projectService: ts.server.ProjectService,
-                                     request: ts.server.protocol.Request) => {
-
-  const requestArguments = request.arguments as TranspiledTemplateArguments
-
-  let fileName = ts.server.toNormalizedPath(requestArguments.file)
-  let project = projectService.getDefaultProjectForFile(fileName, true)
-  if (project) {
-    project.getLanguageService().webStormNgUpdateTranspiledTemplate(
-      ts, fileName, requestArguments.transpiledContent, requestArguments.sourceCode, requestArguments.mappings);
-
-    // trigger reload
-    (session as any).change(
-      {
-        file: fileName,
-        line: 1,
-        offset: 1,
-        endLine: 1,
-        endOffset: 1,
-        insertString: ""
-      })
-  }
-  return {
-    responseRequired: true,
-    response: {}
-  }
-};
-
-const ngGetGeneratedElementTypeHandler = (ts: typeof import('tsc-ide-plugin/tsserverlibrary.shim'),
-                                          _session: ts.server.Session,
-                                          projectService: ts.server.ProjectService,
-                                          request: ts.server.protocol.Request) => {
-
-  const requestArguments = request.arguments as GetGeneratedElementTypeArguments
-
-  let fileName = ts.server.toNormalizedPath(requestArguments.file)
-  let project = projectService.getDefaultProjectForFile(fileName, true)
-  return project?.getLanguageService()?.webStormNgGetGeneratedElementType(
-      ts, fileName, requestArguments.startOffset, requestArguments.endOffset, requestArguments.forceReturnType)
-    ?? {responseRequired: true, response: undefined}
-};
 
 const init = createLanguageServicePlugin(loadLanguagePlugins as any)
 export = init

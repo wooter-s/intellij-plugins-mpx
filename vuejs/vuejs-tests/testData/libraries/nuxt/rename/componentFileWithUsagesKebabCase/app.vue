@@ -1,0 +1,21 @@
+<template>
+  <div>
+    <NuxtRouteAnnouncer/>
+    <NuxtWelcome/>
+    <Link/>
+    <AppCard>
+      123
+    </AppCard>
+    <app-card>
+      123
+    </app-card>
+    <LazyAppCard>
+      123
+    </LazyAppCard>
+    <lazy-app-card>
+      123
+    </lazy-app-card>
+  </div>
+</template>
+<script setup lang="ts">
+</script>

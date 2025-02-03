@@ -43,6 +43,13 @@ import org.intellij.terraform.hil.patterns.HILPatterns.MethodPosition
 import org.intellij.terraform.hil.patterns.HILPatterns.VariableTypePosition
 import org.intellij.terraform.hil.psi.*
 import org.intellij.terraform.hil.psi.impl.getHCLHost
+import org.intellij.terraform.opentofu.codeinsight.EncryptionMethodsCompletionProvider
+import org.intellij.terraform.opentofu.codeinsight.KeyProvidersCompletionProvider
+import org.intellij.terraform.opentofu.codeinsight.findEncryptionBlocksIdsByType
+import org.intellij.terraform.opentofu.patterns.OpenTofuPatterns.EncryptionMethodBlock
+import org.intellij.terraform.opentofu.patterns.OpenTofuPatterns.IlseOpenTofuEncryptionMethod
+import org.intellij.terraform.opentofu.patterns.OpenTofuPatterns.IlseOpenTofuKeyProvider
+import org.intellij.terraform.opentofu.patterns.OpenTofuPatterns.KeyProviderBlock
 import java.util.*
 
 open class HILCompletionContributor : CompletionContributor(), DumbAware {
@@ -55,6 +62,8 @@ open class HILCompletionContributor : CompletionContributor(), DumbAware {
     SelfCompletionProvider,
     TerraformCompletionProvider,
     VariableCompletionProvider,
+    KeyProvidersCompletionProvider,
+    EncryptionMethodsCompletionProvider
   ).associateBy { it.scope }
 
   init {
@@ -78,7 +87,7 @@ open class HILCompletionContributor : CompletionContributor(), DumbAware {
     }
   }
 
-  private abstract class SelectFromScopeCompletionProvider(val scope: String) {
+  internal abstract class SelectFromScopeCompletionProvider(val scope: String) {
     abstract fun doAddCompletions(variable: Identifier,
                                   parameters: CompletionParameters,
                                   context: ProcessingContext,
@@ -283,16 +292,22 @@ open class HILCompletionContributor : CompletionContributor(), DumbAware {
 
       if (expression is Identifier) {
         val module = host.getTerraformModule()
-        val names = TreeSet<String>()
         if (IlseDataSource.accepts(parent)) {
           val dataSources = module.findDataSource(expression.name, null)
-          dataSources.mapNotNull { it.getNameElementUnquoted(2) }.toCollection(names)
+          result.addAllElements(dataSources.mapNotNull { it.getNameElementUnquoted(2) }.map { create(it) })
+        }
+        else if (IlseOpenTofuKeyProvider.accepts(parent)) {
+          val keyProviderIds = findEncryptionBlocksIdsByType(parent, expression.name, KeyProviderBlock).toList()
+          result.addAllElements(keyProviderIds)
+        }
+        else if (IlseOpenTofuEncryptionMethod.accepts(parent)) {
+          val encryptionMethods = findEncryptionBlocksIdsByType(parent, expression.name, EncryptionMethodBlock).toList()
+          result.addAllElements(encryptionMethods)
         }
         else {
           val resources = module.findResources(expression.name, null)
-          resources.mapNotNull { it.getNameElementUnquoted(2) }.toCollection(names)
+          result.addAllElements(resources.mapNotNull { it.getNameElementUnquoted(2) }.map { create(it) })
         }
-        result.addAllElements(names.map { create(it) })
       }
     }
 

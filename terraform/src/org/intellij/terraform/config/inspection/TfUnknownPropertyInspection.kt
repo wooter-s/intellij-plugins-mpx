@@ -9,19 +9,20 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
-import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.actions.TFInitAction
 import org.intellij.terraform.config.codeinsight.TfModelHelper
 import org.intellij.terraform.config.patterns.TerraformPatterns
 import org.intellij.terraform.hcl.HCLBundle
 import org.intellij.terraform.hcl.psi.*
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 
 class TfUnknownPropertyInspection : LocalInspectionTool() {
-  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
-    if (holder.file.fileType != TerraformFileType) {
-      return PsiElementVisitor.EMPTY_VISITOR
-    }
 
+  override fun isAvailableForFile(file: PsiFile): Boolean {
+    return isTerraformCompatiblePsiFile(file)
+  }
+
+  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
     return TfPropertyVisitor(holder)
   }
 
@@ -51,10 +52,13 @@ class TfUnknownPropertyInspection : LocalInspectionTool() {
   }
 }
 
-internal class RemovePropertyQuickFix(element: HCLProperty) : LocalQuickFixOnPsiElement(element) {
-  override fun getText(): String = HCLBundle.message("unknown.property.in.block.inspection.quick.fix.name")
+internal abstract class RemovePsiElementQuickFix(element: HCLElement) : LocalQuickFixOnPsiElement(element) {
   override fun getFamilyName(): String = text
   override fun invoke(project: Project, file: PsiFile, startElement: PsiElement, endElement: PsiElement) {
     startElement.delete()
   }
+}
+
+private class RemovePropertyQuickFix(element: HCLElement) : RemovePsiElementQuickFix(element) {
+  override fun getText(): String = HCLBundle.message("unknown.property.in.block.inspection.quick.fix.name")
 }

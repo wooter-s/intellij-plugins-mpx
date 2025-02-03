@@ -17,7 +17,7 @@ import org.jetbrains.vuejs.lang.configureVueDependencies
 import org.jetbrains.vuejs.options.getVueSettings
 import org.junit.Test
 
-class VolarServiceTest : VolarServiceTestBase() {
+class VolarServiceTest : VueLspServiceTestBase() {
 
   @Test
   fun testSimpleVue() {
@@ -53,13 +53,13 @@ class VolarServiceTest : VolarServiceTestBase() {
       <script setup lang="ts">
       const <error>shouldError</error>: string = 5;
       const id = "el"
-      const <weak_warning>ariaLabel</weak_warning> = "hello"
+      const ariaLabel = "hello"
       </script>
       
       <template>
         <div :id />
-        <!-- below is a bug in Vue LS, TODO wait & update -->
-        <div <error><warning>:<error>aria</error>-<error>label</error></warning></error> />
+        <!-- below was a bug in Vue LS https://github.com/vuejs/language-tools/issues/3830 -->
+        <div <warning>:aria-label</warning> />
       </template>
     """)
     myFixture.checkLspHighlighting()
@@ -339,13 +339,31 @@ class VolarServiceTest : VolarServiceTestBase() {
     val text = """
       <script setup lang="ts">
       <weak_warning>import HelloWorld from '@/components/HelloWorld.vue'</weak_warning>
-      <weak_warning>import incorrect from <error descr="Vue: Cannot find module '@/components/incorrect.vue' or its corresponding type declarations.">'<error descr="Module is not listed in package.json dependencies">@/components</error>/incorrect.vue'</error></weak_warning>
+      <weak_warning>import incorrect from <error descr="Vue: Cannot find module '@/components/incorrect.vue' or its corresponding type declarations.">'@/components/incorrect.vue'</error></weak_warning>
       </script>
     """.trimIndent()
     myFixture.configureByText("App.vue", text)
     myFixture.checkLspHighlighting()
     myFixture.configureByText("App1.vue", text)
     myFixture.checkLspHighlighting()
+  }
+
+  @Test
+  fun testTailwindApplyInterop() {
+    myFixture.enableInspections(VueInspectionsProvider())
+    myFixture.configureVueDependencies(VueTestModule.VUE_3_4_0)
+
+    myFixture.configureByText("tsconfig.json", tsconfig)
+    // @apply is not part of CSS spec,
+    myFixture.configureByText("Simple.vue", """
+      <style scoped>
+      button {
+        @apply bg-red-500;
+      }
+      </style>
+    """)
+    myFixture.checkLspHighlighting()
+    assertCorrectService()
   }
 
   private fun getPresentationTexts(elements: Array<LookupElement>): List<String?> {

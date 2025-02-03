@@ -1,3 +1,4 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.intentions;
 
 import com.intellij.codeInsight.CodeInsightBundle;
@@ -6,8 +7,8 @@ import com.intellij.lang.ASTNode;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.lang.javascript.JSTokenTypes;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.FlexBundle;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.generation.JSChooserElementNode;
 import com.intellij.lang.javascript.generation.JavaScriptImplementMethodsHandlerForFlex;
 import com.intellij.lang.javascript.psi.JSFile;
@@ -36,15 +37,14 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public final class CreateJSSubclassIntention extends PsiElementBaseIntentionAction {
-  private @NonNls static final String IMPL_SUFFIX = "Impl";
+  private static final @NonNls String IMPL_SUFFIX = "Impl";
 
   public CreateJSSubclassIntention() {
     setText(CodeInsightBundle.message("intention.implement.abstract.class.subclass.text"));
   }
 
   @Override
-  @NotNull
-  public String getFamilyName() {
+  public @NotNull String getFamilyName() {
     return FlexBundle.message("intention.create.subclass.or.implement.interface");
   }
 
@@ -53,7 +53,7 @@ public final class CreateJSSubclassIntention extends PsiElementBaseIntentionActi
     final PsiFile psiFile = element.getContainingFile();
     if (!(psiFile instanceof JSFile) ||
         InjectedLanguageManager.getInstance(project).getInjectionHost(psiFile) != null ||
-        !psiFile.getLanguage().isKindOf(JavaScriptSupportLoader.ECMA_SCRIPT_L4)) {
+        !psiFile.getLanguage().isKindOf(FlexSupportLoader.ECMA_SCRIPT_L4)) {
       return false;
     }
 
@@ -125,7 +125,7 @@ public final class CreateJSSubclassIntention extends PsiElementBaseIntentionActi
   }
 
   @Override
-  public void invoke(@NotNull final Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+  public void invoke(final @NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
     final JSClass jsClass = PsiTreeUtil.getParentOfType(element, JSClass.class);
     if (jsClass == null) return;
 

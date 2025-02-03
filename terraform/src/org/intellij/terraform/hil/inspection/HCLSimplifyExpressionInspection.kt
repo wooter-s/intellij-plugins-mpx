@@ -11,7 +11,6 @@ import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.util.DocumentUtil
-import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.TerraformLanguage
 import org.intellij.terraform.config.psi.TerraformElementGenerator
 import org.intellij.terraform.hcl.HCLBundle
@@ -19,13 +18,15 @@ import org.intellij.terraform.hcl.HCLLanguage
 import org.intellij.terraform.hcl.psi.HCLElementVisitor
 import org.intellij.terraform.hcl.psi.HCLExpression
 import org.intellij.terraform.hcl.psi.HCLMethodCallExpression
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 
 class HCLSimplifyExpressionInspection : LocalInspectionTool(), CleanupLocalInspectionTool {
-  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
-    val file = holder.file
-    if (file.language !in listOf(HCLLanguage, TerraformLanguage)) return PsiElementVisitor.EMPTY_VISITOR
-    if (file.fileType != TerraformFileType) return PsiElementVisitor.EMPTY_VISITOR
 
+  override fun isAvailableForFile(file: PsiFile): Boolean {
+    return isTerraformCompatiblePsiFile(file) || file.language == HCLLanguage
+  }
+
+  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
     return MyEV(holder)
   }
 
@@ -37,17 +38,17 @@ class HCLSimplifyExpressionInspection : LocalInspectionTool(), CleanupLocalInspe
       // 'element(list, index)' -> 'list[index]'
       if (args.size == 2 && method.id == "element") {
         if (holder.isOnTheFly) {
-          holder.registerProblem(o, HCLBundle.message("hcl.simplify.expression.inspection.could.be.replaced.with.list.indexing.message"), ProblemHighlightType.INFORMATION, ReplaceWithListIndexing(o))
+          holder.registerProblem(o, HCLBundle.message("hcl.simplify.expression.inspection.could.be.replaced.with.list.indexing.message"), ProblemHighlightType.WEAK_WARNING, ReplaceWithListIndexing(o))
         }
       }
     }
   }
 
   class ReplaceWithListIndexing(e: HCLMethodCallExpression) : LocalQuickFixAndIntentionActionOnPsiElement(e), BatchQuickFix {
-    override fun getText() = HCLBundle.message("hcl.simplify.expression.inspection.replace.with.list.indexing.quick.fix.text")
-    override fun getFamilyName() = HCLBundle.message("hcl.simplify.expression.inspection.replace.with.list.indexing.quick.fix.family.name")
+    override fun getText(): String = HCLBundle.message("hcl.simplify.expression.inspection.replace.with.list.indexing.quick.fix.text")
+    override fun getFamilyName(): String = HCLBundle.message("hcl.simplify.expression.inspection.replace.with.list.indexing.quick.fix.family.name")
 
-    override fun startInWriteAction() = false
+    override fun startInWriteAction(): Boolean = false
 
     override fun isAvailable(project: Project, file: PsiFile, startElement: PsiElement, endElement: PsiElement): Boolean {
       if (file.language !in listOf(HCLLanguage, TerraformLanguage)) return false
@@ -70,7 +71,9 @@ class HCLSimplifyExpressionInspection : LocalInspectionTool(), CleanupLocalInspe
     override fun applyFix(project: Project, descriptors: Array<out CommonProblemDescriptor>, psiElementsToIgnore: MutableList<PsiElement>, refreshViews: Runnable?) {
       val targets = ArrayList<HCLMethodCallExpression>()
       for (descriptor in descriptors) {
-        descriptor.fixes?.filterIsInstance(ReplaceWithListIndexing::class.java)?.map { it.startElement }?.filterIsInstanceTo(targets, HCLMethodCallExpression::class.java)
+        descriptor.fixes?.filterIsInstance<ReplaceWithListIndexing>()
+          ?.map { it.startElement }
+          ?.filterIsInstanceTo(targets, HCLMethodCallExpression::class.java)
       }
 
       if (!FileModificationService.getInstance().preparePsiElementsForWrite(targets)) return

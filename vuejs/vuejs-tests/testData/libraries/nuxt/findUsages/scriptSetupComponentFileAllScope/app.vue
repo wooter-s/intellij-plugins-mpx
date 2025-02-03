@@ -1,0 +1,11 @@
+<template>
+  <div>
+    <NuxtRouteAnnouncer/>
+    <NuxtWelcome/>
+    <Link/>
+    <AppAlert>
+      123
+    </AppAlert>
+    <app-alert/>
+  </div>
+</template>

@@ -2,6 +2,7 @@ package org.angular2.lang.html.tcb
 
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.util.InspectionMessage
+import com.intellij.lang.javascript.service.withServiceTraceSpan
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import org.angular2.codeInsight.config.Angular2Compiler
@@ -9,6 +10,7 @@ import org.angular2.entities.Angular2ClassBasedComponent
 import org.angular2.entities.Angular2Component
 import org.angular2.entities.Angular2Directive
 import org.angular2.lang.html.Angular2HtmlFile
+import java.util.*
 
 object Angular2TemplateTranspiler {
 
@@ -20,9 +22,9 @@ object Angular2TemplateTranspiler {
     fileContext: FileContext,
     component: Angular2Component,
     tcbId: String,
-  ): TranspiledTemplate? {
+  ): TranspiledTemplate? = withServiceTraceSpan("transpileTemplate") {
     val boundTarget = BoundTarget(component)
-    if (boundTarget.templateFile == null) return null
+    if (boundTarget.templateFile == null) return@withServiceTraceSpan null
 
     val context = Context(
       fileContext as Environment,
@@ -33,7 +35,7 @@ object Angular2TemplateTranspiler {
     val scope = Scope.forNodes(context, null, null, boundTarget.templateRoots, null)
     val statements = scope.render()
 
-    return Expression {
+    return@withServiceTraceSpan Expression {
       append("function _tcb${context.id}")
 
       val cls = (component as? Angular2ClassBasedComponent)?.typeScriptClass
@@ -87,6 +89,17 @@ object Angular2TemplateTranspiler {
     val nameMappings: List<Pair<Int, Map<String, String>>>
   }
 
+  @Suppress("unused")
+  enum class SourceMappingFlag {
+    FORMAT,
+    COMPLETION,
+    NAVIGATION,
+    SEMANTIC,
+    STRUCTURE,
+    TYPES,
+    REVERSE_TYPES,
+  }
+
   interface SourceMapping {
     val sourceOffset: Int
     val sourceLength: Int
@@ -94,11 +107,11 @@ object Angular2TemplateTranspiler {
     val generatedLength: Int
     val diagnosticsOffset: Int?
     val diagnosticsLength: Int?
-    val types: Boolean
+    val flags: EnumSet<SourceMappingFlag>
 
     fun offsetBy(generatedOffset: Int = 0, sourceOffset: Int = 0): SourceMapping
 
-    val ignored get() = !types && diagnosticsOffset == null
+    val ignored get() = flags.isEmpty() && diagnosticsOffset == null
   }
 
   interface ContextVarMapping {

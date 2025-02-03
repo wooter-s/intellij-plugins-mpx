@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.mxml;
 
 import com.intellij.codeInsight.FileModificationService;
@@ -8,7 +8,7 @@ import com.intellij.javascript.flex.mxml.schema.AnnotationBackedDescriptorImpl;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.Annotator;
 import com.intellij.lang.annotation.HighlightSeverity;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.lang.javascript.psi.JSCommonTypeNames;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -39,7 +39,7 @@ import java.awt.*;
 public final class FlexMxmlColorAnnotator implements Annotator {
   @Override
   public void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
-    if (!(element instanceof XmlAttribute attribute) || !JavaScriptSupportLoader.isFlexMxmFile(element.getContainingFile())) {
+    if (!(element instanceof XmlAttribute attribute) || !FlexSupportLoader.isFlexMxmFile(element.getContainingFile())) {
       return;
     }
     if (!LineMarkerSettings.getSettings().isEnabled(ColorLineMarkerProvider.INSTANCE)) {
@@ -68,8 +68,7 @@ public final class FlexMxmlColorAnnotator implements Annotator {
     }
   }
 
-  @Nullable
-  private static Color getColor(@NotNull String colorValue) {
+  private static @Nullable Color getColor(@NotNull String colorValue) {
     try {
       int num = Integer.parseInt(colorValue);
       //noinspection UseJBColor
@@ -89,8 +88,7 @@ public final class FlexMxmlColorAnnotator implements Annotator {
     return null;
   }
 
-  @Nullable
-  private static String toCanonicalHex(String colorValue, boolean cssStyle) {
+  private static @Nullable String toCanonicalHex(String colorValue, boolean cssStyle) {
     if (colorValue.startsWith("#")) {
       if (cssStyle) return colorValue;
       return "0x" + colorValue.substring(1);
@@ -120,9 +118,8 @@ public final class FlexMxmlColorAnnotator implements Annotator {
       myAttribute = attribute;
     }
 
-    @NotNull
     @Override
-    public Icon getIcon() {
+    public @NotNull Icon getIcon() {
       Color color = getColor(myColorValue);
       if (color != null) {
         return JBUIScale.scaleIcon(new ColorIcon(ICON_SIZE, color));
@@ -164,7 +161,7 @@ public final class FlexMxmlColorAnnotator implements Annotator {
     public AnAction getClickAction() {
       return new AnAction() {
         @Override
-        public void actionPerformed(@NotNull final AnActionEvent e) {
+        public void actionPerformed(final @NotNull AnActionEvent e) {
           final Editor editor = e.getData(CommonDataKeys.EDITOR);
           if (editor != null) {
             Color currentColor = getColor(myColorValue);

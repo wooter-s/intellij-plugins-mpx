@@ -5,13 +5,15 @@ import com.intellij.lang.Language
 import com.intellij.lang.css.CSSLanguage
 import com.intellij.lang.javascript.highlighting.TypeScriptHighlighter
 import com.intellij.lang.javascript.psi.ecmal4.JSClass
+import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter
 import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter.Companion.applyAttributes
 import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter.Companion.highlightName
 import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter.Companion.highlightWithLexer
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.XmlHighlighterColors
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.psi.PsiElement
-import org.angular2.codeInsight.Angular2HighlightingUtils.TextAttributesKind.NG_PIPE
+import org.angular2.codeInsight.Angular2HighlightingUtils.TextAttributesKind.*
 import org.angular2.codeInsight.blocks.Angular2BlockParameterSymbol
 import org.angular2.codeInsight.blocks.Angular2HtmlBlockSymbol
 import org.angular2.entities.*
@@ -22,6 +24,7 @@ import org.angular2.lang.html.psi.Angular2HtmlBlock
 object Angular2HighlightingUtils {
 
   enum class TextAttributesKind(val key: TextAttributesKey) {
+    TS_LOCAL_VARIABLE(TypeScriptHighlighter.TS_LOCAL_VARIABLE),
     TS_PROPERTY(TypeScriptHighlighter.TS_INSTANCE_MEMBER_VARIABLE),
     TS_FUNCTION(TypeScriptHighlighter.TS_EXPORTED_FUNCTION),
     TS_KEYWORD(TypeScriptHighlighter.TS_KEYWORD),
@@ -43,7 +46,9 @@ object Angular2HighlightingUtils {
 
   val Angular2Entity.htmlLabel: String
     get() =
-      Angular2Bundle.message(
+      if (this is Angular2Module && this.isStandalonePseudoModule)
+        htmlClassName
+      else Angular2Bundle.message(
         when (this) {
           is Angular2Module -> "angular.entity.module"
           is Angular2Component -> "angular.entity.component"
@@ -76,6 +81,18 @@ object Angular2HighlightingUtils {
 
   fun String.withColor(language: Language, context: PsiElement) =
     highlightWithLexer(context.project, this, language)
+
+  fun renderCode(vararg items: Pair<String, TextAttributesKind?>, context: PsiElement): String =
+    context.project.service<JSTooltipWithHtmlHighlighter>().let { highlighter ->
+      highlighter.wrapWithCodeTag(
+        items.joinToString("") { (code, key) ->
+          if (key != null)
+            highlighter.applyAttributes(code, key.key, false)
+          else
+            code
+        }, isBlock = false
+      )
+    }
 
   @JvmStatic
   fun <T : Angular2Entity> renderEntityList(entities: Collection<T>): String {

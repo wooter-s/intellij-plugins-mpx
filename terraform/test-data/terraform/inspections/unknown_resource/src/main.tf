@@ -14,6 +14,6 @@ resource "aws-sso-scim_user" "user" {
   user_name    = "jdoe"
 }
 
-resource "docker_image" "image" {
-  name = "mayastorn-hub:0.0.2"
+resource "ably_app" "ably" {
+  name = "app"
 }

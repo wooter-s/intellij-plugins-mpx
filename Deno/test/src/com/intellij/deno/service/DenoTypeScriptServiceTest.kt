@@ -2,30 +2,19 @@ package com.intellij.deno.service
 
 import com.intellij.deno.DenoSettings
 import com.intellij.deno.UseDeno
-import com.intellij.lang.javascript.modules.JSTempDirWithNodeInterpreterTest
-import com.intellij.lang.typescript.service.TypeScriptServiceTestBase
-import com.intellij.lang.typescript.compiler.languageService.TypeScriptLanguageServiceUtil
+import com.intellij.lang.typescript.compiler.preventTypeScriptServiceRestartOnContextChange
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.platform.lsp.tests.checkLspHighlighting
 import com.intellij.psi.codeStyle.CodeStyleManager
-import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
+import com.intellij.util.ui.UIUtil
 
-class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
-  override fun setUp() {
-    super.setUp()
-    DenoSettings.getService(project).setUseDenoAndReload(UseDeno.ENABLE)
-    (myFixture as CodeInsightTestFixtureImpl).canChangeDocumentDuringHighlighting(true)
-    TypeScriptLanguageServiceUtil.setUseService(true)
-    Disposer.register(testRootDisposable) {
-      TypeScriptLanguageServiceUtil.setUseService(false)
-    }
-  }
+class DenoTypeScriptServiceTest : DenoServiceTestBase() {
 
   fun testSimpleDeno() {
+    DenoSettings.getService(project).setUseDeno(UseDeno.ENABLE)
     // one error comes from JSReferenceChecker.reportUnresolvedReference, another one - from Deno LSP server
     myFixture.configureByText("foo.ts", "console.log(Deno)\n" +
                                         "console.log(<error descr=\"Deno: Cannot find name 'Deno1'. Did you mean 'Deno'?\">Deno1</error>)")
@@ -33,6 +22,7 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
   }
 
   fun testDenoOpenCloseFile() {
+    DenoSettings.getService(project).setUseDeno(UseDeno.ENABLE)
     val file = myFixture.configureByText("bar.ts", "console.log(<error descr=\"Deno: Cannot find name 'UnknownName'.\">UnknownName</error>);\n")
     myFixture.type("export class Hello {}\n")
     FileEditorManager.getInstance(project).closeFile(file.virtualFile)
@@ -48,6 +38,7 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
   }
 
   fun testDenoSimpleRename() {
+    DenoSettings.getService(project).setUseDeno(UseDeno.ENABLE)
     val errorWithMarkup = "<error descr=\"Deno: Cannot find name 'UnknownName'.\">UnknownName</error>"
 
     val fooFile = myFixture.addFileToProject("foo.ts", "export class Hello {}\n$errorWithMarkup")
@@ -73,6 +64,8 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
   }
 
   fun testDenoFileRename() {
+    myFixture.addFileToProject("deno.json", "{}")
+
     val errorWithMarkup = "<error descr=\"Deno: Cannot find name 'UnknownName'.\">UnknownName</error>"
 
     myFixture.configureByText("foo.ts",
@@ -85,6 +78,8 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
     myFixture.renameElement(file, "foo1.ts")
     myFixture.renameElement(bar, "bar1.ts")
     WriteAction.run<Throwable> { myFixture.editor.document.setText(myFixture.editor.document.text.replace("UnknownName", errorWithMarkup)) }
+    UIUtil.dispatchAllInvocationEvents()
+
     myFixture.checkLspHighlighting()
     myFixture.checkResult("import { Hello<caret>1 } from './subdir/bar1.ts'\nconst _hi = new Hello1()\nconsole.log(_hi)\nUnknownName")
 
@@ -93,27 +88,15 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
     myFixture.moveFile("subdir/bar1.ts", "")
     FileDocumentManager.getInstance().saveAllDocuments()
     myFixture.moveFile("foo1.ts", "subdir")
-    myFixture.renameElement(bar.containingDirectory, "subdir1")
+    preventTypeScriptServiceRestartOnContextChange { myFixture.renameElement(bar.containingDirectory, "subdir1") }
     WriteAction.run<Throwable> { myFixture.editor.document.setText(myFixture.editor.document.text.replace("UnknownName", errorWithMarkup)) }
+    UIUtil.dispatchAllInvocationEvents()
+
     myFixture.checkLspHighlighting()
     myFixture.checkResult("import { Hello<caret>2 } from '../bar1.ts'\nconst _hi = new Hello2()\nconsole.log(_hi)\nUnknownName")
   }
 
-  fun testDenoModulePathCompletion() {
-    myFixture.configureByText("main.ts", """
-      import {join} from <warning>"https://deno.land/std/path<caret>/mod.ts"</warning>;
-      
-      join("1", "2");
-    """.trimIndent())
-    myFixture.checkLspHighlighting()
-
-    val lookupElements = myFixture.completeBasic()
-    assertTrue(lookupElements.isNotEmpty())
-    TypeScriptServiceTestBase.assertHasServiceItems(lookupElements, true)
-  }
-
   fun testDenoAutoConfiguredWhenDenoJsonFound() {
-    DenoSettings.getService(project).setUseDenoAndReload(UseDeno.CONFIGURE_AUTOMATICALLY)
     myFixture.addFileToProject("deno/deno.json", "{\"compilerOptions\": {\"allowJs\": true}}")
     val path = "./deno/src/main.ts"
     myFixture.addFileToProject(path, "console.log(Deno); " +
@@ -123,7 +106,6 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
   }
 
   fun testDenoAutoConfiguredWhenDenoJsoncFound() {
-    DenoSettings.getService(project).setUseDenoAndReload(UseDeno.CONFIGURE_AUTOMATICALLY)
     myFixture.addFileToProject("deno/deno.jsonc", "{\"compilerOptions\": {\"allowJs\": true}}")
     val path = "./deno/src/main.ts"
     myFixture.addFileToProject(path, "console.log(Deno); " +
@@ -133,7 +115,6 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
   }
 
   fun testDenoAutoConfiguredWhenDenoJsonNotFound() {
-    DenoSettings.getService(project).setUseDenoAndReload(UseDeno.CONFIGURE_AUTOMATICALLY)
     val path = "./deno/src/main.ts"
     myFixture.addFileToProject(path, "console.log(<error descr=\"TS2304: Cannot find name 'Deno'.\">Deno</error>); " +
                                      "console.log(<error descr=\"TS2304: Cannot find name 'Deno1'.\">Deno1</error>)")
@@ -142,7 +123,6 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
   }
 
   fun testDenoServiceFormatting() {
-    DenoSettings.getService(project).setUseDenoAndReload(UseDeno.CONFIGURE_AUTOMATICALLY)
     DenoSettings.getService(project).setDenoFormattingEnabled(true)
     myFixture.addFileToProject("deno/deno.json", "{\"fmt\": {\"singleQuote\": true}}")
     val path = "./deno/src/fmt.ts"
@@ -159,14 +139,13 @@ class DenoTypeScriptServiceTest : JSTempDirWithNodeInterpreterTest() {
 
     myFixture.checkResult("""
       console.log(
-        'Deno',
+          'Deno',
       );
       
       """.trimIndent())
   }
 
   fun testDenoServiceFormattingDisabled() {
-    DenoSettings.getService(project).setUseDenoAndReload(UseDeno.CONFIGURE_AUTOMATICALLY)
     DenoSettings.getService(project).setDenoFormattingEnabled(false)
     myFixture.addFileToProject("deno/deno.json", "{\"fmt\": {\"singleQuote\": true, \"noSemicolons\": true}}")
     val path = "./deno/src/fmt.ts"

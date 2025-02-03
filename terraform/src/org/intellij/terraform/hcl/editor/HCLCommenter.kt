@@ -2,6 +2,7 @@
 package org.intellij.terraform.hcl.editor
 
 import com.intellij.application.options.CodeStyle
+import com.intellij.codeInsight.generation.IndentedCommenter
 import com.intellij.codeInsight.generation.SelfManagingCommenter
 import com.intellij.codeInsight.generation.SelfManagingCommenterUtil
 import com.intellij.lang.CodeDocumentationAwareCommenter
@@ -12,14 +13,14 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.text.CharArrayUtil
 import org.intellij.terraform.hcl.HCLElementTypes.*
-import org.intellij.terraform.hcl.formatter.HCLCodeStyleSettings
-import org.intellij.terraform.hcl.formatter.HCLCodeStyleSettings.LineCommenterPrefix
+import org.intellij.terraform.hcl.formatter.HclCodeStyleSettings
+import org.intellij.terraform.hcl.formatter.LineCommenterPrefix
 
-class HCLCommenter : CodeDocumentationAwareCommenter, SelfManagingCommenter<HCLCommenterDataHolder> {
+class HCLCommenter : CodeDocumentationAwareCommenter, SelfManagingCommenter<HCLCommenterDataHolder>, IndentedCommenter {
   private val BLOCK_COMMENT_PREFIX = "/*"
   private val BLOCK_COMMENT_SUFFIX = "*/"
-  private val LINE_POUND_COMMENT = LineCommenterPrefix.LINE_POUND_SIGN.prefix
-  private val LINE_DOUBLE_SLASH_COMMENT = LineCommenterPrefix.LINE_DOUBLE_SLASHES.prefix
+  private val LINE_POUND_COMMENT = LineCommenterPrefix.POUND_SIGN.prefix
+  private val LINE_DOUBLE_SLASH_COMMENT = LineCommenterPrefix.DOUBLE_SLASHES.prefix
 
   override fun getLineCommentPrefix(): String = LINE_POUND_COMMENT
 
@@ -88,6 +89,8 @@ class HCLCommenter : CodeDocumentationAwareCommenter, SelfManagingCommenter<HCLC
   override fun commentLine(line: Int, offset: Int, document: Document, data: HCLCommenterDataHolder): Unit =
     document.insertString(offset, lineCommentPrefix(data))
 
+  override fun forceIndentedLineComment(): Boolean = true
+
   private fun isPoundSignComment(offset: Int, document: Document): Boolean =
     CharArrayUtil.regionMatches(document.charsSequence, offset, LINE_POUND_COMMENT)
 
@@ -96,9 +99,8 @@ class HCLCommenter : CodeDocumentationAwareCommenter, SelfManagingCommenter<HCLC
 
   private fun lineCommentPrefix(data: HCLCommenterDataHolder): String {
     val file = data.psiFile ?: return "$LINE_POUND_COMMENT "
-    val settings = CodeStyle.getCustomSettings(file, HCLCodeStyleSettings::class.java)
-    val lineCommenterChar = LineCommenterPrefix.entries.find { it.id == settings.PROPERTY_LINE_COMMENTER_CHARACTER }
-                            ?: LineCommenterPrefix.LINE_POUND_SIGN
+    val settings = CodeStyle.getCustomSettings(file, HclCodeStyleSettings::class.java)
+    val lineCommenterChar = LineCommenterPrefix.entries.find { it == settings.LINE_COMMENTER_CHARACTER } ?: LineCommenterPrefix.POUND_SIGN
     return "${lineCommenterChar.prefix} "
   }
 }

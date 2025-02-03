@@ -15,10 +15,7 @@ import org.angular2.codeInsight.navigation.Angular2FindUsagesTest
 import org.angular2.codeInsight.navigation.Angular2GotoDeclarationTest
 import org.angular2.codeInsight.navigation.Angular2GotoRelatedTest
 import org.angular2.codeInsight.navigation.Angular2GotoSymbolTest
-import org.angular2.codeInsight.refactoring.Angular2ChangeSignatureTest
-import org.angular2.codeInsight.refactoring.Angular2ExtractComponentTest
-import org.angular2.codeInsight.refactoring.Angular2MoveTest
-import org.angular2.codeInsight.refactoring.Angular2RenameTest
+import org.angular2.codeInsight.refactoring.*
 import org.angular2.css.Angular2CssClassTest
 import org.angular2.css.Angular2CssCompletionTest
 import org.angular2.css.Angular2CssHighlightingTest
@@ -47,8 +44,12 @@ import org.junit.runners.Suite
   Angular17HtmlLexerTest::class,
   Angular17HtmlHighlightingLexerTest::class,
   Angular17HtmlIndexerTest::class,
+  Angular181HtmlLexerTest::class,
+  Angular181HtmlHighlightingLexerTest::class,
+  Angular181HtmlIndexerTest::class,
   Angular2HtmlParsingTest::class,
   Angular17HtmlParsingTest::class,
+  Angular181HtmlParsingTest::class,
   Angular2SemanticHighlightingTest::class,
   Angular2DirectiveSimpleSelectorSpecTest::class,
   Angular2TemplateTranspilerTest::class,
@@ -76,8 +77,10 @@ import org.junit.runners.Suite
   Angular2FindUsagesTest::class,
   Angular2UsageHighlightingTest::class,
   Angular2IntentionsAndQuickFixesTest::class,
+  Angular2ServiceInlayHintsTest::class,
   Angular2MoveTest::class,
   Angular2RenameTest::class,
+  Angular2InlineTest::class,
   Angular2ConfigTest::class,
   Angular2EditorTest::class,
   Angular2CliContextTest::class,

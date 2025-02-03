@@ -1,3 +1,4 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.inspections.actionscript.fixes;
 
 import com.intellij.codeInsight.FileModificationService;
@@ -6,8 +7,8 @@ import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.lang.javascript.JSTokenTypes;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.FlexBundle;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.formatter.JSCodeStyleSettings;
 import com.intellij.lang.javascript.inspections.actionscript.JSFieldCanBeLocalInspection;
 import com.intellij.lang.javascript.psi.*;
@@ -37,14 +38,13 @@ public class ConvertToLocalFix implements LocalQuickFix {
     myFunctionToReferences = functionToReferences;
   }
 
-  @NotNull
   @Override
-  public String getFamilyName() {
+  public @NotNull String getFamilyName() {
     return FlexBundle.message("js.convert.to.local.quick.fix");
   }
 
   @Override
-  public void applyFix(@NotNull final Project project, @NotNull final ProblemDescriptor descriptor) {
+  public void applyFix(final @NotNull Project project, final @NotNull ProblemDescriptor descriptor) {
     if (!FileModificationService.getInstance().preparePsiElementForWrite(myField)) return;
 
     for (Map.Entry<JSFunction, Collection<PsiReference>> entry : myFunctionToReferences.entrySet()) {
@@ -84,7 +84,7 @@ public class ConvertToLocalFix implements LocalQuickFix {
 
     text.append(JSCodeStyleSettings.getSemicolon(anchorBlock));
     final PsiElement varStatement =
-      JSChangeUtil.createJSTreeFromText(project, text.toString(), JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi();
+      JSChangeUtil.createJSTreeFromText(project, text.toString(), FlexSupportLoader.ECMA_SCRIPT_L4).getPsi();
     if (varStatement == null) return false;
 
     final PsiElement newDeclaration;
@@ -140,8 +140,7 @@ public class ConvertToLocalFix implements LocalQuickFix {
     return false;
   }
 
-  @Nullable
-  private static JSBlockStatement findAnchorBlock(final Collection<PsiReference> references) {
+  private static @Nullable JSBlockStatement findAnchorBlock(final Collection<PsiReference> references) {
     JSBlockStatement result = null;
     for (PsiReference psiReference : references) {
       final PsiElement element = psiReference.getElement();
@@ -157,8 +156,7 @@ public class ConvertToLocalFix implements LocalQuickFix {
     return result;
   }
 
-  @NotNull
-  private static PsiElement getFirstElement(final Collection<PsiReference> references) {
+  private static @NotNull PsiElement getFirstElement(final Collection<PsiReference> references) {
     PsiElement firstElement = null;
     for (PsiReference reference : references) {
       final PsiElement element = reference.getElement();
@@ -170,8 +168,7 @@ public class ConvertToLocalFix implements LocalQuickFix {
     return firstElement;
   }
 
-  @NotNull
-  private static PsiElement getAnchorElement(final JSBlockStatement anchorBlock, @NotNull final PsiElement firstElement) {
+  private static @NotNull PsiElement getAnchorElement(final JSBlockStatement anchorBlock, final @NotNull PsiElement firstElement) {
     PsiElement element = firstElement;
     while (element != null && element.getParent() != anchorBlock) {
       element = element.getParent();

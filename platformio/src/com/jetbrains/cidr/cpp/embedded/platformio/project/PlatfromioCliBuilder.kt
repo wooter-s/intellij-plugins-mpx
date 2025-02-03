@@ -11,10 +11,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.asSafely
-import com.jetbrains.cidr.cpp.embedded.platformio.ClionEmbeddedPlatformioBundle
-import com.jetbrains.cidr.cpp.embedded.platformio.PlatformioConfigurable
-import com.jetbrains.cidr.cpp.embedded.platformio.PlatformioConfigurable.Companion.pioExePath
-import com.jetbrains.cidr.cpp.embedded.platformio.PlatformioService
+import com.jetbrains.cidr.cpp.embedded.platformio.*
+import com.jetbrains.cidr.cpp.notifications.showUntrustedProjectLoadDialog
 import java.nio.file.Path
 
 private const val POSIX_HOME_ENV_VAR_NAME = "HOME"
@@ -31,7 +29,10 @@ class PlatfromioCliBuilder(
 
   init {
     if (project?.isTrusted() == false) {
-      throw ExecutionException(ClionEmbeddedPlatformioBundle.message("project.not.trusted"))
+      val trusted = showUntrustedProjectLoadDialog(project)
+      if (!trusted) {
+        throw ExecutionException(ClionEmbeddedPlatformioBundle.message("project.not.trusted"))
+      }
     }
     commandLine = if(usePty) PtyCommandLine() else GeneralCommandLine()
   }
@@ -62,7 +63,7 @@ class PlatfromioCliBuilder(
   fun build(): GeneralCommandLine {
     val service = project?.service<PlatformioService>()
     if (verboseAllowed && service?.verbose == true) commandLine.withParameters("-v")
-    commandLine.exePath = pioExePath()
+    commandLine.exePath = PlatformioConfigurable.pioExePath()
 
     if (useEnvName && project != null) {
       val envName = ExecutionTargetManager.getActiveTarget(project).asSafely<PlatformioExecutionTarget>()?.id
@@ -80,7 +81,6 @@ class PlatfromioCliBuilder(
     }
     commandLine.withWorkDirectory(project?.basePath ?: FileUtil.getTempDirectory())
     return commandLine
-
   }
 
   fun withGdbHomeCompatibility(): PlatfromioCliBuilder {

@@ -2,6 +2,7 @@
 package org.intellij.terraform.hcl.psi
 
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiWhiteSpace
@@ -14,6 +15,12 @@ import org.intellij.terraform.hcl.psi.common.SelectExpression
  * Various helper methods for working with PSI of JSON language.
  */
 object HCLPsiUtil {
+  internal fun getIdentifierPsi(element: HCLElement): PsiElement? = when (element) {
+    is HCLProperty -> element.firstChild
+    is HCLBlock -> element.children.lastOrNull { it !is HCLObject }
+    else -> null
+  }
+
   /**
    * Checks that PSI element represents exact key of HCL property
    *
@@ -139,6 +146,7 @@ object HCLPsiUtil {
   }
 
   fun getReferencesSelectAware(e: PsiElement?): Array<out PsiReference> {
+    ProgressManager.checkCanceled()
     if (e == null) return PsiReference.EMPTY_ARRAY
     if (e is SelectExpression<*>) {
       if (e is IndexSelectExpression<*>) {

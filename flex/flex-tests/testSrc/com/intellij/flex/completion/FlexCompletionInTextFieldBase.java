@@ -1,11 +1,11 @@
-// Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.flex.completion;
 
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.flex.editor.FlexProjectDescriptor;
 import com.intellij.flex.util.FlexTestUtils;
 import com.intellij.lang.javascript.BaseJSCompletionInTextFieldTest;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.psi.JSExpressionCodeFragment;
 import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -30,11 +30,6 @@ public abstract class FlexCompletionInTextFieldBase extends BaseJSCompletionInTe
 
   protected void setUpJdk() {
     FlexTestUtils.setupFlexSdk(getModule(), getTestName(false), getClass(), myFixture.getTestRootDisposable());
-  }
-
-  @Override
-  protected String getExtension() {
-    return "js2";
   }
 
   @Override
@@ -87,7 +82,7 @@ public abstract class FlexCompletionInTextFieldBase extends BaseJSCompletionInTe
 
   protected JSClass createFakeClass() {
     return JSPsiImplUtils.findClass((JSFile)JSChangeUtil
-      .createJSTreeFromText(getProject(), "package {class Foo { function a() {}} }", JavaScriptSupportLoader.ECMA_SCRIPT_L4)
+      .createJSTreeFromText(getProject(), "package {class Foo { function a() {}} }", FlexSupportLoader.ECMA_SCRIPT_L4)
       .getPsi().getContainingFile());
   }
 }

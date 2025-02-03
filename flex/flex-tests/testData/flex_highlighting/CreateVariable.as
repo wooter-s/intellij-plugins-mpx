@@ -1,11 +1,11 @@
 package {
 
-import <info>test.RestParam</info>;
+import test.<symbolName descr="classes//class name">RestParam</symbolName>;
 
-public class <info>CreateVariable</info> {
+public class <symbolName descr="classes//class name">CreateVariable</symbolName> {
 
-    public function <info>foo</info>():void{
-        <info>RestParam</info>.<info>foo</info>(<error>my<caret>field</error>);
+    public function <symbolName descr="instance method">foo</symbolName>():void{
+        <symbolName descr="classes//class name">RestParam</symbolName>.<symbolName descr="static method">foo</symbolName>(<error descr="Unresolved variable or type myfield">my<caret>field</error>);
     }
 
 }

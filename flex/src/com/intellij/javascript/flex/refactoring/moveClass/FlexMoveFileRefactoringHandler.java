@@ -1,7 +1,8 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.refactoring.moveClass;
 
 import com.intellij.lang.Language;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.MxmlLanguage;
 import com.intellij.lang.javascript.flex.XmlBackedJSClassImpl;
 import com.intellij.lang.javascript.psi.JSFile;
@@ -92,10 +93,9 @@ public final class FlexMoveFileRefactoringHandler extends MoveHandlerDelegate {
     return targetContainer == null || super.canMove(elements, targetContainer, reference);
   }
 
-  @Nullable
-  public static JSQualifiedNamedElement adjustForMove(PsiElement element) {
+  public static @Nullable JSQualifiedNamedElement adjustForMove(PsiElement element) {
     PsiFile file = element.getContainingFile();
-    if (file == null || !file.getLanguage().is(JavaScriptSupportLoader.ECMA_SCRIPT_L4) && !JavaScriptSupportLoader.isFlexMxmFile(file)) {
+    if (file == null || !file.getLanguage().is(FlexSupportLoader.ECMA_SCRIPT_L4) && !FlexSupportLoader.isFlexMxmFile(file)) {
       return null;
     }
 
@@ -124,7 +124,7 @@ public final class FlexMoveFileRefactoringHandler extends MoveHandlerDelegate {
       }
       return JSPsiImplUtils.findQualifiedElement((JSFile)element);
     }
-    if (element instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile((PsiFile)element)) {
+    if (element instanceof XmlFile && FlexSupportLoader.isFlexMxmFile((PsiFile)element)) {
       return XmlBackedJSClassFactory.getXmlBackedClass((XmlFile)element);
     }
     return null;
@@ -132,6 +132,6 @@ public final class FlexMoveFileRefactoringHandler extends MoveHandlerDelegate {
 
   @Override
   public boolean supportsLanguage(@NotNull Language language) {
-    return language == JavaScriptSupportLoader.ECMA_SCRIPT_L4 || language == MxmlLanguage.INSTANCE;
+    return language == FlexSupportLoader.ECMA_SCRIPT_L4 || language == MxmlLanguage.INSTANCE;
   }
 }

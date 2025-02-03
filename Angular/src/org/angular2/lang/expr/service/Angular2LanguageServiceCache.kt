@@ -1,6 +1,5 @@
 package org.angular2.lang.expr.service
 
-import com.intellij.lang.javascript.JavaScriptSupportLoader
 import com.intellij.lang.javascript.service.protocol.JSLanguageServiceCommand
 import com.intellij.lang.javascript.service.protocol.JSLanguageServiceObject
 import com.intellij.lang.typescript.compiler.languageService.protocol.TypeScriptLanguageServiceCache
@@ -8,11 +7,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringHash
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import org.angular2.entities.Angular2EntitiesProvider
-import org.angular2.lang.expr.Angular2Language
 import org.angular2.lang.expr.service.protocol.commands.Angular2TranspiledTemplateCommand
 import org.angular2.lang.expr.service.protocol.commands.toAngular2TranspiledTemplateRequestArgs
-import org.angular2.lang.html.Angular2HtmlDialect
 import org.angular2.lang.html.tcb.Angular2TranspiledComponentFileBuilder
 import org.angular2.lang.html.tcb.Angular2TranspiledComponentFileBuilder.TranspiledComponentFile
 import java.util.*
@@ -49,7 +45,7 @@ class Angular2LanguageServiceCache(project: Project) : TypeScriptLanguageService
     }
 
     return ServiceObjectWithCacheUpdate(
-      newContents.toAngular2TranspiledTemplateRequestArgs(componentVirtualFile),
+      newContents.toAngular2TranspiledTemplateRequestArgs(myProject, componentVirtualFile),
       listOf(Runnable {
         transpiledComponentCache[componentVirtualFile] = newInfo
       })

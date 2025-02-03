@@ -43,12 +43,16 @@
     <!-- https://jetbrains.team/im/review/PVGJ115BwTp?message=9NaUW0SkJLM&channel=4DbgBf4gBMiD -->
     <registryKey key="deno.use.workspace.model.roots" defaultValue="false" restartRequired="true"
                  description="Enable workspace model integration for deno plugin"/>
+
+    <directoryProjectGenerator implementation="com.intellij.deno.generator.DenoProjectTemplateGenerator"/>
+    <fileBasedIndex implementation="com.intellij.deno.lang.DenoCacheContentIndexExtension"/>
   </extensions>
   <extensions defaultExtensionNs="JavaScript">
     <languageServiceProvider order="first" implementation="com.intellij.deno.service.DenoTypeScriptServiceProvider"/>
     <moduleReferenceContributor id="deno" implementation="com.intellij.deno.modules.DenoModuleReferenceContributor"/>
-    <importModulePathStrategy order="after TypeScript"
+    <importModulePathStrategy order="first"
                               implementation="com.intellij.deno.modules.DenoImportModulePathStrategy"/>
     <tsImportResolver implementation="com.intellij.deno.modules.DenoTypeScriptImportResolverProvider"/>
+    <itemPresentation language="TypeScript" implementationClass="com.intellij.deno.lang.DenoItemPresentationProvider"/>
   </extensions>
 </idea-plugin>

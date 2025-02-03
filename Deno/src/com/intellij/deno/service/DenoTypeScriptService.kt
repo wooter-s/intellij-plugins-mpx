@@ -14,7 +14,6 @@ import com.intellij.lang.typescript.lsp.LspAnnotationError
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.lsp.api.LspServerState
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 
@@ -24,8 +23,8 @@ class DenoTypeScriptServiceProvider(val project: Project) : JSLanguageServicePro
 
   override fun getService(file: VirtualFile) = allServices.firstOrNull()
 
-  override fun getAllServices() =
-    if (DenoSettings.getService(project).isUseDeno()) listOf(DenoTypeScriptService.getInstance(project)) else emptyList()
+  override val allServices
+    get() = if (DenoSettings.getService(project).isUseDeno()) listOf(DenoTypeScriptService.getInstance(project)) else emptyList()
 }
 
 @Service(Service.Level.PROJECT)
@@ -34,19 +33,12 @@ class DenoTypeScriptService(project: Project) : BaseLspTypeScriptService(project
     fun getInstance(project: Project): DenoTypeScriptService = project.getService(DenoTypeScriptService::class.java)
   }
 
+  override fun isServiceNavigationEnabled(): Boolean = true
+
   override val name: String
     get() = "Deno LSP"
   override val prefix: String
     get() = "Deno"
-
-  // TODO delete this overriding function when `TypeScriptStatusBarWidget` is deleted
-  @Deprecated("TypeScriptWidgetItemsProvider uses getWidgetItem(), other usages not expected", ReplaceWith("//not needed"))
-  override fun getStatusText(): String? = when (getServer()?.state) {
-    // TODO use super method (& display serverVersion)
-    LspServerState.Initializing, LspServerState.Running -> "Deno LSP"
-    LspServerState.ShutdownNormally, LspServerState.ShutdownUnexpectedly -> "Deno LSP ⚠"
-    null -> null
-  }
 
   override fun getServiceFixes(file: PsiFile, element: PsiElement?, result: JSAnnotationError): Collection<IntentionAction> {
     return (result as? LspAnnotationError)?.quickFixes ?: emptyList()

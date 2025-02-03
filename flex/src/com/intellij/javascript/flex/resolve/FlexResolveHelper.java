@@ -1,9 +1,9 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.resolve;
 
 import com.intellij.javascript.flex.mxml.MxmlJSClassProvider;
 import com.intellij.lang.ASTNode;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.flex.*;
 import com.intellij.lang.javascript.psi.JSFile;
@@ -45,8 +45,7 @@ public final class FlexResolveHelper implements JSResolveHelper {
   public static final PsiScopedImportSet ourPsiScopedImportSet = new PsiScopedImportSet();
 
   @Override
-  @Nullable
-  public PsiElement findClassByQName(final String link, final Project project, final String className, final GlobalSearchScope scope) {
+  public @Nullable PsiElement findClassByQName(final String link, final Project project, final String className, final GlobalSearchScope scope) {
     final Ref<JSClass> result = new Ref<>();
 
     final String expectedPackage = link.equals(className) ? "" : link.substring(0, link.length() - className.length() - 1);
@@ -69,12 +68,12 @@ public final class FlexResolveHelper implements JSResolveHelper {
     };
 
     Collection<VirtualFile> files =
-      FilenameIndex.getVirtualFilesByName(className + JavaScriptSupportLoader.MXML_FILE_EXTENSION_DOT, scope);
+      FilenameIndex.getVirtualFilesByName(className + FlexSupportLoader.MXML_FILE_EXTENSION_DOT, scope);
     ContainerUtil.process(files, processor);
 
 
     if (result.isNull()) {
-      files = FilenameIndex.getVirtualFilesByName(className + JavaScriptSupportLoader.FXG_FILE_EXTENSION_DOT, scope);
+      files = FilenameIndex.getVirtualFilesByName(className + FlexSupportLoader.FXG_FILE_EXTENSION_DOT, scope);
       ContainerUtil.process(files, processor);
     }
     return result.get();
@@ -138,8 +137,8 @@ public final class FlexResolveHelper implements JSResolveHelper {
       if (resolvedName != null) {
         VirtualFile child = vfile.findChild(resolvedName);
         if (child == null) {
-          child = vfile.findChild(resolvedName + JavaScriptSupportLoader.MXML_FILE_EXTENSION_DOT);
-          if (child == null) child = vfile.findChild(resolvedName + JavaScriptSupportLoader.FXG_FILE_EXTENSION_DOT);
+          child = vfile.findChild(resolvedName + FlexSupportLoader.MXML_FILE_EXTENSION_DOT);
+          if (child == null) child = vfile.findChild(resolvedName + FlexSupportLoader.FXG_FILE_EXTENSION_DOT);
         }
         if (child != null) if (!processor.process(child)) return false;
 
@@ -179,9 +178,9 @@ public final class FlexResolveHelper implements JSResolveHelper {
     PsiFile file;
     if (qName != null &&
         (element instanceof XmlBackedJSClass ||
-         (element instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile((PsiFile)element)) ||
+         (element instanceof XmlFile && FlexSupportLoader.isFlexMxmFile((PsiFile)element)) ||
          (file = element.getContainingFile()) == null ||
-         file.getLanguage().isKindOf(JavaScriptSupportLoader.ECMA_SCRIPT_L4))) {
+         file.getLanguage().isKindOf(FlexSupportLoader.ECMA_SCRIPT_L4))) {
       boolean qualify;
       boolean doImport;
 
@@ -239,7 +238,7 @@ public final class FlexResolveHelper implements JSResolveHelper {
     for (final VirtualFile root : ProjectRootManager.getInstance(project).getContentSourceRoots()) {
       final boolean b = projectFileIndex.iterateContentUnderDirectory(root, fileOrDir -> {
         if (scope.contains(fileOrDir) &&
-            JavaScriptSupportLoader.isMxmlOrFxgFile(fileOrDir) &&
+            FlexSupportLoader.isMxmlOrFxgFile(fileOrDir) &&
             (nameHint == null || nameHint.equals(fileOrDir.getNameWithoutExtension()))) {
           if (!processor.processFile(fileOrDir, root)) return false;
         }
@@ -263,7 +262,7 @@ public final class FlexResolveHelper implements JSResolveHelper {
       processor.addDependency(dir);
 
       for (PsiFile file : dir.getFiles()) {
-        if (JavaScriptSupportLoader.isMxmlOrFxgFile(file)) {
+        if (FlexSupportLoader.isMxmlOrFxgFile(file)) {
           if (!processor.processFile(file.getVirtualFile(), null)) return false;
         }
       }

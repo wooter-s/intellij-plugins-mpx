@@ -57,6 +57,69 @@ class TerraformReferencesTest : BasePlatformTestCase() {
     assertResolvedNames(ref, "ip_address", "ip_address")
   }
 
+  @Test
+  fun forEachOnObjectNonRecursive() {
+    myFixture.enableInspections(HILUnresolvedReferenceInspection::class.java)
+    myFixture.configureByText("main.tf", """
+      locals {
+        vm = [
+          {
+            ip_address = "10.0.0.1"
+            name       = "vm-1"
+          },
+          {
+            ip_address = "10.0.0.1"
+            name       = "vm-2"
+          }
+        ]
+      }
+
+      resource "example" "example" {
+        for_each = {
+        for index, vm in local.vm :
+        vm.name => vm
+        }
+        name       = each.value.name
+        ip_address = each.value.ip_<caret>address
+      }
+    """.trimIndent())
+    val ref = myFixture.getReferenceAtCaretPosition()!!
+    assertResolvedNames(ref, "ip_address", "ip_address")
+    myFixture.checkHighlighting()
+  }
+
+  @Test
+  fun checkSoeInResolve() {
+    myFixture.enableInspections(HILUnresolvedReferenceInspection::class.java)
+    myFixture.configureByText("main.tf", """
+        locals {
+          myprop = toset(
+           [for elem in var.my_var.elem : elem.field]
+          )
+          another = var.<error descr="Unresolved reference unresolved">unresolved</error>
+        }
+        
+        variable "my_var" {
+          type = object({
+            elem = list(object({
+              field = string
+            }))
+          })
+        }
+    """.trimIndent())
+    myFixture.checkHighlighting()
+  }
+
+  @Test
+  fun checkSoeInForNamesakes() {
+    myFixture.enableInspections(HILUnresolvedReferenceInspection::class.java)
+    myFixture.configureByText("main.tf", """
+      locals {s = {}}
+      result = [for s in local.s.<error descr="Unresolved reference unresolved">unresolved</error> : s]
+    """.trimIndent())
+    myFixture.checkHighlighting()
+  }
+
   private fun assertResolvedNames(ref: PsiReference, vararg names: String?) {
 
     fun asAssertString(elt: PsiElement?): String? = elt.asSafely<HCLProperty>()?.name ?: elt?.toString()
@@ -521,6 +584,24 @@ class TerraformReferencesTest : BasePlatformTestCase() {
     targetResource as HCLBlock
     assertEquals("example1", targetResource.name)
     assertEquals("main.tf", targetResource.containingFile.name)
+  }
+
+  @Test
+  fun testResolveKeyOfProperty() {
+    val file = myFixture.configureByText("main.tf", """
+      locals {
+        dev  = "dev"
+        test = "test"
+
+        ips = {
+          (local.dev) = "127.0.0.2"
+          "${DLR}{local.test}" = "127.0.0.3"
+        }
+      }
+    """.trimIndent())
+
+    assertResolvedNames(file.findReferenceByText("local.dev", -1), "dev")
+    assertResolvedNames(file.findReferenceByText("local.test", -1), "test")
   }
 
   private val DLR = "$"

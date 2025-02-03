@@ -1,8 +1,9 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.uml.actions;
 
 import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.parsing.JavaScriptParserBase;
 import com.intellij.lang.javascript.psi.JSElementFactory;
 import com.intellij.lang.javascript.psi.JSExpressionCodeFragment;
@@ -84,7 +85,7 @@ public class JSCreateFieldDialog extends DialogWrapper {
   }
 
   public static JSExpressionCodeFragment createInitializerCodeFragment(JSClass c) {
-    return JSElementFactory.createExpressionCodeFragment(c.getProject(), "", c, JavaScriptSupportLoader.ECMA_SCRIPT_L4,
+    return JSElementFactory.createExpressionCodeFragment(c.getProject(), "", c, FlexSupportLoader.ECMA_SCRIPT_L4,
                                                          c.getResolveScope(), JSElementFactory.TopLevelCompletion.LITERAL_VALUES, null);
   }
 
@@ -117,8 +118,7 @@ public class JSCreateFieldDialog extends DialogWrapper {
   /**
    * @return pair(message, isFatal)
    */
-  @Nullable
-  private Pair<String, Boolean> validateData() {
+  private @Nullable Pair<String, Boolean> validateData() {
     if (!JSRefactoringUtil.isValidIdentifier(getFieldName(), myTargetClass.getProject())) {
       return Pair.create(JavaScriptBundle.message("invalid.identifier.value.0", getFieldName()), true);
     }

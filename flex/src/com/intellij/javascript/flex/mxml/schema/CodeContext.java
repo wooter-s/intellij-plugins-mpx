@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.mxml.schema;
 
 import com.intellij.flex.model.bc.LinkageType;
@@ -10,7 +10,7 @@ import com.intellij.javascript.flex.FlexReferenceContributor;
 import com.intellij.javascript.flex.FlexStateElementNames;
 import com.intellij.javascript.flex.mxml.MxmlJSClass;
 import com.intellij.javascript.flex.resolve.SwcCatalogXmlUtil;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.FlexModuleType;
 import com.intellij.lang.javascript.flex.FlexUtils;
 import com.intellij.lang.javascript.flex.XmlBackedJSClassImpl;
@@ -57,16 +57,15 @@ public final class CodeContext {
   private static final CodeContext EMPTY = new CodeContext(null, null, null);
   private static final String CLASS_FACTORY = "mx.core.ClassFactory";
 
-  @NonNls static final String DEFINITION_TAG_NAME = "Definition";
-  @NonNls public static final String REPARENT_TAG_NAME = "Reparent";
-  @NonNls public static final String TARGET_ATTR_NAME = "target";
+  public static final @NonNls String REPARENT_TAG_NAME = "Reparent";
+  public static final @NonNls String TARGET_ATTR_NAME = "target";
+  static final @NonNls String DEFINITION_TAG_NAME = "Definition";
   public static final String AS3_VEC_VECTOR_QUALIFIED_NAME = "__AS3__.vec.Vector";
   static final String FORMAT_ATTR_NAME = "format";
   static final String TWO_WAY_ATTR_NAME = "twoWay";
   private static final String XML_CLASS = "XML";
   private static final String XMLNODE_CLASS = "flash.xml.XMLNode";
-
-  final static String[] GUMBO_ATTRIBUTES = {FlexStateElementNames.INCLUDE_IN, FlexStateElementNames.EXCLUDE_FROM,
+  static final String[] GUMBO_ATTRIBUTES = {FlexStateElementNames.INCLUDE_IN, FlexStateElementNames.EXCLUDE_FROM,
     FlexStateElementNames.ITEM_CREATION_POLICY, FlexStateElementNames.ITEM_DESTRUCTION_POLICY};
 
   // Component name to descriptor
@@ -81,7 +80,7 @@ public final class CodeContext {
     namespace = _namespace;
     module = _module;
     this.scope = scope;
-    if (JavaScriptSupportLoader.isLanguageNamespace(namespace)) {
+    if (FlexSupportLoader.isLanguageNamespace(namespace)) {
       addPredefinedTags(this);
 
       // XML and XMLList language tags represent respective classes, so they must not be marked as 'predefined'
@@ -92,7 +91,7 @@ public final class CodeContext {
   }
 
   private void putDescriptor(final String name, final ClassBackedElementDescriptor descriptor, final boolean addGumboAttributesIfNeeded) {
-    if (JavaScriptSupportLoader.isLanguageNamespace(namespace)) {
+    if (FlexSupportLoader.isLanguageNamespace(namespace)) {
       if (MxmlJSClass.XML_TAG_NAME.equals(name) || MxmlJSClass.XMLLIST_TAG_NAME.equals(name)) {
         // XML and XMLList are added in constructor
         return;
@@ -108,7 +107,7 @@ public final class CodeContext {
       }
     }
 
-    if (JavaScriptSupportLoader.MXML_URI3.equals(namespace) && JSCommonTypeNames.VECTOR_CLASS_NAME.equals(name)) {
+    if (FlexSupportLoader.MXML_URI3.equals(namespace) && JSCommonTypeNames.VECTOR_CLASS_NAME.equals(name)) {
       final AnnotationBackedDescriptorImpl typeDescriptor = new AnnotationBackedDescriptorImpl("type", descriptor, true, null, null, null);
       typeDescriptor.setRequired(true);
       descriptor.addPredefinedMemberDescriptor(typeDescriptor);
@@ -187,7 +186,7 @@ public final class CodeContext {
       public boolean process(VirtualFile file, @NotNull String name, JSPackageIndexInfo.Kind kind, boolean isPublic) {
         if (kind != JSPackageIndexInfo.Kind.CLASS) return true;
 
-        if (JavaScriptSupportLoader.isMxmlOrFxgFile(file)) {
+        if (FlexSupportLoader.isMxmlOrFxgFile(file)) {
           addFileBackedDescriptor(file, codeContext, packageName, project);
           PsiDirectory psiDirectory = PsiManager.getInstance(project).findDirectory(file.getParent());
           if (psiDirectory != null) codeContext.addDependency(psiDirectory);
@@ -400,12 +399,11 @@ public final class CodeContext {
     return context != null ? context : EMPTY;
   }
 
-  @Nullable
-  public XmlElementDescriptor getElementDescriptor(final @NonNls String localName, final @Nullable XmlTag tag) {
+  public @Nullable XmlElementDescriptor getElementDescriptor(final @NonNls String localName, final @Nullable XmlTag tag) {
     ClassBackedElementDescriptor descriptor = this == EMPTY ? null : myNameToDescriptorsMap.get(localName);
 
     if (tag != null && MxmlJSClass.XML_TAG_NAME.equals(localName)
-        && JavaScriptSupportLoader.isLanguageNamespace(tag.getNamespace())) {
+        && FlexSupportLoader.isLanguageNamespace(tag.getNamespace())) {
       final String format = tag.getAttributeValue(FORMAT_ATTR_NAME);
       if (format != null && !"e4x".equalsIgnoreCase(format)) {
         return createXmlTagDescriptor(this, XMLNODE_CLASS);
@@ -443,8 +441,7 @@ public final class CodeContext {
     return myNameToDescriptorsMap.size();
   }
 
-  @Nullable
-  public ClassBackedElementDescriptor getElementDescriptor(@NotNull final String name, @NotNull final String qname) {
+  public @Nullable ClassBackedElementDescriptor getElementDescriptor(final @NotNull String name, final @NotNull String qname) {
     ClassBackedElementDescriptor descriptor = myNameToDescriptorsMap.get(name);
 
     if (descriptor != null && !qname.equals(descriptor.getQualifiedName())) {
@@ -456,7 +453,7 @@ public final class CodeContext {
     return descriptor;
   }
 
-  private static void handleAllStandardManifests(final Module module, @NotNull final FlexBuildConfiguration bc) {
+  private static void handleAllStandardManifests(final Module module, final @NotNull FlexBuildConfiguration bc) {
     final Sdk sdk = bc.getSdk();
     final String homePath = sdk == null ? null : sdk.getHomePath();
     final VirtualFile sdkHome = homePath == null ? null : LocalFileSystem.getInstance().findFileByPath(homePath);
@@ -494,7 +491,7 @@ public final class CodeContext {
     predefinedTags.add(FlexPredefinedTagNames.STYLE);
     predefinedTags.add(FlexPredefinedTagNames.METADATA);
 
-    if (JavaScriptSupportLoader.MXML_URI3.equals(codeContext.namespace)) {
+    if (FlexSupportLoader.MXML_URI3.equals(codeContext.namespace)) {
       predefinedTags.add(FlexPredefinedTagNames.DECLARATIONS);
       predefinedTags.add(MxmlJSClass.PRIVATE_TAG_NAME);
       predefinedTags.add(FlexPredefinedTagNames.LIBRARY);
@@ -536,7 +533,7 @@ public final class CodeContext {
     bindingDescriptor.addPredefinedMemberDescriptor(
       new AnnotationBackedDescriptorImpl(FlexReferenceContributor.DESTINATION_ATTR_NAME, bindingDescriptor, true, null, null, null));
 
-    if (JavaScriptSupportLoader.MXML_URI3.equals(codeContext.namespace)) {
+    if (FlexSupportLoader.MXML_URI3.equals(codeContext.namespace)) {
       bindingDescriptor.addPredefinedMemberDescriptor(
         new AnnotationBackedDescriptorImpl(TWO_WAY_ATTR_NAME, bindingDescriptor, true, null, null, null));
     }

@@ -1,10 +1,10 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.validation.fixes;
 
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.ECMAScriptImportOptimizer;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.ImportUtils;
 import com.intellij.lang.javascript.formatter.JSCodeStyleSettings;
 import com.intellij.lang.javascript.psi.JSExpression;
@@ -80,14 +80,12 @@ public class ActionScriptAddConstructorAndSuperInvocationFix implements Intentio
   }
 
   @Override
-  @NotNull
-  public String getText() {
+  public @NotNull String getText() {
     return JavaScriptBundle.message("javascript.fix.create.constructor.invoke.super");
   }
 
   @Override
-  @NotNull
-  public String getFamilyName() {
+  public @NotNull String getFamilyName() {
     return getText();
   }
 
@@ -107,7 +105,7 @@ public class ActionScriptAddConstructorAndSuperInvocationFix implements Intentio
 
     Collection<String> toImport = new HashSet<>();
     final String text = getConstructorText(jsClass, superConstructor, toImport);
-    jsClass.add(JSChangeUtil.createJSTreeFromText(jsClass.getProject(), text, JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi());
+    jsClass.add(JSChangeUtil.createJSTreeFromText(jsClass.getProject(), text, FlexSupportLoader.ECMA_SCRIPT_L4).getPsi());
     if (!toImport.isEmpty()) {
       ImportUtils.insertImportStatements(jsClass, toImport);
       new ECMAScriptImportOptimizer().processFile(jsClass.getContainingFile()).run();

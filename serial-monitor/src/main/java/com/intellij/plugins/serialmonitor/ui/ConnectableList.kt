@@ -200,11 +200,17 @@ class ConnectableList(val parent: ConnectPanel) : JBList<Any>() {
       }
 
       override fun setSelectionInterval(index0: Int, index1: Int) {
-        if (index0 >= 0 && model.getElementAt(index0) is Connectable) {
-          super.setSelectionInterval(index0, index0)
-        }
-        else {
-          clearSelection()
+        var newIndex = index1 // according to documentation, index1 is used for the single selection mode
+        val delta = if (newIndex < selectedIndex) -1 else 1
+
+        // Skips over fake string labels and selects the first Connectable in the selected direction from the current element
+        while (newIndex >= 0 && newIndex < model.size) {
+          val element = model.getElementAt(newIndex)
+          if (element is Connectable) {
+            super.setSelectionInterval(newIndex, newIndex)
+            break
+          }
+          newIndex += delta
         }
       }
     }

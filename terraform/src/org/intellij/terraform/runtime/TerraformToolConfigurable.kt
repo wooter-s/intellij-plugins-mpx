@@ -1,108 +1,121 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.runtime
 
-import com.intellij.execution.process.CapturingProcessAdapter
 import com.intellij.execution.wsl.WslPath
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.fileLogger
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.emptyText
 import com.intellij.openapi.ui.validation.validationErrorIf
-import com.intellij.openapi.util.NlsSafe
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.dsl.builder.*
-import kotlinx.coroutines.ensureActive
-import org.intellij.terraform.config.util.TFExecutor
-import org.intellij.terraform.config.util.executeSuspendable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.intellij.terraform.hcl.HCLBundle
-import org.intellij.terraform.install.getBinaryName
-import org.intellij.terraform.install.installTerraform
+import org.intellij.terraform.install.FailedInstallation
+import org.intellij.terraform.install.TfToolType
+import org.intellij.terraform.install.getToolVersion
+import org.intellij.terraform.install.installTFTool
+import org.intellij.terraform.opentofu.runtime.OpenTofuProjectSettings
+import org.jetbrains.concurrency.runAsync
 import java.io.File
-import kotlin.coroutines.coroutineContext
 
 private const val CONFIGURABLE_ID: String = "reference.settings.dialog.project.terraform"
+private const val PARSE_DELAY = 100L
+private val VERSION_REGEX = Regex("^v*(\\d+)(\\.\\d+)*(\\.\\d+)*-?\\S*$")
 
 class TerraformToolConfigurable(private val project: Project) : BoundConfigurable(
-  HCLBundle.message("terraform.name"), null
+  HCLBundle.message("terraform.opentofu.settings.label"), null
 ), SearchableConfigurable {
 
-  private val configuration = TerraformProjectSettings.getInstance(project)
-
-  private val testTerraformButton = TerraformTestButtonComponent(
-    HCLBundle.message("terraform.testButton.text"),
-    { resultHandler ->
-      installTerraform(project, resultHandler, EmptyProgressIndicator())
-    }
-  ) {
-    if (TerraformPathDetector.getInstance(project).detectedPath == null && TerraformPathDetector.getInstance(project).detect()) {
-      executorPathField.component.emptyText.text = TerraformPathDetector.getInstance(project).detectedPath ?: getBinaryName()
-      updateTestButton()
-    }
-    val versionLine = getVersionOfTerraform(project).lineSequence().firstOrNull()?.trim()
-    versionLine?.split(" ")?.getOrNull(1) ?: HCLBundle.message("terraform.executor.unrecognized.version")
-  }
-
-  private fun updateTestButton() {
-    testTerraformButton.text =
-      if (configuration.terraformPath.isEmpty() && TerraformPathDetector.getInstance(project).detectedPath == null)
-        HCLBundle.message("terraform.detectAndTestButton.text")
-      else
-        HCLBundle.message("terraform.testButton.text")
-  }
-
-  private lateinit var executorPathField: Cell<TextFieldWithBrowseButton>
-
-  private suspend fun getVersionOfTerraform(project: Project): @NlsSafe String {
-    val capturingProcessAdapter = CapturingProcessAdapter()
-
-    val success = TFExecutor.`in`(project)
-      .withPresentableName(HCLBundle.message("terraform.executor.version"))
-      .withParameters("version")
-      .withPassParentEnvironment(true)
-      .withProcessListener(capturingProcessAdapter)
-      .executeSuspendable()
-
-    coroutineContext.ensureActive()
-
-    val stdout = capturingProcessAdapter.output.stdout
-    if (!success || stdout.isEmpty()) {
-      throw RuntimeException("Couldn't get version of Terraform")
-    }
-
-    return stdout
-  }
+  private val terraformConfig = TerraformProjectSettings.getInstance(project)
+  private val openTofuConfig = OpenTofuProjectSettings.getInstance(project)
 
   override fun getId(): String = CONFIGURABLE_ID
 
   override fun createPanel(): DialogPanel {
-    val fileChooserDescriptor = FileChooserDescriptor(true, false, false, false, false, false)
-    updateTestButton()
     return panel {
-      row(HCLBundle.message("terraform.settings.executable.path.label")) {
-        executorPathField = textFieldWithBrowseButton(
-          browseDialogTitle = "",
-          fileChooserDescriptor = fileChooserDescriptor,
-          fileChosen = { chosenFile ->
-            return@textFieldWithBrowseButton chosenFile.path
-          }
-        ).bindText(configuration::terraformPath).applyToComponent {
-          emptyText.text = TerraformPathDetector.getInstance(project).detectedPath ?: getBinaryName()
-        }.onChanged {
-          configuration.terraformPath = it.text
-          updateTestButton()
-        }.trimmedTextValidation(
-          validationErrorIf<String>(HCLBundle.message("terraform.invalid.path")) { terraformFilePath ->
-            val wslDistribution = WslPath.getDistributionByWindowsUncPath(terraformFilePath)
-            terraformFilePath.isNotBlank() && (!File(terraformFilePath).exists() || wslDistribution == null)
-          }
-        ).align(AlignX.FILL)
+      group(HCLBundle.message("terraform.name")) {
+        executableToolSettingsPanel(this, terraformConfig, TfToolType.TERRAFORM, disposable)
       }
-      row {
-        cell(testTerraformButton)
+      group(HCLBundle.message("opentofu.name")) {
+        executableToolSettingsPanel(this, openTofuConfig, TfToolType.OPENTOFU, disposable)
       }
     }
+  }
+
+  private fun executableToolSettingsPanel(
+    parent: Panel,
+    settings: TfToolSettings,
+    type: TfToolType,
+    parentDisposable: Disposable?,
+  ) = parent.apply {
+    val myRow = row(HCLBundle.message("tool.settings.executable.path.label", type.displayName)) {}
+    val executorField = myRow.textFieldWithBrowseButton(
+      fileChooserDescriptor = FileChooserDescriptor(true, false, false, false, false, false),
+      fileChosen = { chosenFile ->
+        return@textFieldWithBrowseButton chosenFile.path
+      }
+    ).bindText(settings::toolPath).applyToComponent {
+      emptyText.text = type.getBinaryName()
+    }.trimmedTextValidation(
+      validationErrorIf(HCLBundle.message("tool.executor.invalid.path")) { filePath ->
+        val wslDistribution = WslPath.getDistributionByWindowsUncPath(filePath)
+        filePath.isNotBlank() && (!File(filePath).exists() && wslDistribution == null)
+      }
+    ).align(AlignX.FILL)
+    val testButton = testToolButton(type, project.service<ToolPathDetector>(), parentDisposable, executorField.component)
+    row {
+      cell(testButton)
+    }
+    executorField.onChanged {
+      testButton.updateTestButton(it.text)
+    }
+  }
+
+  private fun testToolButton(
+    type: TfToolType,
+    pathDetector: ToolPathDetector,
+    parentDisposable: Disposable?,
+    executorPathField: TextFieldWithBrowseButton?,
+  ) = ToolExecutableTestButtonComponent(
+    type,
+    parentDisposable,
+    executorPathField,
+    { resultHandler ->
+      try {
+        installTFTool(project, resultHandler, EmptyProgressIndicator(), type)
+      }
+      catch (ex: Exception) {
+        fileLogger().warnWithDebug("Failed to install ${type.displayName}", ex)
+        resultHandler(FailedInstallation { ex.message ?: HCLBundle.message("tool.executor.unknown.error") })
+      }
+    }
+  ) {
+    val executorPathText = withContext(Dispatchers.EDT) { executorPathField?.text }
+    if (executorPathText.isNullOrEmpty() || !pathDetector.isExecutable(executorPathText)) { //Trying to detect tool in PATH variable
+      val detectedPath = pathDetector.detect(executorPathText.orEmpty().ifBlank { type.executableName })
+      if (!detectedPath.isNullOrEmpty()) {
+        withContext(Dispatchers.EDT) { executorPathField?.text = detectedPath }
+      }
+    }
+    val updatedPathText = withContext(Dispatchers.EDT) { executorPathField?.text }
+    if (!updatedPathText.isNullOrEmpty() && pathDetector.isExecutable(updatedPathText)) {
+      val versionLine = getToolVersion(project, type, updatedPathText).lineSequence().firstOrNull()?.trim()
+      val version = versionLine?.split(" ")?.firstOrNull {
+        VERSION_REGEX.matches(StringUtil.newBombedCharSequence(it, PARSE_DELAY))
+      } ?: throw IllegalStateException(HCLBundle.message("tool.executor.unrecognized.version", type.executableName))
+      return@ToolExecutableTestButtonComponent version
+    }
+    return@ToolExecutableTestButtonComponent ""
   }
 }

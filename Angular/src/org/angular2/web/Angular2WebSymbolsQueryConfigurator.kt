@@ -48,8 +48,8 @@ class Angular2WebSymbolsQueryConfigurator : WebSymbolsQueryConfigurator {
     else emptyList()
 
   private fun calculateHtmlScopes(element: XmlElement): MutableList<WebSymbolsScope> {
-    val result = mutableListOf(DirectiveElementSelectorsScope(element.project),
-                               DirectiveAttributeSelectorsScope(element.project))
+    val result = mutableListOf(DirectiveElementSelectorsScope(element.containingFile),
+                               DirectiveAttributeSelectorsScope(element.containingFile))
 
     if (element is XmlAttributeValue || element is XmlAttribute || element is XmlTag) {
       element.parentOfType<XmlTag>(withSelf = true)?.let {
@@ -70,8 +70,8 @@ class Angular2WebSymbolsQueryConfigurator : WebSymbolsQueryConfigurator {
   }
 
   private fun calculateCssScopes(element: CssElement): List<WebSymbolsScope> =
-    listOf(DirectiveElementSelectorsScope(element.project),
-           DirectiveAttributeSelectorsScope(element.project))
+    listOf(DirectiveElementSelectorsScope(element.containingFile),
+           DirectiveAttributeSelectorsScope(element.containingFile))
 
   private fun calculateJavaScriptScopes(element: JSElement): List<WebSymbolsScope> =
     when (element) {
@@ -129,4 +129,5 @@ val NG_DIRECTIVE_ATTRIBUTE_SELECTORS = WebSymbolQualifiedKind(NAMESPACE_JS, "ng-
 val NG_I18N_ATTRIBUTES = WebSymbolQualifiedKind(NAMESPACE_HTML, "ng-i18n-attributes")
 val NG_BLOCKS = WebSymbolQualifiedKind(NAMESPACE_HTML, "ng-blocks")
 val NG_BLOCK_PARAMETERS = WebSymbolQualifiedKind(NAMESPACE_HTML, "ng-block-parameters")
+val NG_BLOCK_PARAMETER_PREFIXES = WebSymbolQualifiedKind(NAMESPACE_HTML, "ng-block-parameter-prefixes")
 val NG_DEFER_ON_TRIGGERS = WebSymbolQualifiedKind(NAMESPACE_JS, "ng-defer-on-triggers")

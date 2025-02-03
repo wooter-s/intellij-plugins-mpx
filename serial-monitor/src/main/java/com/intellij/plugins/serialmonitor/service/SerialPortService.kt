@@ -6,7 +6,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.plugins.serialmonitor.Parity
-import com.intellij.plugins.serialmonitor.SerialMonitorConnectCollector
+import com.intellij.plugins.serialmonitor.SerialMonitorCollector
 import com.intellij.plugins.serialmonitor.SerialMonitorException
 import com.intellij.plugins.serialmonitor.StopBits
 import com.intellij.plugins.serialmonitor.service.SerialPortsListener.Companion.SERIAL_PORTS_TOPIC
@@ -19,12 +19,16 @@ import jssc.SerialPort.*
 import jssc.SerialPortEventListener
 import jssc.SerialPortException
 import jssc.SerialPortList
+import java.nio.file.Files
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
+import java.util.regex.Pattern
 import kotlin.Comparator
+import kotlin.io.path.Path
+import kotlin.io.path.pathString
 
 @Service
 class SerialPortService : Disposable {
@@ -58,8 +62,26 @@ class SerialPortService : Disposable {
     }
   }
 
+  private val MATCH_ALL_PATTERN = Pattern.compile(".*")
+
+  private fun scanPorts(): Set<String> =
+    TreeSet(NAME_COMPARATOR).apply {
+      // Get devices which SerialPortList recognizes as serial ports
+      addAll(SerialPortList.getPortNames())
+      // Include symlinks to known ports
+      addAll(SerialPortList.getPortNames(MATCH_ALL_PATTERN)
+        .filter {
+          runCatching {
+            val path = Path(it)
+            if (!Files.isSymbolicLink(path)) return@filter false
+            this.contains(path.toRealPath().pathString)
+          }.getOrDefault(false)
+        }
+      )
+    }
+
   private fun rescanPorts() {
-    val portList = TreeSet(NAME_COMPARATOR).apply { addAll(SerialPortList.getPortNames()) }
+    val portList = scanPorts()
     var changeDetected = portList != portNames
     if (changeDetected) {
       for (name in portNames) {
@@ -129,7 +151,7 @@ class SerialPortService : Disposable {
         port?.closePort()
       }
       catch (e: SerialPortException) {
-        throw SerialMonitorException(e.localizedMessage)
+        throw SerialMonitorException(SerialMonitorBundle.message("port.close.error", e.port.portName, e.exceptionType))
       }
       catch (e: Throwable) {
         throw SerialMonitorException(portName, e)
@@ -180,18 +202,18 @@ class SerialPortService : Disposable {
         newPort.addEventListener(listener, MASK_RXCHAR or MASK_ERR)
 
         if (!newPort.setParams(baudRate, bits, portStopBits, portParity)) {
-          SerialMonitorConnectCollector.logConnect(baudRate, false)
+          SerialMonitorCollector.logConnect(baudRate, false)
           throw SerialMonitorException(SerialMonitorBundle.message("serial.port.parameters.wrong"))
         }
         newPort.setFlowControlMode(FLOWCONTROL_NONE)
         newPort.setRTS(false)
         port = newPort
-        SerialMonitorConnectCollector.logConnect(baudRate, true)
+        SerialMonitorCollector.logConnect(baudRate, true)
         status = PortStatus.CONNECTED
         portMessageTopic().portsStatusChanged()
       }
       catch (e: Throwable) {
-        SerialMonitorConnectCollector.logConnect(baudRate, false)
+        SerialMonitorCollector.logConnect(baudRate, false)
         try {
           newPort.closePort()
         }
@@ -200,7 +222,7 @@ class SerialPortService : Disposable {
         status = PortStatus.UNAVAILABLE_DISCONNECTED
         portMessageTopic().portsStatusChanged()
         if (e is SerialPortException) {
-          throw SerialMonitorException(e.localizedMessage)
+          throw SerialMonitorException(SerialMonitorBundle.message("port.connect.error", e.port.portName, e.exceptionType))
         }
         else {
           throw SerialMonitorException(newPort.portName, e)

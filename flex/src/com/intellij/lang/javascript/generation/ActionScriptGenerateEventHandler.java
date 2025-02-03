@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.generation;
 
 import com.intellij.codeInsight.template.Expression;
@@ -16,6 +16,7 @@ import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.flex.AnnotationBackedDescriptor;
 import com.intellij.lang.javascript.flex.FlexBundle;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.ImportUtils;
 import com.intellij.lang.javascript.psi.*;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttribute;
@@ -76,8 +77,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
   }
 
 
-  @Nullable
-  public static XmlAttribute getXmlAttribute(final PsiFile psiFile, final Editor editor) {
+  public static @Nullable XmlAttribute getXmlAttribute(final PsiFile psiFile, final Editor editor) {
     PsiElement context = null;
     if (psiFile instanceof JSFile) {
       context = InjectedLanguageManager.getInstance(psiFile.getProject()).getInjectionHost(psiFile);
@@ -89,8 +89,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
     return PsiTreeUtil.getParentOfType(context, XmlAttribute.class);
   }
 
-  @Nullable
-  public static String getEventType(final XmlAttribute xmlAttribute) {
+  public static @Nullable String getEventType(final XmlAttribute xmlAttribute) {
     final XmlAttributeDescriptor descriptor = xmlAttribute == null ? null : xmlAttribute.getDescriptor();
     final PsiElement declaration = descriptor instanceof AnnotationBackedDescriptor ? descriptor.getDeclaration() : null;
     final PsiElement declarationParent = declaration == null ? null : declaration.getParent();
@@ -106,8 +105,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
     return null;
   }
 
-  @Nullable
-  public static JSCallExpression getEventListenerCallExpression(final PsiFile psiFile, final Editor editor) {
+  public static @Nullable JSCallExpression getEventListenerCallExpression(final PsiFile psiFile, final Editor editor) {
     if (!(psiFile instanceof JSFile)) {
       return null;
     }
@@ -152,8 +150,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
    */
   public record EventConstantInfo(@NotNull JSExpressionStatement expr, String eventClass, @NotNull String eventName) {}
 
-  @Nullable
-  public static EventConstantInfo getEventConstantInfo(final PsiFile psiFile, final Editor editor) {
+  public static @Nullable EventConstantInfo getEventConstantInfo(final PsiFile psiFile, final Editor editor) {
     if (!(psiFile instanceof JSFile)) {
       return null;
     }
@@ -259,7 +256,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
 
     // called outside of write action - required for class chooser
     @Override
-    public void beforeInvoke(@NotNull final Project project, final Editor editor, final PsiFile psiFile) {
+    public void beforeInvoke(final @NotNull Project project, final Editor editor, final PsiFile psiFile) {
       // keep consistency with CreateEventHandlerIntention.isAvailable()
 
       final XmlAttribute xmlAttribute = getXmlAttribute(psiFile, editor);
@@ -311,7 +308,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
     }
 
     @Override
-    public void invoke(@NotNull final Project project, final Editor editor, final PsiFile file) throws IncorrectOperationException {
+    public void invoke(final @NotNull Project project, final Editor editor, final PsiFile file) throws IncorrectOperationException {
       if (userCancelled) return;
       final PsiElement referenceElement = insertEventHandlerReference(editor, file);
       evalAnchor(editor, file);
@@ -352,8 +349,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
       TemplateManager.getInstance(project).startTemplate(topEditor, template);
     }
 
-    @Nullable
-    private PsiElement insertEventHandlerReference(final Editor editor, final PsiFile psiFile) {
+    private @Nullable PsiElement insertEventHandlerReference(final Editor editor, final PsiFile psiFile) {
       if (inMxmlEventAttributeValue) {
         final XmlAttribute xmlAttribute = getXmlAttribute(psiFile, editor);
         if (xmlAttribute != null) {
@@ -375,7 +371,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
       else if (inEventListenerCall) {
         if (handlerCallerAnchorInArgumentList != null) {
           PsiElement element =
-            JSChangeUtil.createJSTreeFromText(psiFile.getProject(), eventHandlerName, JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi();
+            JSChangeUtil.createJSTreeFromText(psiFile.getProject(), eventHandlerName, FlexSupportLoader.ECMA_SCRIPT_L4).getPsi();
           PsiElement created = null;
           if (element != null) {
             created = handlerCallerAnchorInArgumentList.getParent().addAfter(element, handlerCallerAnchorInArgumentList);
@@ -402,7 +398,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
       else if (inEventConstantExpression) {
         final String text = "addEventListener(" + eventConstantExpression.getExpression().getText() + ", " + eventHandlerName + ");";
         final PsiElement element =
-          JSChangeUtil.createJSTreeFromText(psiFile.getProject(), text, JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi();
+          JSChangeUtil.createJSTreeFromText(psiFile.getProject(), text, FlexSupportLoader.ECMA_SCRIPT_L4).getPsi();
         if (element != null) {
           final PsiElement addedElement = eventConstantExpression.replace(element);
           final JSExpression expression = ((JSExpressionStatement)addedElement).getExpression();
@@ -434,8 +430,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
       }
     }
 
-    @Nullable
-    private JSClass getEventBaseClass() {
+    private @Nullable JSClass getEventBaseClass() {
       final PsiElement eventClass = JSDialectSpecificHandlersFactory.forElement(myJsClass).getClassResolver()
         .findClassByQName(FlexCommonTypeNames.FLASH_EVENT_FQN, myJsClass);
       if (eventClass instanceof JSClass) return (JSClass)eventClass;
@@ -536,8 +531,7 @@ public class ActionScriptGenerateEventHandler extends BaseJSGenerateHandler {
       eventHandlerName2 = "on" + (eventName.isEmpty() ? "Event" : Character.toUpperCase(eventName.charAt(0)) + eventName.substring(1));
     }
 
-    @NotNull
-    private static Expression createExpression(String... variants) {
+    private static @NotNull Expression createExpression(String... variants) {
       return new ConstantNode(variants[0]).withLookupStrings(variants);
     }
 

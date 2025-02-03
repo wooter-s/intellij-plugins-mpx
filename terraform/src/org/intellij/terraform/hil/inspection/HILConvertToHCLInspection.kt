@@ -17,7 +17,6 @@ import com.intellij.psi.impl.source.tree.CompositePsiElement
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.util.DocumentUtil
 import com.intellij.util.SmartList
-import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.TerraformLanguage
 import org.intellij.terraform.config.model.Types
 import org.intellij.terraform.config.model.getTerraformModule
@@ -33,14 +32,16 @@ import org.intellij.terraform.hcl.psi.HCLPsiUtil.isUnderPropertyUnderPropertyWit
 import org.intellij.terraform.hcl.psi.HCLStringLiteral
 import org.intellij.terraform.hil.HILFileType
 import org.intellij.terraform.hil.psi.*
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 import java.util.function.BiConsumer
 
 class HILConvertToHCLInspection : LocalInspectionTool(), CleanupLocalInspectionTool {
-  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
-    val file = holder.file
-    if (file.language !in listOf(HCLLanguage, TerraformLanguage)) return PsiElementVisitor.EMPTY_VISITOR
-    if (file.fileType != TerraformFileType) return PsiElementVisitor.EMPTY_VISITOR
 
+  override fun isAvailableForFile(file: PsiFile): Boolean {
+    return isTerraformCompatiblePsiFile(file) || file.language == HCLLanguage
+  }
+
+  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
     return MyEV(holder)
   }
 

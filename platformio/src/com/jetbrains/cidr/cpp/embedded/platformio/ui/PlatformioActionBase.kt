@@ -1,6 +1,9 @@
 package com.jetbrains.cidr.cpp.embedded.platformio.ui
 
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.BaseOSProcessHandler
+import com.intellij.execution.process.ProcessHandler
+import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.execution.ui.RunContentManager
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
@@ -9,6 +12,8 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAwareAction
@@ -16,16 +21,20 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsContexts.TabTitle
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.ui.LayeredIcon
-import com.intellij.util.IconUtil
 import com.jetbrains.cidr.cpp.embedded.platformio.ClionEmbeddedPlatformioBundle
 import com.jetbrains.cidr.cpp.embedded.platformio.PlatformioConfigurable
 import com.jetbrains.cidr.cpp.embedded.platformio.PlatformioService
 import com.jetbrains.cidr.cpp.embedded.platformio.project.PlatfromioCliBuilder
 import icons.ClionEmbeddedPlatformioIcons
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.Icon
 import javax.swing.SwingConstants
+import com.jetbrains.cidr.cpp.embedded.platformio.project.LOG
+import kotlinx.coroutines.withContext
 
 private val NOTIFICATION_GROUP = NotificationGroupManager.getInstance().getNotificationGroup("PlatformIO plugin")
 
@@ -40,12 +49,14 @@ abstract class PlatformioActionBase(private  val text:  () -> @TabTitle String,
                                 vararg arguments: String) {
     val project = e.project
     if (project != null) {
-      val commandLine = PlatfromioCliBuilder(true, project, appendEnvKey, verboseAllowed).withParams(*arguments).build()
-      val runContentManager = RunContentManager.getInstance(project)
-      val alreadyRunningDescriptor = runContentManager.allDescriptors.firstOrNull {
-        val processHandler = it.processHandler as? BaseOSProcessHandler
-        processHandler?.isProcessTerminated != true && processHandler?.commandLine == commandLine.commandLineString
+      val commandLine = runCatching {
+        return@runCatching PlatfromioCliBuilder(true, project, appendEnvKey, verboseAllowed).withParams(*arguments).build()
+      }.getOrElse {
+        LOG.warn(it)
+        return@actionPerformed
       }
+      val runContentManager = RunContentManager.getInstance(project)
+      val alreadyRunningDescriptor = getAlreadyRunningDescriptor(runContentManager, commandLine)
       if (alreadyRunningDescriptor == null) {
         val service = project.service<PlatformioService>()
         doRun(service, @Suppress("HardCodedStringLiteral") text.invoke(), commandLine, reloadProject)
@@ -57,10 +68,21 @@ abstract class PlatformioActionBase(private  val text:  () -> @TabTitle String,
     }
   }
 
+  protected fun actionPerformedKillAlreadyRunning(e: AnActionEvent,
+                                                  reloadProject: Boolean,
+                                                  appendEnvKey: Boolean,
+                                                  verboseAllowed: Boolean,
+                                                  vararg arguments: String) {
+    val project = e.project
+    if (project == null) return
+    val commandLine = PlatfromioCliBuilder(true, project, appendEnvKey, verboseAllowed).withParams(*arguments).build()
+    project.service<PlatformioActionService>().runPioKillAlreadyRunning(commandLine, text.invoke(), reloadProject)
+  }
+
   override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
   companion object {
-    private val badge = IconUtil.resizeSquared(ClionEmbeddedPlatformioIcons.Platformio, 8)
+    private val badge = ClionEmbeddedPlatformioIcons.ModPlatformIO
 
     fun pioIcon(icon: Icon): Icon {
       return LayeredIcon(2).apply {
@@ -103,3 +125,34 @@ fun notifyUploadUnavailable(project: Project?) {
     .createNotification(ClionEmbeddedPlatformioBundle.message("notification.content.upload.unavailable"), NotificationType.WARNING)
     .notify(project)
 }
+
+@Service(Service.Level.PROJECT)
+internal class PlatformioActionService(val project: Project, private val cs: CoroutineScope) {
+  fun destroyProcess(processHandler: ProcessHandler) {
+    cs.launch(Dispatchers.IO) {
+      processHandler.destroyProcess()
+    }
+  }
+
+  fun runPioKillAlreadyRunning(commandLine: GeneralCommandLine, @TabTitle text: String, reloadProject: Boolean ) {
+    cs.launch(Dispatchers.EDT) {
+      val alreadyRunningDescriptor = getAlreadyRunningDescriptor(RunContentManager.getInstance(project), commandLine)
+      alreadyRunningDescriptor?.processHandler?.let { processHandler ->
+        withContext(Dispatchers.IO) {
+          processHandler.destroyProcess()
+          processHandler.waitFor()
+        }
+      }
+      doRun(project.service<PlatformioService>(), text, commandLine, reloadProject)
+    }
+  }
+}
+
+private fun getAlreadyRunningDescriptor(
+  runContentManager: RunContentManager,
+  commandLine: GeneralCommandLine,
+): RunContentDescriptor? =
+  runContentManager.allDescriptors.firstOrNull {
+    val processHandler = it.processHandler as? BaseOSProcessHandler
+    processHandler?.isProcessTerminated != true && processHandler?.commandLine == commandLine.commandLineString
+  }

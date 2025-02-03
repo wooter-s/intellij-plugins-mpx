@@ -9,6 +9,7 @@ import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElementVisitor
+import com.intellij.psi.createSmartPointer
 import com.intellij.util.NullableFunction
 import org.intellij.terraform.config.model.getTerraformModule
 import org.intellij.terraform.config.patterns.TerraformPatterns

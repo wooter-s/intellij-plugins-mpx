@@ -1,3 +1,4 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.projectStructure.detection;
 
 import com.intellij.ide.util.DelegatingProgressIndicator;
@@ -11,8 +12,8 @@ import com.intellij.ide.util.projectWizard.importSources.ProjectStructureDetecto
 import com.intellij.ide.util.projectWizard.importSources.util.CommonSourceRootDetectionUtil;
 import com.intellij.lang.LanguageParserDefinitions;
 import com.intellij.lang.javascript.ActionScriptFileType;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.JSTokenTypes;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lexer.Lexer;
 import com.intellij.openapi.fileTypes.FileTypeRegistry;
 import com.intellij.openapi.util.Pair;
@@ -30,7 +31,7 @@ import java.util.List;
 public final class FlexProjectStructureDetector extends ProjectStructureDetector {
 
   public static final NullableFunction<CharSequence, String> PACKAGE_NAME_FETCHER = charSequence -> {
-    Lexer lexer = LanguageParserDefinitions.INSTANCE.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).createLexer(null);
+    Lexer lexer = LanguageParserDefinitions.INSTANCE.forLanguage(FlexSupportLoader.ECMA_SCRIPT_L4).createLexer(null);
     lexer.start(charSequence);
     return readPackageName(charSequence, lexer);
   };
@@ -40,11 +41,10 @@ public final class FlexProjectStructureDetector extends ProjectStructureDetector
   }
 
   @Override
-  @NotNull
-  public DirectoryProcessingResult detectRoots(@NotNull final File dir,
-                                               final File @NotNull [] children,
-                                               @NotNull final File base,
-                                               @NotNull final List<DetectedProjectRoot> result) {
+  public @NotNull DirectoryProcessingResult detectRoots(final @NotNull File dir,
+                                                        final File @NotNull [] children,
+                                                        final @NotNull File base,
+                                                        final @NotNull List<DetectedProjectRoot> result) {
     for (File child : children) {
       if (child.isFile()) {
         if (isActionScriptFile(child)) {
@@ -59,7 +59,7 @@ public final class FlexProjectStructureDetector extends ProjectStructureDetector
             return DirectoryProcessingResult.SKIP_CHILDREN;
           }
         }
-        else if (JavaScriptSupportLoader.isFlexMxmFile(child.getName())) {
+        else if (FlexSupportLoader.isFlexMxmFile(child.getName())) {
           result.add(new FlexModuleSourceRoot(dir));
           // don't skip this folder since .as files can be located here, and they will make some parent folder marked as source root
           // essentially 'dir' will be marked as source root *only* if no .as files exist at this level or below
@@ -88,8 +88,7 @@ public final class FlexProjectStructureDetector extends ProjectStructureDetector
     return steps;
   }
 
-  @Nullable
-  public static String readPackageName(final CharSequence charSequence, final Lexer lexer) {
+  public static @Nullable String readPackageName(final CharSequence charSequence, final Lexer lexer) {
     skipWhiteSpaceAndComments(lexer);
     if (!JSTokenTypes.PACKAGE_KEYWORD.equals(lexer.getTokenType())) {
       return null;
@@ -100,8 +99,7 @@ public final class FlexProjectStructureDetector extends ProjectStructureDetector
     return readQualifiedName(charSequence, lexer, false);
   }
 
-  @Nullable
-  static String readQualifiedName(final CharSequence charSequence, final Lexer lexer, boolean allowStar) {
+  static @Nullable String readQualifiedName(final CharSequence charSequence, final Lexer lexer, boolean allowStar) {
     final StringBuilder buffer = new StringBuilder();
     while (true) {
       if (lexer.getTokenType() != JSTokenTypes.IDENTIFIER && !(allowStar && lexer.getTokenType() != JSTokenTypes.MULT)) break;

@@ -4,7 +4,7 @@ package org.angular2.lang.html.parser
 import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiBuilder.Marker
 import com.intellij.lang.html.HtmlParsing
-import com.intellij.lang.javascript.JavaScriptBundle
+import com.intellij.lang.javascript.JavaScriptParserBundle
 import com.intellij.psi.tree.ICustomParsingType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.ILazyParseableElementType
@@ -13,6 +13,7 @@ import com.intellij.psi.xml.XmlElementType
 import com.intellij.psi.xml.XmlTokenType
 import com.intellij.xml.psi.XmlPsiBundle
 import com.intellij.xml.util.XmlUtil
+import org.angular2.codeInsight.blocks.BLOCK_LET
 import org.angular2.lang.Angular2Bundle
 import org.angular2.lang.expr.parser.Angular2EmbeddedExprTokenType
 import org.angular2.lang.expr.parser.Angular2EmbeddedExprTokenType.Companion.createTemplateBindings
@@ -183,6 +184,10 @@ open class Angular2HtmlParsing(private val templateSyntax: Angular2TemplateSynta
       startMarker.done(Angular2HtmlElementTypes.BLOCK)
       return
     }
+    else if (blockName == BLOCK_LET) {
+      parseLetBlock(startMarker)
+      return
+    }
     if (builder.tokenType == Angular2HtmlTokenTypes.BLOCK_PARAMETERS_START) {
       val parameters = builder.mark()
       builder.advanceLexer()
@@ -205,7 +210,7 @@ open class Angular2HtmlParsing(private val templateSyntax: Angular2TemplateSynta
         parameterIndex++
       }
       if (builder.eof() || builder.tokenType != Angular2HtmlTokenTypes.BLOCK_PARAMETERS_END) {
-        parameters.errorBefore(JavaScriptBundle.message("javascript.parser.message.missing.rparen"), parametersContents)
+        parameters.errorBefore(JavaScriptParserBundle.message("javascript.parser.message.missing.rparen"), parametersContents)
         parametersContents.drop()
         parameters.precede().done(Angular2HtmlElementTypes.BLOCK_PARAMETERS)
       }
@@ -225,6 +230,29 @@ open class Angular2HtmlParsing(private val templateSyntax: Angular2TemplateSynta
       builder.error(Angular2Bundle.message("angular.parse.template.missing-block-opening-lbrace"))
       startMarker.done(Angular2HtmlElementTypes.BLOCK)
     }
+  }
+
+  private fun parseLetBlock(startMarker: Marker) {
+    if (builder.tokenType !is Angular2EmbeddedExprTokenType) {
+      if (builder.rawLookup(-1) == Angular2HtmlTokenTypes.BLOCK_NAME) {
+        builder.error(Angular2Bundle.message("angular.parse.expression.expected-whitespace"))
+      }
+      else {
+        builder.error(JavaScriptParserBundle.message("javascript.parser.message.expected.identifier"))
+      }
+      startMarker.done(Angular2HtmlElementTypes.BLOCK)
+      return
+    }
+    val parameters = builder.mark()
+    builder.advanceLexer()
+    if (builder.tokenType != Angular2HtmlTokenTypes.BLOCK_SEMICOLON) {
+      builder.error(Angular2Bundle.message("angular.parse.template.missing-let-block-closing-semicolon"))
+    }
+    else {
+      builder.advanceLexer()
+    }
+    parameters.done(Angular2HtmlElementTypes.BLOCK_PARAMETERS)
+    startMarker.done(Angular2HtmlElementTypes.BLOCK)
   }
 
   override fun parseCustomTopLevelContent(error: Marker?): Marker? {
@@ -462,21 +490,25 @@ open class Angular2HtmlParsing(private val templateSyntax: Angular2TemplateSynta
     return result
   }
 
-  private inner class AngularHtmlTagInfo(normalizedName: String,
-                                         originalName: String,
-                                         marker: Marker,
-                                         var hasNgNonBindable: Boolean = false)
-    : HtmlTagInfoImpl(normalizedName, originalName, marker)
+  private inner class AngularHtmlTagInfo(
+    normalizedName: String,
+    originalName: String,
+    marker: Marker,
+    var hasNgNonBindable: Boolean = false,
+  ) : HtmlTagInfoImpl(normalizedName, originalName, marker)
 
-  private class AngularBlock(private val startMarker: Marker,
-                             private val contentsMarker: Marker,
-                             private val errorStartMarker: Marker,
-                             private val errorEndMarker: Marker)
-    : HtmlParserStackItem {
+  private class AngularBlock(
+    private val startMarker: Marker,
+    private val contentsMarker: Marker,
+    private val errorStartMarker: Marker,
+    private val errorEndMarker: Marker,
+  ) : HtmlParserStackItem {
 
-    override fun done(builder: PsiBuilder,
-                      beforeMarker: Marker?,
-                      incomplete: Boolean) {
+    override fun done(
+      builder: PsiBuilder,
+      beforeMarker: Marker?,
+      incomplete: Boolean,
+    ) {
       if (incomplete) {
         errorStartMarker.errorBefore(Angular2Bundle.message("angular.parse.template.missing-block-closing-rbrace"), errorEndMarker)
       }

@@ -3,7 +3,9 @@ package org.intellij.terraform.config.codeinsight
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiFile
+import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.util.parentOfType
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.intellij.terraform.config.Constants.HCL_DATASOURCE_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_MODULE_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_OUTPUT_IDENTIFIER
@@ -17,12 +19,20 @@ import org.intellij.terraform.hcl.psi.HCLBlock
 import org.intellij.terraform.hcl.psi.HCLObject
 import org.intellij.terraform.hcl.psi.HCLStringLiteral
 import org.intellij.terraform.hcl.psi.getNameElementUnquoted
+import org.intellij.terraform.opentofu.patterns.OpenTofuPatterns
+import org.intellij.terraform.opentofu.model.getEncryptionKeyProviderProperties
+import org.intellij.terraform.opentofu.model.getEncryptionMethodProperties
 import java.util.*
 
 internal object TfModelHelper {
   private val LOG = Logger.getInstance(TfModelHelper::class.java)
 
   fun getBlockProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {
+    val fileType = block.containingFile.originalFile.fileType
+    return getBlockPropertiesInternal(block).filter { it.value.canBeUsedIn(fileType) }
+  }
+
+  private fun getBlockPropertiesInternal(block: HCLBlock): Map<String, PropertyOrBlockType> {
     val type = block.getNameElementUnquoted(0) ?: return emptyMap()
     // Special case for 'backend' blocks, since it's located not in root
 
@@ -40,6 +50,8 @@ internal object TfModelHelper {
       TerraformPatterns.ProvisionerBlock.accepts(block) -> return getProvisionerProperties(block)
       TerraformPatterns.ResourceLifecycleBlock.accepts(block) -> return TypeModel.ResourceLifecycle.properties
       TerraformPatterns.ResourceConnectionBlock.accepts(block) -> return getConnectionProperties(block)
+      OpenTofuPatterns.KeyProviderBlock.accepts(block) -> return getEncryptionKeyProviderProperties(block)
+      OpenTofuPatterns.EncryptionMethodBlock.accepts(block) -> return getEncryptionMethodProperties(block)
       block.parent !is PsiFile -> return getModelBlockProperties(block, type)
     }
 
@@ -181,19 +193,19 @@ internal object TfModelHelper {
 
   private fun getProviderProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {
     val type = block.getNameElementUnquoted(1)
-    val providerType = if (type != null) TypeModelProvider.getModel(block).getProviderType(type, block) else null
+    val providerType = if (!type.isNullOrBlank()) TypeModelProvider.getModel(block).getProviderType(type, block) else null
     return getPropertiesWithDefaults(TypeModel.AbstractProvider, providerType)
   }
 
   private fun getProvisionerProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {
     val type = block.getNameElementUnquoted(1)
-    val provisionerType = if (type != null) TypeModelProvider.getModel(block).getProvisionerType(type) else null
+    val provisionerType = if (!type.isNullOrBlank()) TypeModelProvider.getModel(block).getProvisionerType(type) else null
     return getPropertiesWithDefaults(TypeModel.AbstractResourceProvisioner, provisionerType)
   }
 
   private fun getBackendProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {
     val type = block.getNameElementUnquoted(1)
-    val backendType = if (type != null) TypeModelProvider.getModel(block).getBackendType(type) else null
+    val backendType = if (!type.isNullOrBlank()) TypeModelProvider.getModel(block).getBackendType(type) else null
     return getPropertiesWithDefaults(TypeModel.AbstractBackend, backendType)
   }
 
@@ -223,14 +235,29 @@ internal object TfModelHelper {
 
   fun getResourceProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {
     val type = block.getNameElementUnquoted(1)
-    val resourceType = if (type != null) TypeModelProvider.getModel(block).getResourceType(type, block) else null
+    val resourceType = if (!type.isNullOrBlank()) TypeModelProvider.getModel(block).getResourceType(type, block) else null
     return getPropertiesWithDefaults(TypeModel.AbstractResource, resourceType)
   }
 
   private fun getDataSourceProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {
     val type = block.getNameElementUnquoted(1)
-    val dataSourceType = if (type != null) TypeModelProvider.getModel(block).getDataSourceType(type, block) else null
+    val dataSourceType = if (!type.isNullOrBlank()) TypeModelProvider.getModel(block).getDataSourceType(type, block) else null
     return getPropertiesWithDefaults(TypeModel.AbstractDataSource, dataSourceType)
+  }
+
+  @RequiresReadLock
+  fun getAllTypesForBlockByIdentifier(blockPointer: SmartPsiElementPointer<HCLBlock>): List<BlockType> {
+    val block = blockPointer.element ?: return emptyList()
+    val typeString = block.getNameElementUnquoted(0) ?: return emptyList()
+    val identifier = block.getNameElementUnquoted(1) ?: return emptyList()
+    val model = TypeModelProvider.getModel(block)
+    val types = when (typeString) {
+      HCL_RESOURCE_IDENTIFIER -> model.allResources().filter { it.type == identifier }.toList()
+      HCL_DATASOURCE_IDENTIFIER -> model.allDatasources().filter { it.type == identifier }.toList()
+      HCL_PROVIDER_IDENTIFIER -> model.allProviders().filter { it.type == identifier }.toList()
+      else -> emptyList()
+    }
+    return types
   }
 
   private fun getModuleProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {

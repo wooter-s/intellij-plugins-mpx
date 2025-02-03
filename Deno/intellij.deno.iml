@@ -20,6 +20,7 @@
     <orderEntry type="module" module-name="intellij.platform.lang" />
     <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.javascript.testFramework" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.platform.lsp.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.javascript.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.debugger" />
     <orderEntry type="module" module-name="intellij.javascript.debugger" />
@@ -29,5 +30,6 @@
     <orderEntry type="module" module-name="intellij.platform.lsp.impl" />
     <orderEntry type="module" module-name="intellij.platform.workspace.jps" />
     <orderEntry type="module" module-name="intellij.platform.backend.workspace" />
+    <orderEntry type="module" module-name="intellij.platform.core.impl" scope="TEST" />
   </component>
 </module>

@@ -117,7 +117,7 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
 
   private final Module myModule;
   private final ModifiableFlexBuildConfiguration myConfiguration;
-  private @NotNull final FlexProjectConfigurationEditor myConfigEditor;
+  private final @NotNull FlexProjectConfigurationEditor myConfigEditor;
   private final ProjectSdksModel mySdksModel;
   private final StructureConfigurableContext myContext;
   private String myName;
@@ -151,7 +151,7 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
 
     myStructureElement = new BuildConfigurationProjectStructureElement(bc, module, context) {
       @Override
-      protected void libraryReplaced(@NotNull final Library library, @Nullable final Library replacement) {
+      protected void libraryReplaced(final @NotNull Library library, final @Nullable Library replacement) {
         myDependenciesConfigurable.libraryReplaced(library, replacement);
       }
     };
@@ -208,8 +208,7 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
       }
     });
 
-    myOutputFolderField.addBrowseFolderListener(null, null, module.getProject(),
-                                                FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myOutputFolderField.addBrowseFolderListener(module.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
 
     initHtmlWrapperControls();
     initRLMControls();
@@ -238,10 +237,9 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
       }
     });
 
-    final String title = "Select Folder with HTML Wrapper Template";
-    final String description = "Folder must contain 'index.template.html' file which must contain '${swf}' macro.";
-    myWrapperTemplateTextWithBrowse.addBrowseFolderListener(title, description, myModule.getProject(),
-                                                            FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myWrapperTemplateTextWithBrowse.addBrowseFolderListener(myModule.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor()
+      .withTitle("Select Folder with HTML Wrapper Template")
+      .withDescription("Folder must contain 'index.template.html' file which must contain '${swf}' macro."));
 
     myCreateHtmlWrapperTemplateButton.addActionListener(new ActionListener() {
       @Override
@@ -457,8 +455,7 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
   }
 
   @Override
-  @Nls
-  public String getDisplayName() {
+  public @Nls String getDisplayName() {
     return myName;
   }
 
@@ -746,7 +743,7 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
   }
 
   @Override
-  public ActionCallback navigateTo(@Nullable final Place place, final boolean requestFocus) {
+  public ActionCallback navigateTo(final @Nullable Place place, final boolean requestFocus) {
     if (place != null && place.getPath(LOCATION_ON_TAB) instanceof Location location) {
       return switch (location) {
         case Nature -> IdeFocusManager.findInstance().requestFocus(myChangeNatureHyperlink, true);

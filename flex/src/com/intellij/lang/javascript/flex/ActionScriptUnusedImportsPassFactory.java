@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex;
 
 import com.intellij.codeHighlighting.*;
@@ -14,7 +14,6 @@ import com.intellij.lang.ImportOptimizer;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.inspections.JSUnusedLocalSymbolsInspection;
 import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSExpressionCodeFragment;
@@ -50,9 +49,9 @@ final class ActionScriptUnusedImportsPassFactory implements TextEditorHighlighti
   }
 
   @Override
-  public TextEditorHighlightingPass createHighlightingPass(@NotNull final PsiFile file, @NotNull final Editor editor) {
-    if (file instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile(file) ||
-        file instanceof JSFile && !(file instanceof PsiCompiledElement) && file.getLanguage().is(JavaScriptSupportLoader.ECMA_SCRIPT_L4)
+  public TextEditorHighlightingPass createHighlightingPass(final @NotNull PsiFile file, final @NotNull Editor editor) {
+    if (file instanceof XmlFile && FlexSupportLoader.isFlexMxmFile(file) ||
+        file instanceof JSFile && !(file instanceof PsiCompiledElement) && file.getLanguage().is(FlexSupportLoader.ECMA_SCRIPT_L4)
        ) {
       final HighlightDisplayKey key = HighlightDisplayKey.find(JSUnusedLocalSymbolsInspection.SHORT_NAME);
       if (InspectionProjectProfileManager.getInstance(file.getProject()).getCurrentProfile().isToolEnabled(key, file)) {
@@ -62,18 +61,20 @@ final class ActionScriptUnusedImportsPassFactory implements TextEditorHighlighti
     return null;
   }
 
+  public @NotNull String getComponentName() {
+    return "ActionScript.UnusedImportReporter";
+  }
+
   private static IntentionAction createOptimizeImportsIntention() {
     return new IntentionAction() {
 
       @Override
-      @NotNull
-      public String getText() {
+      public @NotNull String getText() {
         return JavaScriptBundle.message("javascript.fix.optimize.imports");
       }
 
       @Override
-      @NotNull
-      public String getFamilyName() {
+      public @NotNull String getFamilyName() {
         return getText();
       }
 
@@ -83,7 +84,7 @@ final class ActionScriptUnusedImportsPassFactory implements TextEditorHighlighti
       }
 
       @Override
-      public void invoke(@NotNull final Project project, Editor editor, PsiFile file) {
+      public void invoke(final @NotNull Project project, Editor editor, PsiFile file) {
         ImportOptimizer optimizer = new ECMAScriptImportOptimizer();
         final Runnable runnable = optimizer.processFile(file);
         ApplicationManager.getApplication().runWriteAction(new Runnable() {
@@ -102,11 +103,6 @@ final class ActionScriptUnusedImportsPassFactory implements TextEditorHighlighti
 
   }
 
-  @NotNull
-  public String getComponentName() {
-    return "ActionScript.UnusedImportReporter";
-  }
-
   public static class ActionScriptUnusedImportsHighlightingPass extends TextEditorHighlightingPass {
     private Collection<JSImportStatement> importStatements;
     private Collection<JSReferenceExpression> fqnsToReplaceWithShortName;
@@ -118,7 +114,7 @@ final class ActionScriptUnusedImportsPassFactory implements TextEditorHighlighti
     }
 
     @Override
-    public void doCollectInformation(@NotNull final ProgressIndicator progress) {
+    public void doCollectInformation(final @NotNull ProgressIndicator progress) {
       if (myFile instanceof JSExpressionCodeFragment) {
         importStatements = Collections.emptyList();
         fqnsToReplaceWithShortName = Collections.emptyList();

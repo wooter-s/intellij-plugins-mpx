@@ -8,25 +8,32 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupElementRenderer
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.util.NlsSafe
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.DebugUtil
+import org.intellij.terraform.TerraformIcons
+import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.model.*
 import org.intellij.terraform.config.model.Function
 import org.intellij.terraform.hcl.HCLElementTypes
 import org.intellij.terraform.hcl.HCLTokenTypes
+import org.intellij.terraform.hcl.Icons
 import org.intellij.terraform.hcl.psi.HCLIdentifier
 import org.intellij.terraform.hcl.psi.HCLObject
 import org.intellij.terraform.hcl.psi.HCLPsiUtil
 import org.intellij.terraform.hcl.psi.HCLStringLiteral
 import org.intellij.terraform.hil.codeinsight.FunctionInsertHandler
 import org.intellij.terraform.hil.codeinsight.ScopeSelectInsertHandler
-import org.intellij.terraform.nullize
+import org.intellij.terraform.opentofu.OpenTofuConstants.OpenTofuScopes
+import org.intellij.terraform.opentofu.OpenTofuFileType
 import java.util.*
+import javax.swing.Icon
 
 object TerraformCompletionUtil {
-  val Scopes: Set<String> = setOf("data", "var", "self", "path", "count", "terraform", "local", "module")
-  val GlobalScopes: SortedSet<String> = sortedSetOf("var", "path", "data", "module", "local")
-  val RootBlockKeywords: Set<String> = TypeModel.RootBlocks.map(BlockType::literal).toHashSet()
+  val Scopes: Set<String> = setOf("data", "var", "self", "path", "count", "terraform", "local", "module") + OpenTofuScopes
+  val GlobalScopes: SortedSet<String> = (setOf("var", "path", "data", "module", "local") + OpenTofuScopes).toSortedSet()
+  val RootBlockKeywords: Set<String> = TypeModel.RootBlocksMap.keys
   val RootBlockSorted: List<BlockType> = TypeModel.RootBlocks.sortedBy { it.literal }
 
   fun createPropertyOrBlockType(value: PropertyOrBlockType, lookupString: String? = null, psiElement: PsiElement? = null): LookupElementBuilder {
@@ -84,6 +91,52 @@ object TerraformCompletionUtil {
     val position = parameters.position
     val text = getClearTextValue(position) ?: position.text
     if (text == CompletionUtilCore.DUMMY_IDENTIFIER_TRIMMED) return null
-    return text.replace(CompletionUtilCore.DUMMY_IDENTIFIER_TRIMMED, "").nullize(true)
+    return StringUtil.nullize(text.replace(CompletionUtilCore.DUMMY_IDENTIFIER_TRIMMED, ""), true)
   }
+
+  @NlsSafe
+  internal fun buildProviderTypeText(provider: ProviderType): String =
+    """${provider.fullName}${if (provider.version.isNotBlank()) " ${provider.version}" else ""}"""
+
+
+  @NlsSafe
+  internal fun buildResourceDisplayString(block: BlockType, providerLocalNames: Map<String, String>): String {
+    return when (block) {
+      is ResourceOrDataSourceType -> {
+        val providerLocalName = providerLocalNames[block.provider.fullName] ?: return block.type
+        return "${providerLocalName}_${TypeModel.getResourceName(block.type)}"
+      }
+      is ProviderType -> {
+        val providerLocalName = providerLocalNames[block.fullName] ?: return block.type
+        providerLocalName
+      }
+      else -> {
+        block.literal
+      }
+    }
+  }
+
+  @NlsSafe
+  internal fun buildResourceFullString(block: BlockType): String {
+    return when (block) {
+      is ResourceOrDataSourceType -> {
+        return "${block.type} (${buildProviderTypeText(block.provider)})"
+      }
+      is ProviderType -> {
+        return "${block.fullName} ${block.version}"
+      }
+      else -> {
+        block.presentableText
+      }
+    }
+  }
+
+  internal fun getLookupIcon(element: PsiElement): Icon {
+    return when (element.containingFile.fileType) {
+      is TerraformFileType -> {TerraformIcons.Terraform}
+      is OpenTofuFileType -> {TerraformIcons.Opentofu}
+      else -> Icons.FileTypes.HCL
+    }
+  }
+
 }

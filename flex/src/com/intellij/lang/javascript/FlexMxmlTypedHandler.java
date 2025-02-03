@@ -1,7 +1,8 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript;
 
 import com.intellij.codeInsight.editorActions.TypedHandlerDelegate;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
@@ -15,14 +16,13 @@ import com.intellij.psi.xml.XmlText;
 import org.jetbrains.annotations.NotNull;
 
 public final class FlexMxmlTypedHandler extends TypedHandlerDelegate {
-  @NotNull
   @Override
-  public Result beforeCharTyped(char c,
-                                @NotNull Project project,
-                                @NotNull Editor editor,
-                                @NotNull PsiFile file,
-                                @NotNull FileType fileType) {
-    if (c == '}' && JavaScriptSupportLoader.isFlexMxmFile(file)) {
+  public @NotNull Result beforeCharTyped(char c,
+                                         @NotNull Project project,
+                                         @NotNull Editor editor,
+                                         @NotNull PsiFile file,
+                                         @NotNull FileType fileType) {
+    if (c == '}' && FlexSupportLoader.isFlexMxmFile(file)) {
       PsiDocumentManager.getInstance(project).commitDocument(editor.getDocument());
       int offset = editor.getCaretModel().getOffset();
       PsiElement at = file.findElementAt(offset);
@@ -35,10 +35,9 @@ public final class FlexMxmlTypedHandler extends TypedHandlerDelegate {
     return super.beforeCharTyped(c, project, editor, file, fileType);
   }
 
-  @NotNull
   @Override
-  public Result charTyped(char c, @NotNull Project project, @NotNull Editor editor, @NotNull PsiFile file) {
-    if (c == '{' && JavaScriptSupportLoader.isFlexMxmFile(file)) {
+  public @NotNull Result charTyped(char c, @NotNull Project project, @NotNull Editor editor, @NotNull PsiFile file) {
+    if (c == '{' && FlexSupportLoader.isFlexMxmFile(file)) {
       PsiDocumentManager.getInstance(project).commitDocument(editor.getDocument());
       int offset = editor.getCaretModel().getOffset();
       PsiElement at = file.findElementAt(offset);

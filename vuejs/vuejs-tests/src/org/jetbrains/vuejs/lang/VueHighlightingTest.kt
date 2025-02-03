@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.vuejs.lang
 
 import com.intellij.htmltools.codeInspection.htmlInspections.HtmlFormInputWithoutLabelInspection
@@ -23,11 +23,13 @@ import com.intellij.testFramework.VfsTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.util.ThrowableRunnable
+import com.intellij.workspaceModel.ide.impl.WorkspaceEntityLifecycleSupporterUtils
 import com.intellij.xml.util.CheckTagEmptyBodyInspection
 import junit.framework.TestCase
 import org.jetbrains.plugins.scss.inspections.SassScssResolvedByNameOnlyInspection
 import org.jetbrains.plugins.scss.inspections.SassScssUnresolvedVariableInspection
 import org.jetbrains.vuejs.libraries.nuxt.NuxtHighlightingTest
+
 
 /**
  * @see VueComponentTest
@@ -42,27 +44,33 @@ class VueHighlightingTest : BasePlatformTestCase() {
     myFixture.enableInspections(VueInspectionsProvider())
   }
 
-  private fun doTest(packageJsonDependencies: Map<String, String> = emptyMap(),
-                     addNodeModules: List<VueTestModule> = emptyList(),
-                     extension: String = "vue",
-                     vararg files: String) {
+  private fun doTest(
+    packageJsonDependencies: Map<String, String> = emptyMap(),
+    addNodeModules: List<VueTestModule> = emptyList(),
+    extension: String = "vue",
+    vararg files: String,
+  ) {
     configureTestProject(packageJsonDependencies, addNodeModules, extension, *files)
     myFixture.checkHighlighting()
   }
 
-  private fun configureTestProject(packageJsonDependencies: Map<String, String> = emptyMap(),
-                                   addNodeModules: List<VueTestModule> = emptyList(),
-                                   extension: String = "vue",
-                                   vararg files: String): PsiFile {
+  private fun configureTestProject(
+    packageJsonDependencies: Map<String, String> = emptyMap(),
+    addNodeModules: List<VueTestModule> = emptyList(),
+    extension: String = "vue",
+    vararg files: String,
+  ): PsiFile {
     myFixture.configureVueDependencies(*addNodeModules.toTypedArray(),
                                        additionalDependencies = packageJsonDependencies)
     myFixture.configureByFiles(*files)
     return myFixture.configureByFile(getTestName(true) + "." + extension)
   }
 
-  private fun doDirTest(addNodeModules: List<VueTestModule> = emptyList(),
-                        fileName: String? = null,
-                        vararg additionalFilesToCheck: String) {
+  private fun doDirTest(
+    addNodeModules: List<VueTestModule> = emptyList(),
+    fileName: String? = null,
+    vararg additionalFilesToCheck: String,
+  ) {
     val testName = getTestName(true)
     if (addNodeModules.isNotEmpty()) {
       myFixture.configureVueDependencies(*addNodeModules.toTypedArray())
@@ -337,7 +345,7 @@ const props = {seeMe: {}}
 
   fun testSemanticHighlighting() {
     configureTestProject()
-    myFixture.checkHighlighting( /* checkWarnings = */ false,   /* checkInfos = */ true,  /* checkWeakWarnings = */ false)
+    JSTestUtils.checkHighlightingWithSymbolNames(myFixture, false, false, true)
   }
 
   // TODO add special inspection for unused slot scope parameters - WEB-43893
@@ -432,14 +440,18 @@ const props = {seeMe: {}}
     myFixture.enableInspections(CssInvalidFunctionInspection::class.java,
                                 SassScssResolvedByNameOnlyInspection::class.java,
                                 SassScssUnresolvedVariableInspection::class.java)
-    doTest()
+    WorkspaceEntityLifecycleSupporterUtils.withAllEntitiesInWorkspaceFromProvidersDefinedOnEdt(project) {
+      doTest()
+    }
   }
 
   fun testSassBuiltInModules() {
     myFixture.enableInspections(CssInvalidFunctionInspection::class.java,
                                 SassScssResolvedByNameOnlyInspection::class.java,
                                 SassScssUnresolvedVariableInspection::class.java)
-    doTest()
+    WorkspaceEntityLifecycleSupporterUtils.withAllEntitiesInWorkspaceFromProvidersDefinedOnEdt(project) {
+      doTest()
+    }
   }
 
   fun testIndirectExport() = doTest(addNodeModules = listOf(VueTestModule.VUE_2_6_10))
@@ -539,7 +551,7 @@ const props = {seeMe: {}}
 
   fun testScriptSetupSymbolsHighlighting() {
     configureTestProject()
-    myFixture.checkHighlighting(/* checkWarnings = */ true, /* checkInfos = */ true, /* checkWeakWarnings = */ true)
+    JSTestUtils.checkHighlightingWithSymbolNames(myFixture, true, true, true)
   }
 
   fun testSlotTypes() {

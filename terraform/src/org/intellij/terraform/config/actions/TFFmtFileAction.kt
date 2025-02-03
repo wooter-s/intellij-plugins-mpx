@@ -2,6 +2,7 @@
 package org.intellij.terraform.config.actions
 
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.writeIntentReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -11,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.intellij.terraform.config.util.TFExecutor
 import org.intellij.terraform.config.util.executeSuspendable
+import org.intellij.terraform.config.util.getApplicableToolType
 import org.jetbrains.annotations.Nls
 
 class TFFmtFileAction : TFExternalToolsAction() {
@@ -18,11 +20,15 @@ class TFFmtFileAction : TFExternalToolsAction() {
   override suspend fun invoke(project: Project, title: @Nls String, vararg virtualFiles: VirtualFile) {
     withBackgroundProgress(project, title) {
       withContext(Dispatchers.EDT) {
-        FileDocumentManager.getInstance().saveAllDocuments()
+        writeIntentReadAction {
+          FileDocumentManager.getInstance().saveAllDocuments()
+        }
       }
 
+      if (virtualFiles.isEmpty()) return@withBackgroundProgress
+
       val filePaths = virtualFiles.map { it.canonicalPath!! }.toTypedArray()
-      TFExecutor.`in`(project)
+      TFExecutor.`in`(project, getApplicableToolType(virtualFiles.first()))
         .withPresentableName(title)
         .withParameters("fmt", *filePaths)
         .showOutputOnError()

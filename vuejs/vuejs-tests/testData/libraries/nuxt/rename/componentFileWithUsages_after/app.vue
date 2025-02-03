@@ -1,0 +1,19 @@
+<template>
+  <div>
+    <NuxtRouteAnnouncer/>
+    <NuxtWelcome/>
+    <Link/>
+    <NewName>
+      123
+    </NewName>
+    <new-name>
+      123
+    </new-name>
+    <LazyNewName>
+      123
+    </LazyNewName>
+    <lazy-new-name>
+      123
+    </lazy-new-name>
+  </div>
+</template>

@@ -3,6 +3,8 @@ package com.jetbrains.cidr.cpp.embedded.platformio
 import com.intellij.execution.configurations.PathEnvironmentVariableUtil
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.DialogPanel
@@ -14,12 +16,22 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
 import com.intellij.util.FontUtil
 import com.intellij.util.SystemProperties
+import com.intellij.util.ui.EDT
 import com.jetbrains.cidr.cpp.embedded.platformio.ui.OpenInstallGuide
-import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicReference
 import javax.swing.JComponent
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
+import kotlin.io.path.isExecutable
 import kotlin.io.path.pathString
 
 class PlatformioConfigurable : SearchableConfigurable {
@@ -29,32 +41,31 @@ class PlatformioConfigurable : SearchableConfigurable {
     "configurable.ClionEmbeddedPlatformioBundle.display.name")
 
   private var disposable: Disposable? = null
-  private fun checkHome(path: String): Boolean {
+  private fun checkLocation(path: String): Boolean {
+    EDT.assertIsEdt()
     if (path.isBlank()) return false
-    val utilName = if (SystemInfo.isWindows) "pio.exe" else "pio"
-    return !(Path.of(path, "penv", "Scripts", utilName).toFile().canExecute() ||
-             Path.of(path, "penv", "bin", utilName).toFile().canExecute())
+    return adjustPioPath(path).isNullOrEmpty()
   }
 
   override fun createComponent(): JComponent {
     val newSettingsPanel = panel {
       row {
-        textFieldWithBrowseButton(
-          project = null,
-          browseDialogTitle = ClionEmbeddedPlatformioBundle.message("dialog.title.home.location"),
-          fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor().withShowHiddenFiles(true))
+        val descriptor = FileChooserDescriptorFactory.createSingleFileOrFolderDescriptor()
+          .withShowHiddenFiles(true)
+          .withTitle(ClionEmbeddedPlatformioBundle.message("dialog.title.home.location"))
+        textFieldWithBrowseButton(descriptor)
           .align(Align.FILL)
           .label(ClionEmbeddedPlatformioBundle.message("home.location"), LabelPosition.TOP)
-          .bindText(::pioLocation.toMutableProperty())
+          .bindText(::manualPioLocation.toMutableProperty())
           .trimmedTextValidation(
-            validationErrorIf(ClionEmbeddedPlatformioBundle.message("dialog.message.platformio.utility.not.found.inside"), ::checkHome))
+            validationErrorIf(ClionEmbeddedPlatformioBundle.message("dialog.message.platformio.utility.not.found.inside"), ::checkLocation))
           .applyToComponent {
-            val location = pioBinFolderPath()
+            EDT.assertIsEdt()
+            val location = pioBinLookup()
             val text =
-              if (!location.second.isDirectory())
+              if (!location.isDirectory())
                 ClionEmbeddedPlatformioBundle.message("auto.not.detected.platformio")
-              else if (location.first) ClionEmbeddedPlatformioBundle.message("auto.detected.platformio", location.second)
-              else ClionEmbeddedPlatformioBundle.message("auto.detected.platformio", location.second.parent?.parent?.pathString)
+              else ClionEmbeddedPlatformioBundle.message("auto.detected.platformio", location.pathString)
             (textField as JBTextField).emptyText.text = text
           }
       }
@@ -94,51 +105,93 @@ class PlatformioConfigurable : SearchableConfigurable {
 
   override fun getHelpTopic(): String = "settings.plugin.platformio"
 
+  @Service
+  class PlatformioConfigurableService(cs: CoroutineScope) {
+
+    private var manualPioLocationValue: AtomicReference<String>
+
+    var manualPioLocation: String
+      get() = manualPioLocationValue.get()
+      set(path) {
+        writeEvents.tryEmit(path)
+        manualPioLocationValue.set(path)
+      }
+
+    private val writeEvents = MutableSharedFlow<String>(
+      replay = 1,
+      onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    init {
+      cs.launch {
+        writeEvents.distinctUntilChanged().collectLatest {
+          handlePioPathChange(it)
+        }
+      }
+      manualPioLocationValue = AtomicReference(PropertiesComponent.getInstance().getValue(PIO_LOCATION_KEY, ""))
+    }
+
+    private suspend fun handlePioPathChange(path: String) {
+      withContext(Dispatchers.IO) {
+        PropertiesComponent.getInstance().setValue(PIO_LOCATION_KEY, path.trim())
+      }
+    }
+  }
 
   companion object {
     private const val ID = "PlatformIO.settings"
     private const val PIO_LOCATION_KEY = "$ID.platformio.location"
-    private var pioLocation: String
-      get() {
-        val file = File(PropertiesComponent.getInstance().getValue(PIO_LOCATION_KEY, "").trim())
-        if (file.canExecute()) {
-          if (file.parent.endsWith("penv${File.separator}Scripts", true)) {
-            val s = file.parentFile.parentFile.parent
-            PropertiesComponent.getInstance().setValue(PIO_LOCATION_KEY, s)
-            return s
-          }
-        }
-        return file.path
-      }
-      set(value) = PropertiesComponent.getInstance().setValue(PIO_LOCATION_KEY, value.trim())
+    private const val PIO_VENV_FOLDER = "penv"
 
-    fun pioBinFolder(): Path {
-      if (pioLocation.isNotEmpty()) {
-        val path = Path.of(pioLocation, "penv", "Scripts")
-        if (path.exists()) return path
-        return Path.of(pioLocation, "penv", "bin")
+    private val PIO_EXECUTABLE = "pio" + if (SystemInfo.isWindows) { ".exe" } else { "" }
+    private val PLATFORMIO_EXECUTABLE = "platformio" + if (SystemInfo.isWindows) { ".exe" } else { "" }
+    private val BIN_FOLDER = if (SystemInfo.isWindows) { "Scripts" } else { "bin" }
+
+    /** Contains what the User has entered as the location of PIO.
+     *  Empty if the user did not enter anything.
+     */
+    private var manualPioLocation: String
+      get() = service<PlatformioConfigurableService>().manualPioLocation
+      set(path) { service<PlatformioConfigurableService>().manualPioLocation = path }
+
+    fun pioBinFolder(): Path =
+      if (manualPioLocation.isNotEmpty()) {
+        Path.of(adjustPioPath(manualPioLocation) ?: manualPioLocation)
       }
-      return pioBinFolderPath().second
+      else {
+        pioBinLookup()
+      }
+
+    /** Adjusts the path entered by the user to the bin folder of pio */
+    private fun adjustPioPath(pathString: String): String? {
+      // Case 1: points to the executable
+      val path = Path.of(pathString)
+      val fileName = path.fileName?.pathString
+      if (path.isExecutable() && (fileName == PIO_EXECUTABLE || fileName == PLATFORMIO_EXECUTABLE)){
+        return path.parent?.pathString
+      }
+      // Else do backup fuzzy search
+      return listOf(
+        Path.of(pathString, PIO_EXECUTABLE),                              // Case 2: points to bin folder
+        Path.of(pathString, BIN_FOLDER, PIO_EXECUTABLE),                  // Case 3: points to venv
+        Path.of(pathString, PIO_VENV_FOLDER, BIN_FOLDER, PIO_EXECUTABLE), // Case 4: points to installation folder of platformio
+      ).firstOrNull { it.isExecutable() }?.parent?.pathString
     }
 
-    private fun pioBinFolderPath(): Pair<Boolean, Path> {
-      val path = PathEnvironmentVariableUtil.findExecutableInPathOnAnyOS("pio")?.parent?.let { Path.of(it) }
+    // Searches for pio executable bin folder
+    private fun pioBinLookup(): Path {
+      val path = PathEnvironmentVariableUtil.findExecutableInPathOnAnyOS(PIO_EXECUTABLE)?.parent?.let { Path.of(it) }
       if (path != null) {
-        return Pair(true, path)
+        return path
       }
+      val defaultPath1 = Path.of(SystemProperties.getUserHome(), ".platformio", PIO_VENV_FOLDER, BIN_FOLDER)
+      if (defaultPath1.exists()) return defaultPath1
+      val defaultPath2 = Path.of(SystemProperties.getUserHome(), ".pio", PIO_VENV_FOLDER, BIN_FOLDER)
+      if (defaultPath2.exists()) return defaultPath2
 
-      var defaultPath1 = Path.of(SystemProperties.getUserHome(), ".platformio", "penv", "Scripts")
-      if (defaultPath1.exists()) return Pair(false, defaultPath1)
-      defaultPath1 = Path.of(SystemProperties.getUserHome(), ".platformio", "penv", "bin")
-      if (defaultPath1.exists()) return Pair(false, defaultPath1)
-
-      var defaultPath2 = Path.of(SystemProperties.getUserHome(), ".pio", "penv", "Scripts")
-      if (defaultPath2.exists()) return Pair(false, defaultPath2)
-      defaultPath2 = Path.of(SystemProperties.getUserHome(), ".pio", "penv", "bin")
-      if (defaultPath2.exists()) return Pair(false, defaultPath2)
-      return Pair(false, defaultPath1)
+      return defaultPath1
     }
 
-    fun pioExePath() = pioBinFolder().resolve("pio").toString()
+    fun pioExePath() = pioBinFolder().resolve(PIO_EXECUTABLE).toString()
   }
 }

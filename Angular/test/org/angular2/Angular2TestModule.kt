@@ -2,17 +2,10 @@
 package org.angular2
 
 import com.intellij.javascript.web.WebFrameworkTestModule
-import com.intellij.lang.javascript.JSTestUtils
-import com.intellij.lang.javascript.ui.NodeModuleNamesUtil
-import com.intellij.lang.resharper.ReSharperTestUtil
-import com.intellij.openapi.application.WriteAction
-import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.io.FileUtilRt
-import com.intellij.testFramework.PsiTestUtil
+import com.intellij.javascript.web.configureDependencies
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import one.util.streamex.StreamEx
 
-enum class Angular2TestModule(private val myPackageName: String, private val myVersion: String) : WebFrameworkTestModule {
+enum class Angular2TestModule(myPackageName: String, myVersion: String) : WebFrameworkTestModule {
   AGM_CORE_1_0_0_BETA_5("@agm/core", "1.0.0-beta.5"),
 
   ANGULAR_CDK_14_2_0("@angular/cdk", "14.2.0"),
@@ -24,6 +17,7 @@ enum class Angular2TestModule(private val myPackageName: String, private val myV
   ANGULAR_COMMON_15_1_5("@angular/common", "15.1.5"),
   ANGULAR_COMMON_16_2_8("@angular/common", "16.2.8"),
   ANGULAR_COMMON_17_3_0("@angular/common", "17.3.0"),
+  ANGULAR_COMMON_18_2_1("@angular/common", "18.2.1"),
 
   ANGULAR_CORE_4_0_0("@angular/core", "4.0.0"),
   ANGULAR_CORE_8_2_14("@angular/core", "8.2.14"),
@@ -32,12 +26,15 @@ enum class Angular2TestModule(private val myPackageName: String, private val myV
   ANGULAR_CORE_15_1_5("@angular/core", "15.1.5"),
   ANGULAR_CORE_16_2_8("@angular/core", "16.2.8"),
   ANGULAR_CORE_17_3_0("@angular/core", "17.3.0"),
+  ANGULAR_CORE_18_2_1("@angular/core", "18.2.1"),
+  ANGULAR_CORE_19_0_0_NEXT_4("@angular/core", "19.0.0-next.4"),
 
   ANGULAR_FLEX_LAYOUT_13_0_0("@angular/flex-layout", "13.0.0-beta.36"),
 
   ANGULAR_FORMS_4_0_0("@angular/forms", "4.0.0"),
   ANGULAR_FORMS_8_2_14("@angular/forms", "8.2.14"),
   ANGULAR_FORMS_16_2_8("@angular/forms", "16.2.8"),
+  ANGULAR_FORMS_17_3_0("@angular/forms", "17.3.0"),
 
   ANGULAR_MATERIAL_7_2_1("@angular/material", "7.2.1"),
   ANGULAR_MATERIAL_8_2_3_MIXED("@angular/material", "8.2.3-mixed"),
@@ -55,6 +52,7 @@ enum class Angular2TestModule(private val myPackageName: String, private val myV
   IONIC_ANGULAR_3_0_1("ionic-angular", "3.0.1"),
   IONIC_ANGULAR_4_1_1("@ionic/angular", "4.1.1"),
   IONIC_ANGULAR_4_11_4_IVY("@ionic/angular", "4.11.4-ivy"),
+  IONIC_ANGULAR_7_7_3("@ionic/angular", "7.7.3"),
   NGNEAT_TRANSLOCO_2_6_0_IVY("@ngneat/transloco", "2.6.0-ivy"),
   NGXS_STORE_3_6_2("@ngxs/store", "3.6.2"),
   NGXS_STORE_3_6_2_MIXED("@ngxs/store", "3.6.2-mixed"),
@@ -67,49 +65,15 @@ enum class Angular2TestModule(private val myPackageName: String, private val myV
   override val packageNames: List<String> = listOf(myPackageName)
   override val folder: String = myPackageName.replace('/', '#') + "/" + myVersion + "/node_modules"
 
-  val location: String
-    get() = DATA_DIR + myPackageName.replace('/', '#') + "/" + myVersion + "/"
-
   companion object {
-    private val DATA_DIR = FileUtilRt.toCanonicalPath(
-      Angular2TestUtil.getBaseTestDataPath() + "node_modules/", '/', false)
+    private val testDataRoot = Angular2TestUtil.getBaseTestDataPath()
+    private val defaultDependencies = mapOf("@angular/core" to "*")
 
     @JvmStatic
-    fun configureCopy(fixture: CodeInsightTestFixture, vararg modules: Angular2TestModule) {
-      configure(fixture, false, modules = modules)
-    }
-
-    @JvmStatic
-    fun configureLink(fixture: CodeInsightTestFixture, vararg modules: Angular2TestModule) {
-      configure(fixture, true, modules = modules)
-    }
-
-    @JvmStatic
-    fun configure(fixture: CodeInsightTestFixture,
-                  linkSourceRoot: Boolean,
-                  vararg modules: Angular2TestModule) {
-      if (modules.isNotEmpty()) {
-        if (linkSourceRoot) {
-          WriteAction.runAndWait<RuntimeException> {
-            for (module in modules) {
-              val nodeModules = ReSharperTestUtil.fetchVirtualFile("", module.location + "node_modules",
-                                                                   fixture.testRootDisposable)
-              PsiTestUtil.addSourceContentToRoots(fixture.getModule(), nodeModules)
-              Disposer.register(fixture.testRootDisposable
-              ) { PsiTestUtil.removeContentEntry(fixture.getModule(), nodeModules) }
-            }
-          }
-        }
-        else {
-          for (module in modules) {
-            fixture.getTempDirFixture().copyAll(module.location, ".")
-          }
-        }
-      }
-      if (fixture.getTempDirFixture().getFile(NodeModuleNamesUtil.PACKAGE_JSON) == null) {
-        JSTestUtils.addPackageJson(fixture, *StreamEx.of(*modules).map { module: Angular2TestModule -> module.myPackageName }
-          .append("@angular/core").distinct().toArray(String::class.java))
-      }
+    fun CodeInsightTestFixture.configureDependencies(
+      vararg modules: Angular2TestModule,
+    ) {
+      configureDependencies(testDataRoot, defaultDependencies, *modules)
     }
   }
 }

@@ -1,9 +1,10 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.mxml;
 
 import com.intellij.codeInsight.daemon.LineMarkerInfo;
 import com.intellij.codeInsight.daemon.LineMarkerProviderDescriptor;
 import com.intellij.icons.AllIcons;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.lang.javascript.highlighting.JavaScriptLineMarkerProvider;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -41,13 +42,13 @@ public final class XmlBackedClassLineMarkerProvider extends LineMarkerProviderDe
           XmlTagUtil.getStartTagNameElement((XmlTag)parent) == element &&
           parent.getParent() instanceof XmlDocument &&
           parent.getContainingFile() != null &&
-          JavaScriptSupportLoader.isFlexMxmFile(parent.getContainingFile())) {
+          FlexSupportLoader.isFlexMxmFile(parent.getContainingFile())) {
         final XmlBackedJSClass clazz = XmlBackedJSClassFactory.getInstance().getXmlBackedClass((XmlTag)parent);
         Query<JSClass> classQuery = JSClassSearch.searchClassInheritors(clazz, true);
         XmlToken nameElement = XmlTagUtil.getStartTagNameElement((XmlTag)parent);
         if (classQuery.findFirst() != null && nameElement != null) {
           result.add(new LineMarkerInfo<>(element, nameElement.getTextRange(), AllIcons.Gutter.OverridenMethod,
-                                          JavaScriptLineMarkerProvider.ourClassInheritorsTooltipProvider,
+                                          JavaScriptLineMarkerProvider::getClassInheritorsTooltip,
                                           JavaScriptLineMarkerProvider.ourClassInheritorsNavHandler, GutterIconRenderer.Alignment.RIGHT));
         }
       }

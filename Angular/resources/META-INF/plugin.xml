@@ -79,7 +79,6 @@
     <platform.backend.documentation.psiTargetProvider
       implementation="org.angular2.codeInsight.documentation.Angular2ElementDocumentationTargetFactory"/>
 
-    <!--suppress PluginXmlValidity -->
     <javascript.rename.extension implementation="org.angular2.refactoring.Angular2RenameExtension"/>
     <localInspection implementationClass="org.angular2.inspections.AngularCliAddDependencyInspection"
                      groupKey="angular.inspection.group.name" enabledByDefault="true" level="WARNING" language="JSON"
@@ -112,6 +111,24 @@
     <localInspection implementationClass="org.angular2.inspections.AngularInaccessibleSymbolInspection"
                      groupKey="angular.inspection.group.name" enabledByDefault="true" level="ERROR"
                      key="angular.inspection.inaccessible-symbol.name" bundle="messages.Angular2Bundle"/>
+    <localInspection implementationClass="org.angular2.inspections.AngularUnusedComponentImportInspection"
+                     groupKey="angular.inspection.group.name" enabledByDefault="true" level="ERROR" language="TypeScript"
+                     key="angular.inspection.unused-component-import.name" bundle="messages.Angular2Bundle"/>
+    <localInspection implementationClass="org.angular2.inspections.AngularIncorrectLetUsageInspection"
+                     groupKey="angular.inspection.group.name" enabledByDefault="true" level="ERROR" language="Angular2"
+                     key="angular.inspection.incorrect-let-usage.name" bundle="messages.Angular2Bundle"/>
+    <localInspection implementationClass="org.angular2.inspections.AngularUnsupportedSyntaxInspection"
+                     groupKey="angular.inspection.group.name" enabledByDefault="true" level="ERROR" language="Angular2"
+                     key="angular.inspection.unsupported-syntax-inspection.name" bundle="messages.Angular2Bundle"/>
+
+    <intentionAction>
+      <language>Angular2</language>
+      <className>org.angular2.intentions.AngularIntroduceLetVariableIntention</className>
+      <bundleName>messages.Angular2Bundle</bundleName>
+      <categoryKey>angular.intention.category</categoryKey>
+    </intentionAction>
+    <inlineActionHandler implementation="org.angular2.refactoring.inline.Angular2InlineHandler" id="Angular2Inline"
+                         order="before genericJSInline"/>
     <directoryProjectGenerator implementation="org.angular2.cli.AngularCliProjectGenerator"/>
     <projectTemplatesFactory implementation="org.angular2.AngularProjectTemplatesFactory"/>
     <!-- works in new IDEA wizard -->
@@ -159,6 +176,8 @@
                                        implementation="org.angular2.codeInsight.blocks.Angular2HtmlBlockSymbol$Factory"/>
     <webSymbols.webTypes.symbolFactory namespace="html" kind="ng-block-parameters"
                                        implementation="org.angular2.codeInsight.blocks.Angular2BlockParameterSymbol$Factory"/>
+    <webSymbols.webTypes.symbolFactory namespace="html" kind="ng-block-parameter-prefixes"
+                                       implementation="org.angular2.codeInsight.blocks.Angular2BlockParameterPrefixSymbol$Factory"/>
     <webSymbols.psiSourcedSymbolProvider implementation="org.angular2.web.findUsages.Angular2PsiSourcedWebSymbolProvider"/>
     <webSymbols.documentationCustomizer implementation="org.angular2.web.Angular2WebSymbolDocumentationCustomizer"/>
     <elementDescriptionProvider
@@ -185,16 +204,20 @@
     <liveTemplateContext contextId="ANGULAR_TEMPLATE" baseContextId="Angular"
                          implementation="org.angular2.liveTemplate.Angular2TemplateContextType"/>
     <defaultLiveTemplates file="liveTemplates/Angular2"/>
+    <lang.importOptimizer language="TypeScript" id="Angular2"
+                          implementationClass="org.angular2.codeInsight.imports.Angular2TypeScriptImportsOptimizer"
+                          order="before TypeScript"/>
 
     <!-- Angular 2 HTML template contributions -->
     <fileType name="Angular2Html" implementationClass="org.angular2.lang.html.Angular2HtmlFileType" fieldName="INSTANCE"
               language="Angular2Html"/>
     <fileType name="Angular17Html" implementationClass="org.angular2.lang.html.Angular17HtmlFileType" fieldName="INSTANCE"
               language="Angular17Html"/>
+    <fileType name="Angular181Html" implementationClass="org.angular2.lang.html.Angular181HtmlFileType" fieldName="INSTANCE"
+              language="Angular181Html"/>
     <langCodeStyleSettingsProvider implementation="org.angular2.options.Angular2HtmlCodeStyleSettingsProvider"/>
     <fileIndentOptionsProvider implementation="org.angular2.lang.html.psi.formatter.Angular2HtmlFileIndentOptionsProvider"
                                id="angular2html" order="before html"/>
-    <!--suppress PluginXmlValidity -->
     <quoteHandler className="com.intellij.codeInsight.editorActions.HtmlQuoteHandler" fileType="Angular2Html"/>
     <multiHostInjector implementation="org.angular2.editor.Angular2Injector" order="after JSCommentInjector, before JSConfigurationInjector"
                        id="angular2"/>
@@ -202,13 +225,17 @@
                       id="angular2"/>
     <lang.parserDefinition language="Angular2Html" implementationClass="org.angular2.lang.html.parser.Angular2HtmlParserDefinition"/>
     <lang.parserDefinition language="Angular17Html" implementationClass="org.angular2.lang.html.parser.Angular17HtmlParserDefinition"/>
+    <lang.parserDefinition language="Angular181Html" implementationClass="org.angular2.lang.html.parser.Angular181HtmlParserDefinition"/>
     <tree.CustomLanguageASTComparator language="Angular2Html"
                                       implementationClass="org.angular2.lang.expr.parser.Angular2HtmlASTComparator"/>
     <braceMatcher filetype="Angular17Html" implementationClass="org.angular2.lang.html.Angular17HtmlBraceMatcher"/>
+    <braceMatcher filetype="Angular181Html" implementationClass="org.angular2.lang.html.Angular17HtmlBraceMatcher"/>
     <lang.syntaxHighlighterFactory language="Angular2Html"
                                    implementationClass="org.angular2.lang.html.highlighting.Angular2HtmlHighlighterFactory"/>
     <lang.syntaxHighlighterFactory language="Angular17Html"
                                    implementationClass="org.angular2.lang.html.highlighting.Angular17HtmlHighlighterFactory"/>
+    <lang.syntaxHighlighterFactory language="Angular181Html"
+                                   implementationClass="org.angular2.lang.html.highlighting.Angular181HtmlHighlighterFactory"/>
     <completion.contributor language="Angular2Html" implementationClass="org.angular2.codeInsight.Angular2HtmlCompletionContributor"
                             id="Angular2HtmlCompletionContributor"/>
     <lookup.charFilter implementation="org.angular2.editor.Angular2LookupCharFilter" order="before xml"/>
@@ -270,6 +297,8 @@
     <todoIndexer filetype="Angular2Html" implementationClass="org.angular2.lang.html.index.Angular2HtmlTodoIndexer"/>
     <idIndexer filetype="Angular17Html" implementationClass="org.angular2.lang.html.index.Angular17HtmlIdIndexer"/>
     <todoIndexer filetype="Angular17Html" implementationClass="org.angular2.lang.html.index.Angular17HtmlTodoIndexer"/>
+    <idIndexer filetype="Angular181Html" implementationClass="org.angular2.lang.html.index.Angular181HtmlIdIndexer"/>
+    <todoIndexer filetype="Angular181Html" implementationClass="org.angular2.lang.html.index.Angular181HtmlTodoIndexer"/>
     <stubElementTypeHolder class="org.angular2.lang.html.stub.Angular2HtmlStubElementTypes" externalIdPrefix="NG-HTML:"/>
     <lang.formatter language="Angular2Html" implementationClass="org.angular2.lang.html.psi.formatter.Angular2HtmlFormattingModelBuilder"/>
     <lang.foldingBuilder language="Angular2Html" implementationClass="org.angular2.editor.Angular2HtmlFoldingBuilder"/>
@@ -284,10 +313,14 @@
     <copyPastePostProcessor implementation="org.angular2.codeInsight.imports.Angular2ExpressionsCopyPasteProcessor"/>
     <platform.backend.documentation.linkHandler implementation="org.angular2.codeInsight.documentation.Angular2DocumentationLinkHandler"/>
 
+    <webSymbols.webTypes enableByDefault="true" source="web-types/angular-base@0.0.0.web-types.json"/>
     <webSymbols.webTypes enableByDefault="false" source="web-types/angular@2.0.0.web-types.json"/>
     <webSymbols.webTypes enableByDefault="false" source="web-types/angular@10.0.0.web-types.json"/>
-    <webSymbols.webTypes enableByDefault="true" source="web-types/angular@16.0.0.web-types.json"/>
-    <webSymbols.webTypes enableByDefault="false" source="web-types/angular@17.0.0.web-types.json"/>
+    <webSymbols.webTypes enableByDefault="false" source="web-types/angular@16.0.0.web-types.json"/>
+    <webSymbols.webTypes enableByDefault="true" source="web-types/angular@17.0.0.web-types.json"/>
+    <webSymbols.webTypes enableByDefault="false" source="web-types/angular@18.0.0.web-types.json"/>
+    <webSymbols.webTypes enableByDefault="false" source="web-types/angular@18.1.0.web-types.json"/>
+    <webSymbols.webTypes enableByDefault="false" source="web-types/angular@19.0.0.web-types.json"/>
     <webSymbols.webTypes enableByDefault="true" source="web-types/angular-hacks.web-types.json"/>
     <webSymbols.webTypes enableByDefault="true" source="web-types/hammerjs.web-types.json"/>
     <webSymbols.queryConfigurator implementation="org.angular2.web.Angular2WebSymbolsQueryConfigurator"/>
@@ -298,11 +331,15 @@
     <!-- Angular 2 SVG contributions -->
     <lang.parserDefinition language="Angular2Svg" implementationClass="org.angular2.lang.svg.parser.Angular2SvgParserDefinition"/>
     <lang.parserDefinition language="Angular17Svg" implementationClass="org.angular2.lang.svg.parser.Angular17SvgParserDefinition"/>
+    <lang.parserDefinition language="Angular181Svg" implementationClass="org.angular2.lang.svg.parser.Angular181SvgParserDefinition"/>
     <fileType name="Angular2Svg" implementationClass="org.angular2.lang.svg.Angular2SvgFileType" fieldName="INSTANCE"
               language="Angular2Svg"/>
     <fileType name="Angular17Svg" implementationClass="org.angular2.lang.svg.Angular17SvgFileType" fieldName="INSTANCE"
               language="Angular17Svg"/>
-    <!--suppress PluginXmlValidity -->
+    <fileType name="Angular181Svg" implementationClass="org.angular2.lang.svg.Angular181SvgFileType" fieldName="INSTANCE"
+              language="Angular181Svg"/>
+    <braceMatcher filetype="Angular17Svg" implementationClass="org.angular2.lang.html.Angular17HtmlBraceMatcher"/>
+    <braceMatcher filetype="Angular181Svg" implementationClass="org.angular2.lang.html.Angular17HtmlBraceMatcher"/>
     <quoteHandler className="com.intellij.codeInsight.editorActions.HtmlQuoteHandler" fileType="Angular2Svg"/>
 
     <!-- Angular 2 Expression Language contributions -->
@@ -367,7 +404,7 @@
     <dialectSpecificHandlersFactory language="Angular2Html" implementationClass="org.angular2.codeInsight.Angular2SpecificHandlersFactory"/>
 
     <!-- Angular 2 Expression language contributions -->
-    <frameworkIndexingHandler implementation="org.angular2.index.Angular2IndexingHandler" version="19"/>
+    <frameworkIndexingHandler implementation="org.angular2.index.Angular2IndexingHandler" version="20"/>
     <frameworkSpecificHandler language="Angular2" implementationClass="org.angular2.lang.expr.Angular2JSFrameworkSpecificHandler"/>
     <elementScopeProvider implementation="org.angular2.codeInsight.Angular2ResolveScopeProvider"/>
     <dialectSpecificHandlersFactory language="Angular2" implementationClass="org.angular2.codeInsight.Angular2SpecificHandlersFactory"/>

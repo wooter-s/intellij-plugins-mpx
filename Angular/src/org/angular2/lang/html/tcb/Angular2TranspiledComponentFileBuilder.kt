@@ -2,14 +2,19 @@ package org.angular2.lang.html.tcb
 
 import com.intellij.lang.ecmascript6.psi.ES6ExportDefaultAssignment
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider.withTypeEvaluationLocation
 import com.intellij.lang.javascript.psi.JSElementVisitor
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptClass
+import com.intellij.lang.javascript.service.withServiceTraceSpan
 import com.intellij.lang.typescript.compiler.TypeScriptCompilerConfigUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.DumbService
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
@@ -20,24 +25,24 @@ import org.angular2.entities.Angular2Directive
 import org.angular2.entities.Angular2EntitiesProvider
 import org.angular2.lang.html.Angular2HtmlDialect
 import org.angular2.lang.html.tcb.Angular2TemplateTranspiler.SourceMapping
+import org.angular2.lang.html.tcb.Angular2TemplateTranspiler.SourceMappingFlag
 import org.angular2.lang.html.tcb.Angular2TemplateTranspiler.TranspiledTemplate
 import java.util.*
-import java.util.function.Supplier
-import kotlin.Comparator
 
 object Angular2TranspiledComponentFileBuilder {
 
   private val mappingsComparator: Comparator<SourceMapping> =
     Comparator.comparingInt<SourceMapping?> { it.sourceOffset }.thenComparingInt { it.sourceLength }
 
-  fun getTranspiledComponentAndTopLevelTemplateFile(context: PsiElement): Pair<TranspiledComponentFile, PsiFile>? {
+  fun getTranspiledComponentAndTopLevelTemplateFile(context: PsiElement): Pair<TranspiledComponentFile, PsiFile>? = withServiceTraceSpan("getTranspiledComponentAndTopLevelTemplateFile") {
+    if (DumbService.isDumb(context.project)) return@withServiceTraceSpan null
     val templateFile = InjectedLanguageManager.getInstance(context.project).getTopLevelFile(context)
     val componentFile = if (templateFile.language is Angular2HtmlDialect)
       Angular2EntitiesProvider.findTemplateComponent(templateFile)?.sourceElement?.containingFile
-      ?: return null
+      ?: return@withServiceTraceSpan null
     else
       templateFile
-    return getTranspiledComponentFile(componentFile)
+    return@withServiceTraceSpan getTranspiledComponentFile(componentFile)
       ?.let { Pair(it, templateFile) }
   }
 
@@ -50,25 +55,33 @@ object Angular2TranspiledComponentFileBuilder {
       templateFile
   }
 
+  fun getTranspiledComponentFileForTemplateFile(project: Project, templateFile: VirtualFile): TranspiledComponentFile? {
+    val templatePsiFile = PsiManager.getInstance(project).findFile(templateFile)
+                          ?: return null
+    val componentFile = findComponentFile(templatePsiFile)
+                        ?: return null
+    return getTranspiledComponentFile(componentFile)
+  }
+
   fun getTranspiledComponentFile(componentFile: PsiFile): TranspiledComponentFile? =
     CachedValuesManager.getCachedValue(componentFile) {
       CachedValueProvider.Result.create(getComponentFileCache(componentFile)?.let {
-        buildTranspiledComponentFile(componentFile, it)
+        withTypeEvaluationLocation(componentFile) {
+          buildTranspiledComponentFile(componentFile, it)
+        }
       }, PsiModificationTracker.MODIFICATION_COUNT)
     }
 
-  private fun buildTranspiledComponentFile(componentFile: PsiFile, cache: ComponentFileCache): TranspiledComponentFile {
+  private fun buildTranspiledComponentFile(componentFile: PsiFile, cache: ComponentFileCache): TranspiledComponentFile = withServiceTraceSpan("buildTranspiledComponentFile") {
     val templates = cache.components.mapIndexedNotNull { index, cls ->
       CachedValuesManager.getCachedValue(cls) {
         val context = getComponentFileCache(cls.containingFile)!!.environment
         CachedValueProvider.Result.create(Angular2EntitiesProvider.getComponent(cls)?.let {
-          JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(cls, Supplier {
-            Angular2TemplateTranspiler.transpileTemplate(context, it, (index + 1).toString())
-          })
+          Angular2TemplateTranspiler.transpileTemplate(context, it, (index + 1).toString())
         }, PsiModificationTracker.MODIFICATION_COUNT)
       }
     }
-    return buildTranspiledComponentFile(cache.environment, componentFile, templates)
+    return@withServiceTraceSpan buildTranspiledComponentFile(cache.environment, componentFile, templates)
   }
 
   private fun getComponentFileCache(file: PsiFile): ComponentFileCache? =
@@ -173,7 +186,7 @@ object Angular2TranspiledComponentFileBuilder {
         sourceLength,
         diagnosticsOffset = lastRangeEnd,
         diagnosticsLength = sourceLength,
-        types = true,
+        flags = EnumSet.allOf(SourceMappingFlag::class.java),
       ))
       lastRangeEnd = inlineTemplateRange.endOffset
     }

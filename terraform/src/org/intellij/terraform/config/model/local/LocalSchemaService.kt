@@ -10,6 +10,7 @@ import com.intellij.openapi.application.readAndWriteAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.RuntimeExceptionWithAttachments
+import com.intellij.openapi.diagnostic.fileLogger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileTypes.FileTypeManager
@@ -33,11 +34,11 @@ import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.util.SuspendingLazy
-import com.intellij.util.concurrency.annotations.RequiresBlockingContext
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.suspendingLazy
 import kotlinx.coroutines.*
 import org.intellij.terraform.LatestInvocationRunner
+import org.intellij.terraform.config.Constants.PROVIDER_VERSION
 import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.model.ProviderTier
 import org.intellij.terraform.config.model.TypeModel
@@ -46,8 +47,10 @@ import org.intellij.terraform.config.model.getVFSParents
 import org.intellij.terraform.config.model.loader.TerraformMetadataLoader
 import org.intellij.terraform.config.util.TFExecutor
 import org.intellij.terraform.config.util.executeSuspendable
+import org.intellij.terraform.config.util.getApplicableToolType
 import org.intellij.terraform.hcl.HCLBundle
 import org.intellij.terraform.hcl.HCLFileType
+import org.intellij.terraform.opentofu.OpenTofuFileType
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
@@ -70,7 +73,6 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
   private val modelComputationCache = VirtualFileMap<Deferred<TypeModel>>(project)
 
   @OptIn(ExperimentalCoroutinesApi::class)
-  @RequiresBlockingContext
   fun getModel(virtualFile: VirtualFile): TypeModel? {
     val lock = findLockFile(virtualFile) ?: return null
     val myDeferred = modelComputationCache[lock]
@@ -93,6 +95,7 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
       myDeferred.getCompleted()
     }
     catch (e: Exception) {
+      fileLogger().warn("Failed to load local model for $lock", e)
       null
     }
   }
@@ -144,7 +147,7 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
 
   private fun getOpenTerraformFiles(): Set<PsiFile> {
     val fileTypeManager = FileTypeManager.getInstance()
-    val fileTypes = listOf(TerraformFileType, HCLFileType)
+    val fileTypes = setOf(TerraformFileType, OpenTofuFileType, HCLFileType)
     return ProjectManager.getInstance().openProjects.asSequence().flatMap { project ->
       FileEditorManager.getInstance(project).openFiles.asSequence()
         .filter { virtualFile -> fileTypes.any { fileTypeManager.isFileOfType(virtualFile, it) } }
@@ -189,7 +192,7 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
     }
   }
 
-  private fun buildProviderMeta(providers: Collection<LockFileObject.ProviderInfo>): String? {
+  private fun buildProviderMeta(providers: Collection<ProviderInfo>): String? {
     val mapper = ObjectMapper()
     val metadataNode = mapper.createObjectNode()
     providers.forEach { providerInfo ->
@@ -200,7 +203,7 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
       attributes.put("namespace", providerInfo.namespace)
       attributes.put("full-name", providerInfo.fullName)
       attributes.put("tier", ProviderTier.TIER_LOCAL.label)
-      attributes.put(LockFileObject.VERSION, providerInfo.version)
+      attributes.put(PROVIDER_VERSION, providerInfo.version)
       info.set<ObjectNode>("attributes", attributes)
       metadataNode.set<ObjectNode>(providerInfo.fullName.lowercase(), info)
     }
@@ -289,7 +292,7 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
   private suspend fun generateNewJsonFile(lock: VirtualFile, explicitlyAllowRunningProcess: Boolean): @NlsSafe String {
     if (!explicitlyAllowRunningProcess && !buildLocalMetadataAutomatically) throw IllegalStateException("generateNewJsonFile is not enabled")
     val jsonFromProcess = buildJsonFromTerraformProcess(project, lock)
-    val lockFileProviders = readAction { getLockFilePsi(lock)?.let { LockFileObject.create(it).providers.values } }
+    val lockFileProviders = readAction { getLockFilePsi(lock)?.let { collectProviders(it).values } }
     val lockFileDataString = lockFileProviders?.let { buildProviderMeta(lockFileProviders) }
     val modelJson = addLockFileDataString(lockFileDataString, jsonFromProcess)
     return withContext(Dispatchers.IO) {
@@ -354,7 +357,8 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
     logger<LocalSchemaService>().info("building local model buildJsonFromTerraformProcess: $lock")
     val capturingProcessAdapter = CapturingProcessAdapter()
 
-    val success = TFExecutor.`in`(project)
+    val toolType = getApplicableToolType(lock)
+    val success = TFExecutor.`in`(project, toolType)
       .withPresentableName(HCLBundle.message("rebuilding.local.schema"))
       .withParameters("providers", "schema", "-json")
       .withWorkDirectory(lock.parent.path)
@@ -376,7 +380,7 @@ class LocalSchemaService(val project: Project, val scope: CoroutineScope) {
       throw RuntimeExceptionWithAttachments(
         HCLBundle.message("dialog.message.failed.to.get.output.terraform.providers.command.for",
                           lock,
-                          capturingProcessAdapter.output.exitCode),
+                          capturingProcessAdapter.output.exitCode, toolType.executableName),
         Attachment("truncatedOutput.txt", truncatedOutput),
         Attachment("stderror.txt", stderr)
       )

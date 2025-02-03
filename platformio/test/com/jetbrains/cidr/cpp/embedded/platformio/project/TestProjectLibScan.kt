@@ -6,12 +6,18 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.readText
+import com.intellij.testFramework.JUnit38AssumeSupportRunner
 import com.intellij.testFramework.LightPlatformTestCase
 import com.intellij.util.asSafely
+import com.intellij.util.system.OS
+import com.jetbrains.cidr.cpp.CPPTestCase
 import com.jetbrains.cidr.cpp.execution.manager.CLionRunConfigurationManager
 import com.jetbrains.cidr.external.system.model.ExternalModule
+import org.junit.Assume
+import org.junit.runner.RunWith
 import java.nio.file.Paths
 
+@RunWith(JUnit38AssumeSupportRunner::class)
 class TestProjectLibScan : LightPlatformTestCase() {
 
   private lateinit var projectPath: String
@@ -34,6 +40,8 @@ class TestProjectLibScan : LightPlatformTestCase() {
   }
 
   fun testScanLibraries() {
+    Assume.assumeFalse(CPPTestCase.getTestToolSet().kind.isRemoteLike)
+
     val taskId: ExternalSystemTaskId = ExternalSystemTaskId.create(ID, ExternalSystemTaskType.RESOLVE_PROJECT, project)
     val testListener = ExternalSystemTaskNotificationListener.NULL_OBJECT
     val projectNode = PlatformioProjectResolverForTest().resolveProjectInfo(
@@ -47,14 +55,15 @@ class TestProjectLibScan : LightPlatformTestCase() {
     val actualSourceFiles = projectNode.children.first().children.first()
       .data.asSafely<ExternalModule>()!!
       .resolveConfigurations.first()
-      .fileConfigurations.associate {
+      .fileConfigurations
+      .associate {
         it.file.path.replace(projectPath, "").replace('\\', '/') to it
       }
     assertEquals("Source file", expectedSourceFiles, actualSourceFiles.keys)
     val switchesWithDefines = actualSourceFiles["/lib/confusing-name-no-src/confusing-name-no-src.cpp"]!!.compilerSwitches
     assertNotNull(switchesWithDefines)
     assertTrue("MANDATORY_DEFINE_B1", switchesWithDefines!!.contains("-DMANDATORY_DEFINE_B1"))
-    assertTrue("MANDATORY_DEFINE_B2", switchesWithDefines.contains("-D MANDATORY_DEFINE_B2"))
+    assertTrue("MANDATORY_DEFINE_B2", switchesWithDefines.contains("-DMANDATORY_DEFINE_B2"))
   }
 
   private inner class PlatformioProjectResolverForTest() : PlatformioProjectResolver() {
@@ -84,5 +93,19 @@ class TestProjectLibScan : LightPlatformTestCase() {
       projectDir.findChild("pio-project-metadata.json")!!.readText().replace("T:", projectDir.path)
 
     override fun createRunConfigurationIfRequired(project: Project) {}
+
+    /**
+     * Mock data is loaded from compile_commands.json or compile_commands_win.json on Windows
+     * The file is created by invoking `pio run -t compiledb`,
+     * dropping information about framework sources,
+     * and clearing the `directory` entries to make the data not rely on absolute paths.
+     * We inject the actual project directory here.
+     */
+    override fun gatherCompDB(id: ExternalSystemTaskId, pioRunEventId: String, project: Project, activeEnvName: String, listener: ExternalSystemTaskNotificationListener, projectPath: String): String {
+      val compDbFileName = if (OS.CURRENT == OS.Windows) "compile_commands_win.json" else "compile_commands.json"
+      return projectDir.findChild(compDbFileName)!!.readText().injectProjectPath()
+    }
+
+    private fun String.injectProjectPath() = this.replace("\"directory\": \"\"", "\"directory\": \"${projectPath.replace("\\", "\\\\")}\"")
   }
 }

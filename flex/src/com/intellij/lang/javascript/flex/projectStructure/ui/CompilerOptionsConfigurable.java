@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.projectStructure.ui;
 
 import com.intellij.compiler.options.CompilerUIConfigurableKt;
@@ -6,6 +6,7 @@ import com.intellij.flex.model.bc.BuildConfigurationNature;
 import com.intellij.flex.model.bc.CompilerOptionInfo;
 import com.intellij.flex.model.bc.ValueSource;
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.IdeCoreBundle;
 import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.lang.javascript.flex.FlexUtils;
 import com.intellij.lang.javascript.flex.projectStructure.FlexProjectLevelCompilerOptionsHolder;
@@ -35,7 +36,6 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.*;
 import com.intellij.ui.navigation.Place;
@@ -302,10 +302,10 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
       }
     };
 
-    myConfigFileTextWithBrowse.addBrowseFolderListener(null, null, myProject, FlexUtils.createFileChooserDescriptor("xml"));
+    myConfigFileTextWithBrowse.addBrowseFolderListener(myProject, FlexUtils.createFileChooserDescriptor("xml"));
     myConfigFileTextWithBrowse.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
-      protected void textChanged(@NotNull final DocumentEvent e) {
+      protected void textChanged(final @NotNull DocumentEvent e) {
         updateAdditionalOptionsControls();
         fireConfigFileChanged();
       }
@@ -324,7 +324,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
     myAdditionalOptionsField.setDialogCaption(StringUtil.capitalizeWords(labelText, true));
     myAdditionalOptionsField.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
-      protected void textChanged(@NotNull final DocumentEvent e) {
+      protected void textChanged(final @NotNull DocumentEvent e) {
         updateAdditionalOptionsControls();
         fireAdditionalOptionsChanged();
       }
@@ -356,8 +356,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
   }
 
   @Override
-  @Nls
-  public String getDisplayName() {
+  public @Nls String getDisplayName() {
     return myName;
   }
 
@@ -603,7 +602,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
       private final JCheckBox myCheckBox = new JCheckBox();
 
       {
-        myTextWithBrowse.addBrowseFolderListener(null, null, myProject, myFileChooserDescriptor);
+        myTextWithBrowse.addBrowseFolderListener(myProject, myFileChooserDescriptor);
 
         myCheckBox.addActionListener(new ActionListener() {
           @Override
@@ -829,24 +828,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
     }
   }
 
-  @Nullable
-  private static DefaultMutableTreeNode findChildNodeWithInfo(final DefaultMutableTreeNode rootNode,
-                                                              final CompilerOptionInfo info) {
-    for (int i = 0; i < rootNode.getChildCount(); i++) {
-      final DefaultMutableTreeNode childNode = (DefaultMutableTreeNode)rootNode.getChildAt(i);
-      if (info.equals(childNode.getUserObject())) {
-        return childNode;
-      }
-    }
-    return null;
-  }
-
-  private boolean hasCustomValue(final CompilerOptionInfo info) {
-    return myCurrentOptions.get(info.ID) != null;
-  }
-
-  @NotNull
-  private Pair<String, ValueSource> getValueAndSource(final CompilerOptionInfo info) {
+  private @NotNull Pair<String, ValueSource> getValueAndSource(final CompilerOptionInfo info) {
     if (info.isGroup()) {
       // choose "the most custom" subnode of a group a group source
       ValueSource groupValueSource = ValueSource.GlobalDefault;
@@ -882,6 +864,47 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
 
     return Pair.create(info.getDefaultValue(getSdkVersion(), myNature, myDependenciesConfigurable.getCurrentComponentSet()),
                        ValueSource.GlobalDefault);
+  }
+
+  private boolean hasCustomValue(final CompilerOptionInfo info) {
+    return myCurrentOptions.get(info.ID) != null;
+  }
+
+  @Override
+  public ActionCallback navigateTo(final @Nullable Place place, final boolean requestFocus) {
+    if (place != null) {
+      if (place.getPath(FlexBCConfigurable.LOCATION_ON_TAB) instanceof Location location) {
+        switch (location) {
+          case AdditionalConfigFile -> {
+            return IdeFocusManager.findInstance().requestFocus(myConfigFileTextWithBrowse.getChildComponent(), true);
+          }
+          case FilesToIncludeInSwc -> {
+            return IdeFocusManager.findInstance().requestFocus(myIncludeInSWCField.getChildComponent(), true);
+          }
+          case ConditionalCompilerDefinition -> {
+            final DefaultMutableTreeNode root = (DefaultMutableTreeNode)myTreeTable.getTree().getModel().getRoot();
+            final CompilerOptionInfo info = CompilerOptionInfo.getOptionInfo("compiler.define");
+            final DefaultMutableTreeNode node = findChildNodeWithInfo(root, info);
+
+            if (node != null) {
+              myTreeTable.clearSelection();
+              myTreeTable.addSelectedPath(TreeUtil.getPath(root, node));
+
+              final Object ccdName = place.getPath(CONDITIONAL_COMPILER_DEFINITION_NAME);
+              if (ccdName instanceof String) {
+                TableUtil.editCellAt(myTreeTable, myTreeTable.getSelectedRow(), 1);
+                final Component editor = myTreeTable.getEditorComponent();
+                if (editor instanceof RepeatableValueEditor) {
+                  ((RepeatableValueEditor)editor).setAutoAddConditionalCompilerDefinition((String)ccdName);
+                  ((RepeatableValueEditor)editor).getButton().doClick();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return ActionCallback.DONE;
   }
 
   private String getSdkVersion() {
@@ -952,31 +975,29 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
   }
 
   static class ExtensionAwareFileChooserDescriptor extends FileChooserDescriptor {
-    private String @Nullable [] myAllowedExtensions;
-
     ExtensionAwareFileChooserDescriptor() {
       super(true, false, true, true, false, false);
     }
 
-    @Override
-    public boolean isFileVisible(final VirtualFile file, final boolean showHiddenFiles) {
-      return super.isFileVisible(file, showHiddenFiles) &&
-             (file.isDirectory() || isAllowedExtension(file.getExtension()));
-    }
-
-    private boolean isAllowedExtension(final String extension) {
-      if (myAllowedExtensions == null) return true;
-
-      for (String allowedExtension : myAllowedExtensions) {
-        if (allowedExtension.equalsIgnoreCase(extension)) return true;
+    public void setAllowedExtensions(String @Nullable ... extensions) {
+      if (extensions != null) {
+        withExtensionFilter(IdeCoreBundle.message("file.chooser.files.label", extensions[0]), extensions);
       }
-
-      return false;
+      else {
+        withoutExtensionFilter();
+      }
     }
+  }
 
-    public void setAllowedExtensions(final String @Nullable ... allowedExtensions) {
-      myAllowedExtensions = allowedExtensions;
+  private static @Nullable DefaultMutableTreeNode findChildNodeWithInfo(final DefaultMutableTreeNode rootNode,
+                                                                        final CompilerOptionInfo info) {
+    for (int i = 0; i < rootNode.getChildCount(); i++) {
+      final DefaultMutableTreeNode childNode = (DefaultMutableTreeNode)rootNode.getChildAt(i);
+      if (info.equals(childNode.getUserObject())) {
+        return childNode;
+      }
     }
+    return null;
   }
 
   private class RestoreDefaultValueAction extends AnAction {
@@ -993,14 +1014,14 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
     }
 
     @Override
-    public void update(@NotNull final AnActionEvent e) {
+    public void update(final @NotNull AnActionEvent e) {
       TableUtil.stopEditing(myTreeTable);
       final CompilerOptionInfo info = getNodeAndInfo().second;
       e.getPresentation().setEnabled(info != null && hasCustomValue(info));
     }
 
     @Override
-    public void actionPerformed(@NotNull final AnActionEvent e) {
+    public void actionPerformed(final @NotNull AnActionEvent e) {
       final Pair<DefaultMutableTreeNode, CompilerOptionInfo> nodeAndInfo = getNodeAndInfo();
       if (nodeAndInfo.second != null) {
         myMapModified = true;
@@ -1019,45 +1040,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
     }
   }
 
-  @Override
-  public ActionCallback navigateTo(@Nullable final Place place, final boolean requestFocus) {
-    if (place != null) {
-      if (place.getPath(FlexBCConfigurable.LOCATION_ON_TAB) instanceof Location location) {
-        switch (location) {
-          case AdditionalConfigFile -> {
-            return IdeFocusManager.findInstance().requestFocus(myConfigFileTextWithBrowse.getChildComponent(), true);
-          }
-          case FilesToIncludeInSwc -> {
-            return IdeFocusManager.findInstance().requestFocus(myIncludeInSWCField.getChildComponent(), true);
-          }
-          case ConditionalCompilerDefinition -> {
-            final DefaultMutableTreeNode root = (DefaultMutableTreeNode)myTreeTable.getTree().getModel().getRoot();
-            final CompilerOptionInfo info = CompilerOptionInfo.getOptionInfo("compiler.define");
-            final DefaultMutableTreeNode node = findChildNodeWithInfo(root, info);
-
-            if (node != null) {
-              myTreeTable.clearSelection();
-              myTreeTable.addSelectedPath(TreeUtil.getPath(root, node));
-
-              final Object ccdName = place.getPath(CONDITIONAL_COMPILER_DEFINITION_NAME);
-              if (ccdName instanceof String) {
-                TableUtil.editCellAt(myTreeTable, myTreeTable.getSelectedRow(), 1);
-                final Component editor = myTreeTable.getEditorComponent();
-                if (editor instanceof RepeatableValueEditor) {
-                  ((RepeatableValueEditor)editor).setAutoAddConditionalCompilerDefinition((String)ccdName);
-                  ((RepeatableValueEditor)editor).getButton().doClick();
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    return ActionCallback.DONE;
-  }
-
   public static String getTabName() {
     return FlexBundle.message("bc.tab.compiler.options.display.name");
   }
 }
-

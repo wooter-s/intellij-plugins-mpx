@@ -1,3 +1,4 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.projectStructure.ui;
 
 import com.intellij.flex.FlexCommonUtils;
@@ -111,8 +112,7 @@ public class CreateAirDescriptorTemplateDialog extends DialogWrapper {
   }
 
   private void initControls() {
-    myDescriptorFolderTextWithBrowse
-      .addBrowseFolderListener(null, null, myProject, FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myDescriptorFolderTextWithBrowse.addBrowseFolderListener(myProject, FileChooserDescriptorFactory.createSingleFolderDescriptor());
 
     final String[] items = Arrays.copyOf(ArrayUtil.reverseArray(FlexApplicationComponent.AIR_VERSIONS), 8);
     myAirVersionCombo.setModel(new DefaultComboBoxModel(items));
@@ -224,11 +224,10 @@ public class CreateAirDescriptorTemplateDialog extends DialogWrapper {
     }
   }
 
-  @Nullable
-  private static VirtualFile createAirDescriptorTemplate(final Project project,
-                                                         final boolean interactive,
-                                                         final String descriptorPath,
-                                                         final AirDescriptorOptions options) {
+  private static @Nullable VirtualFile createAirDescriptorTemplate(final Project project,
+                                                                   final boolean interactive,
+                                                                   final String descriptorPath,
+                                                                   final AirDescriptorOptions options) {
     final VirtualFile dir = FlexUtils.createDirIfMissing(project, interactive, PathUtil.getParentPath(descriptorPath), getTitleText());
     if (dir == null) return null;
 

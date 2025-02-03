@@ -3,15 +3,14 @@ package org.angular2.inspections.quickfixes
 
 import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemDescriptor
-import com.intellij.lang.javascript.psi.JSArrayLiteralExpression
 import com.intellij.lang.javascript.psi.JSReferenceExpression
 import com.intellij.lang.javascript.psi.ecma6.ES6Decorator
-import com.intellij.lang.javascript.psi.impl.JSChangeUtil
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.parentOfType
 import com.intellij.util.asSafely
 import org.angular2.Angular2DecoratorUtil.IMPORTS_PROP
 import org.angular2.entities.Angular2EntitiesProvider
+import org.angular2.inspections.quickfixes.Angular2FixesPsiUtil.removeReferenceFromImportsList
 import org.angular2.lang.Angular2Bundle
 import org.jetbrains.annotations.Nls
 
@@ -37,13 +36,7 @@ class MoveDeclarationOfStandaloneToImportsQuickFix(val className: String) : Loca
     val modulePtr = Angular2EntitiesProvider.getModule(reference.parentOfType<ES6Decorator>())?.createPointer()
                     ?: return
 
-    val array = reference.parent.asSafely<JSArrayLiteralExpression>()
-    if (array != null) {
-      JSChangeUtil.removeRangeWithRemovalOfCommas(reference, array.expressions)
-    }
-    else {
-      reference.delete()
-    }
+    removeReferenceFromImportsList(reference)
 
     val module = modulePtr.dereference() ?: return
     Angular2FixesPsiUtil.insertEntityDecoratorMember(module, IMPORTS_PROP, referenceName)

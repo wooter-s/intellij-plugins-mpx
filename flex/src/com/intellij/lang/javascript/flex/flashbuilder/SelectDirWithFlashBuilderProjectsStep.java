@@ -1,4 +1,4 @@
-// Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.flashbuilder;
 
 import com.intellij.CommonBundle;
@@ -43,13 +43,13 @@ public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardSt
 
     myExtractPathComponent.setVisible(false);
     myExtractPathComponent.getComponent()
-      .addBrowseFolderListener(null, null, context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
+      .addBrowseFolderListener(context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
 
     final boolean creatingNewProject = context.isCreatingNewProject();
     myProjectNameComponent.setVisible(creatingNewProject);
     myProjectLocationComponent.setVisible(creatingNewProject);
     myProjectLocationComponent.getComponent()
-      .addBrowseFolderListener(null, null, context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
+      .addBrowseFolderListener(context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
     myProjectFormatPanel.getPanel().setVisible(creatingNewProject);
 
     myMultiProjectNote.setVisible(false);
@@ -59,19 +59,12 @@ public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardSt
   private void setupInitialPathComponent() {
     myInitialPathComponent.getComponent().getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
-      protected void textChanged(@NotNull final DocumentEvent e) {
+      protected void textChanged(final @NotNull DocumentEvent e) {
         onInitialPathChanged();
       }
     });
 
-    final FileChooserDescriptor descriptor = new FileChooserDescriptor(true, true, true, true, false, false) {
-      @Override
-      public boolean isFileVisible(final VirtualFile file, final boolean showHiddenFiles) {
-        return (super.isFileVisible(file, showHiddenFiles) &&
-                (file.isDirectory() || FlashBuilderProjectFinder.isFlashBuilderProject(file)) ||
-                FlashBuilderProjectFinder.hasArchiveExtension(file.getPath()));
-      }
-
+    var descriptor = new FileChooserDescriptor(true, true, true, true, false, false) {
       @Override
       public Icon getIcon(final VirtualFile file) {
         // do not use Flash Builder specific icon for zip
@@ -80,10 +73,13 @@ public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardSt
                ? dressIcon(file, getBuilder().getIcon())
                : super.getIcon(file);
       }
-    };
+    }
+      .withFileFilter(file -> FlashBuilderProjectFinder.isFlashBuilderProject(file) ||
+                              FlashBuilderProjectFinder.hasArchiveExtension(file.getPath()))
+      .withTitle(FlexBundle.message("select.flash.builder.workspace.or.project"));
 
-    myInitialPathComponent.getComponent().addBrowseFolderListener(FlexBundle.message("select.flash.builder.workspace.or.project"),
-                                                                  null, getWizardContext().getProject(), descriptor);
+    var button = myInitialPathComponent.getComponent();
+    button.addBrowseFolderListener(getWizardContext().getProject(), descriptor);
   }
 
   private void onInitialPathChanged() {

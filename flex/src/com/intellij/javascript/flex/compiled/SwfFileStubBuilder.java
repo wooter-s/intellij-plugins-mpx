@@ -1,7 +1,8 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.compiled;
 
 import com.intellij.javascript.flex.FlexApplicationComponent;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.importer.FlexImporter;
 import com.intellij.lang.javascript.psi.stubs.impl.JSFileCachedData;
 import com.intellij.lang.javascript.psi.stubs.impl.JSFileStubImpl;
@@ -27,7 +28,7 @@ public final class SwfFileStubBuilder implements BinaryFileStubBuilder {
   private static final int VERSION = 3;
 
   @Override
-  public boolean acceptsFile(@NotNull final VirtualFile file) {
+  public boolean acceptsFile(final @NotNull VirtualFile file) {
     return FileTypeRegistry.getInstance().isFileOfType(file, FlexApplicationComponent.SWF_FILE_TYPE) &&
            file.getPath().endsWith(JarFileSystem.JAR_SEPARATOR + file.getName());
   }
@@ -38,7 +39,7 @@ public final class SwfFileStubBuilder implements BinaryFileStubBuilder {
   }
 
   static PsiFileStub<?> buildFileStub(VirtualFile file, byte[] content) {
-    PsiFileStubImpl<?> stub = new JSFileStubImpl(JavaScriptSupportLoader.ECMA_SCRIPT_L4, new JSFileCachedData(), Collections.emptySet());
+    PsiFileStubImpl<?> stub = new JSFileStubImpl(FlexSupportLoader.ECMA_SCRIPT_L4, new JSFileCachedData(), Collections.emptySet());
     try {
 
       FlexImporter.buildStubsInterfaceFromStream(

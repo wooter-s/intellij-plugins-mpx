@@ -16,9 +16,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiElementVisitor
-import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import com.intellij.refactoring.actions.RenameElementAction
 import com.intellij.usageView.UsageInfo
@@ -27,9 +25,15 @@ import com.intellij.util.NullableFunction
 import org.intellij.terraform.config.model.getTerraformSearchScope
 import org.intellij.terraform.config.patterns.TerraformPatterns
 import org.intellij.terraform.hcl.HCLBundle
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 
 
 abstract class TFDuplicatedInspectionBase : LocalInspectionTool() {
+
+  override fun isAvailableForFile(file: PsiFile): Boolean {
+    return isTerraformCompatiblePsiFile(file)
+  }
+
   override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
     val file = holder.file
     if (!TerraformPatterns.TerraformConfigFile.accepts(file)) {
@@ -67,7 +71,8 @@ abstract class TFDuplicatedInspectionBase : LocalInspectionTool() {
 
   abstract fun createVisitor(holder: ProblemsHolder): PsiElementVisitor
 
-  protected fun createNavigateToDupeFix(element: PsiElement, single: Boolean): LocalQuickFix {
+  protected fun createNavigateToDupeFix(psiElement: PsiElement, single: Boolean): LocalQuickFix {
+    val psiPointer = psiElement.createSmartPointer()
     return object : LocalQuickFix {
       override fun startInWriteAction(): Boolean = false
 
@@ -77,6 +82,7 @@ abstract class TFDuplicatedInspectionBase : LocalInspectionTool() {
       }
 
       override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+        val element = psiPointer.element ?: return
         if (element is Navigatable && (element as Navigatable).canNavigate()) {
           (element as Navigatable).navigate(true)
         }

@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.completion;
 
 import com.intellij.codeInsight.lookup.LookupElement;
@@ -6,8 +6,8 @@ import com.intellij.javascript.flex.FlexPredefinedTagNames;
 import com.intellij.javascript.flex.mxml.FlexCommonTypeNames;
 import com.intellij.javascript.flex.mxml.MxmlJSClass;
 import com.intellij.javascript.flex.resolve.ActionScriptClassResolver;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.JSTokenTypes;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.completion.*;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.flex.ImportUtils;
@@ -47,9 +47,8 @@ import static com.intellij.lang.javascript.psi.resolve.AccessibilityProcessingHa
 import static com.intellij.lang.javascript.psi.types.JSNamedType.createType;
 
 public final class ActionScriptSmartCompletionContributor extends JSSmartCompletionContributor {
-  @Nullable
   @Override
-  public List<LookupElement> getSmartCompletionVariants(final @NotNull JSReferenceExpression location) {
+  public @Nullable List<LookupElement> getSmartCompletionVariants(final @NotNull JSReferenceExpression location) {
     final PsiElement parent = location.getParent();
 
     List<LookupElement> variants = new ArrayList<>();
@@ -60,7 +59,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
       final JSExpression calledExpr = ((JSCallExpression)parent.getParent()).getMethodExpression();
 
       if (calledExpr instanceof JSReferenceExpression expression) {
-        @NonNls final String s = expression.getReferencedName();
+        final @NonNls String s = expression.getReferencedName();
 
         if (ActionScriptResolveUtil.ADD_EVENT_LISTENER_METHOD.equals(s) ||
             ActionScriptResolveUtil.REMOVE_EVENT_LISTENER_METHOD.equals(s) ||
@@ -194,7 +193,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
       }
     }, resolveScope, project);
     for (String qualifiedName : qualifiedNames) {
-      PsiElement element = JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver()
+      PsiElement element = JSDialectSpecificHandlersFactory.forLanguage(FlexSupportLoader.ECMA_SCRIPT_L4).getClassResolver()
         .findClassByQName(qualifiedName, resolveScope);
       if (element != null && !processor.execute(element, ResolveState.initial())) {
         return;
@@ -217,8 +216,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
     }
   }
 
-  @Nullable
-  public static JSClass findClassOfQualifier(JSReferenceExpression expression) {
+  public static @Nullable JSClass findClassOfQualifier(JSReferenceExpression expression) {
     JSExpression qualifier = expression.getQualifier();
 
     JSClass clazzToProcess = null;
@@ -250,7 +248,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
       }
 
       @Override
-      public boolean process(@NotNull final JSAttribute jsAttribute) {
+      public boolean process(final @NotNull JSAttribute jsAttribute) {
         if ("Event".equals(jsAttribute.getName())) {
           final JSAttributeNameValuePair eventAttr = jsAttribute.getValueByName("name");
           JSAttributeNameValuePair typeAttr = jsAttribute.getValueByName("type");
@@ -282,7 +280,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
     final EventsDataCollector eventsDataCollector = new EventsDataCollector();
     if (clazzToProcess instanceof XmlBackedJSClassImpl) {
       XmlFile file = (XmlFile)clazzToProcess.getParent().getContainingFile();
-      if (file != null && JavaScriptSupportLoader.isFlexMxmFile(file)) {
+      if (file != null && FlexSupportLoader.isFlexMxmFile(file)) {
         final XmlDocument xmlDocument = file.getDocument();
         final XmlTag rootTag = xmlDocument == null ? null : xmlDocument.getRootTag();
         final XmlTag[] tags = rootTag == null ? XmlTag.EMPTY
@@ -367,7 +365,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
     }
 
     @Override
-    public boolean execute(@NotNull final PsiElement element, @NotNull final ResolveState state) {
+    public boolean execute(final @NotNull PsiElement element, final @NotNull ResolveState state) {
       if (element instanceof JSVariable variable) {
         final JSAttributeList attributeList = variable.getAttributeList();
 

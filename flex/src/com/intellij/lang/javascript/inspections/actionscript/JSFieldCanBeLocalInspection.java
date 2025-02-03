@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.inspections.actionscript;
 
 import com.intellij.codeInsight.highlighting.ReadWriteAccessDetector;
@@ -7,7 +7,7 @@ import com.intellij.codeInspection.LocalQuickFix;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.lang.javascript.DialectDetector;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.findUsages.JSReadWriteAccessDetector;
 import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.lang.javascript.inspections.JSInspection;
@@ -33,9 +33,8 @@ import java.util.*;
 public final class JSFieldCanBeLocalInspection extends JSInspection {
   private static final Logger LOG = Logger.getInstance(JSFieldCanBeLocalInspection.class);
 
-  @NotNull
   @Override
-  protected PsiElementVisitor createVisitor(final ProblemsHolder holder, final LocalInspectionToolSession session) {
+  protected @NotNull PsiElementVisitor createVisitor(final ProblemsHolder holder, final LocalInspectionToolSession session) {
     return new MyVisitor(holder);
   }
 
@@ -55,7 +54,7 @@ public final class JSFieldCanBeLocalInspection extends JSInspection {
       if (!(parentParent instanceof JSClass) &&
           !(parentParent instanceof JSFile &&
             context instanceof XmlText &&
-            JavaScriptSupportLoader.isFlexMxmFile(context.getContainingFile()))) {
+            FlexSupportLoader.isFlexMxmFile(context.getContainingFile()))) {
         return;
       }
 

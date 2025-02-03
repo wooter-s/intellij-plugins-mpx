@@ -13,8 +13,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.readText
+import com.intellij.testFramework.JUnit38AssumeSupportRunner
 import com.intellij.testFramework.LightPlatformTestCase
 import com.intellij.util.asSafely
+import com.intellij.util.system.OS
+import com.jetbrains.cidr.cpp.CPPTestCase
 import com.jetbrains.cidr.cpp.embedded.platformio.PlatformioService
 import com.jetbrains.cidr.cpp.execution.manager.CLionRunConfigurationManager
 import com.jetbrains.cidr.external.system.model.ExternalModule
@@ -22,11 +25,14 @@ import com.jetbrains.cidr.lang.CLanguageKind
 import com.jetbrains.cidr.lang.OCLanguageKind
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind
 import org.jetbrains.annotations.NonNls
+import org.junit.Assume
+import org.junit.runner.RunWith
 import java.nio.file.Path
 import java.nio.file.Paths
 
 val BASE_TEST_DATA_PATH: Path = Paths.get(PathManager.getHomePath(), "contrib", "platformio", "testData")
 
+@RunWith(JUnit38AssumeSupportRunner::class)
 class TestProjectResolve : LightPlatformTestCase() {
   private val EXPECTED_ACTIVE_INI_FILES = listOf(
     "platformio.ini",
@@ -48,6 +54,7 @@ class TestProjectResolve : LightPlatformTestCase() {
     "nothingA.cpp" to CLanguageKind.CPP,
     "nothingB.cpp" to CLanguageKind.CPP,
     "nothingC.cpp" to CLanguageKind.CPP,
+    "extra.c" to CLanguageKind.C
   )
 
   private lateinit var projectPath: String
@@ -67,6 +74,8 @@ class TestProjectResolve : LightPlatformTestCase() {
   fun testScanFiles2023() = doTestScanFiles("-2023")
 
   private fun doTestScanFiles(suffix: String = "") {
+    Assume.assumeFalse(CPPTestCase.getTestToolSet().kind.isRemoteLike)
+
     val taskId: ExternalSystemTaskId = ExternalSystemTaskId.create(ID, ExternalSystemTaskType.RESOLVE_PROJECT, project)
     val testListener = TaskNotificationListerForTest()
     val projectNode = PlatformioProjectResolverForTest(suffix).resolveProjectInfo(
@@ -136,7 +145,8 @@ class TestProjectResolve : LightPlatformTestCase() {
     val actualSourceFiles = externalModule
       .data.asSafely<ExternalModule>()!!
       .resolveConfigurations.first()
-      .fileConfigurations.associate { it.file.name to it.languageKind }
+      .fileConfigurations
+      .associate { it.file.name to it.languageKind }
     assertEquals("Source file", expectedSourceFiles, actualSourceFiles)
   }
 
@@ -174,6 +184,19 @@ class TestProjectResolve : LightPlatformTestCase() {
     }
 
     override fun createRunConfigurationIfRequired(project: Project) {}
+
+    /**
+     * Mock data is loaded from compile_commands.json or compile_commands_win.json on Windows
+     * The file is created by invoking `pio run -t compiledb`,
+     * dropping information about framework sources,
+     * and modifying the `directory` entries to make the data not rely on absolute paths
+     */
+    override fun gatherCompDB(id: ExternalSystemTaskId, pioRunEventId: String, project: Project, activeEnvName: String, listener: ExternalSystemTaskNotificationListener, projectPath: String): String {
+      val compDbFileName = if (OS.CURRENT == OS.Windows) "compile_commands_win.json" else "compile_commands.json"
+      return projectDir.findChild(compDbFileName)!!.readText().injectProjectPath()
+    }
+
+    private fun String.injectProjectPath() = this.replace("\"directory\": \"\"", "\"directory\": \"${projectPath.replace("\\", "\\\\")}\"")
   }
 }
 

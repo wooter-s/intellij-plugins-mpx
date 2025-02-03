@@ -26,6 +26,9 @@
 // limitations under the License.
 package org.jetbrains.vuejs.lang
 
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.psi.impl.source.PostprocessReformattingAspect
 import com.intellij.refactoring.rename.inplace.VariableInplaceRenameHandler
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.CodeInsightTestUtil
@@ -187,6 +190,18 @@ class VueRenameTest : BasePlatformTestCase() {
     doTestDir("newName", true)
   }
 
+  fun testComponentFile() {
+    doTestRenameComponent("OrdersListView.vue", "SomeComponent.vue", false)
+  }
+
+  fun testComponentFileWithUsages() {
+    doTestRenameComponent("OrdersListView.vue", "SomeComponent.vue", true)
+  }
+
+  fun testComponentFileWithReexports() {
+    doTestRenameComponent("OrdersListView.vue", "SomeComponent.vue", true)
+  }
+
   private fun doTest(newName: String, usingHandler: Boolean = false) {
     myFixture.configureByFile(getTestName(true) + ".vue")
     if (usingHandler) {
@@ -219,8 +234,22 @@ class VueRenameTest : BasePlatformTestCase() {
     }
   }
 
+  private fun doTestRenameComponent(newName: String, fileName: String, renameUsages: Boolean) {
+    val dirName = getTestName(true)
+    myFixture.copyDirectoryToProject(dirName, "")
+    myFixture.configureFromTempProjectFile(fileName)
+
+    withRenameUsages(renameUsages) {
+      myFixture.renameElement(myFixture.file, newName)
+      WriteCommandAction.runWriteCommandAction(project) { PostprocessReformattingAspect.getInstance(project).doPostponedFormatting() }
+      FileDocumentManager.getInstance().saveAllDocuments()
+    }
+
+    checkResultByDir()
+  }
+
   private fun checkResultByDir(resultsDir: String = getTestName(true) + "_after") {
-    val extensions = setOf("vue", "html", "ts")
+    val extensions = setOf("vue", "html", "ts", "js")
     myFixture.tempDirFixture.findOrCreateDir(".")
       .children
       .filter { !it.isDirectory && extensions.contains(it.extension) }.forEach {

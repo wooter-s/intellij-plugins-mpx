@@ -1,10 +1,11 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.validation.fixes;
 
 import com.intellij.codeInsight.CodeInsightBundle;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.ide.util.PlatformPackageUtil;
 import com.intellij.lang.LanguageNamesValidation;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.refactoring.util.JSRefactoringUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -46,13 +47,12 @@ public abstract class CreateMxmlFileIntentionBase implements CreateClassIntentio
   }
 
   @Override
-  @NotNull
-  public String getFamilyName() {
+  public @NotNull String getFamilyName() {
     return CodeInsightBundle.message("create.file.family");
   }
 
   @Override
-  public boolean isAvailable(@NotNull final Project project, final Editor editor, final PsiFile file) {
+  public boolean isAvailable(final @NotNull Project project, final Editor editor, final PsiFile file) {
     return myIdentifierIsValid && myElement.isValid();
   }
 
@@ -62,13 +62,12 @@ public abstract class CreateMxmlFileIntentionBase implements CreateClassIntentio
   }
 
   @Override
-  @NotNull
-  public String getName() {
+  public @NotNull String getName() {
     return getText();
   }
 
   @Override
-  public void applyFix(@NotNull final Project project, @NotNull final ProblemDescriptor descriptor) {
+  public void applyFix(final @NotNull Project project, final @NotNull ProblemDescriptor descriptor) {
     invoke(project, null, myElement.getContainingFile());
   }
 
@@ -78,7 +77,7 @@ public abstract class CreateMxmlFileIntentionBase implements CreateClassIntentio
   }
 
   @Override
-  public void invoke(@NotNull final Project project, final @Nullable Editor editor, final PsiFile file) throws IncorrectOperationException {
+  public void invoke(final @NotNull Project project, final @Nullable Editor editor, final PsiFile file) throws IncorrectOperationException {
     final Module module = ModuleUtilCore.findModuleForPsiElement(file);
     if (module == null) {
       return;
@@ -91,7 +90,7 @@ public abstract class CreateMxmlFileIntentionBase implements CreateClassIntentio
 
     ApplicationManager.getApplication().runWriteAction(() -> {
       try {
-        final String fileName = myClassName + JavaScriptSupportLoader.MXML_FILE_EXTENSION_DOT;
+        final String fileName = myClassName + FlexSupportLoader.MXML_FILE_EXTENSION_DOT;
         final PsiFile newFile = fileTextAndDir.second.createFile(fileName);
 
         final PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);

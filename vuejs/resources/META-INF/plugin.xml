@@ -47,6 +47,7 @@
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">
+    <registryKey defaultValue="true" description="Use bundled Mpx service" key="vue.language.server.bundled.enabled"/>
     <registryKey defaultValue="" description="Mpx service version for downloading" key="vue.language.server.default.version"/>
     <dependencySupport kind="javascript" coordinate="npm:vue" displayName="Mpx.js"/>
     <dependencySupport kind="javascript" coordinate="npm:nuxt" displayName="Nuxt"/>
@@ -74,9 +75,8 @@
     <psi.fileReferenceHelper implementation="org.jetbrains.mpxjs.libraries.nuxt.codeInsight.NuxtFileReferenceHelper"/>
     <useScopeEnlarger implementation="org.jetbrains.mpxjs.findUsages.VueUseScopeEnlarger"/>
     <implicitUsageProvider implementation="org.jetbrains.mpxjs.codeInsight.refs.VueImplicitUsageProvider"/>
-    <platform.lsp.serverSupportProvider implementation="org.jetbrains.mpxjs.lang.typescript.service.volar.VolarSupportProvider"/>
+    <platform.lsp.serverSupportProvider implementation="org.jetbrains.mpxjs.lang.typescript.service.lsp.VueLspServerSupportProvider"/>
 
-    <!--suppress PluginXmlValidity -->
     <quoteHandler className="com.intellij.codeInsight.editorActions.HtmlQuoteHandler" fileType="Mpx.js"/>
     <copyPastePostProcessor implementation="org.jetbrains.mpxjs.codeInsight.imports.VueTemplateExpressionsCopyPasteProcessor"/>
     <copyPastePostProcessor implementation="org.jetbrains.mpxjs.codeInsight.imports.VueComponentCopyPasteProcessor"/>
@@ -394,19 +394,17 @@
     <tsImportResolver implementation="org.jetbrains.mpxjs.lang.typescript.VueTypeScriptImportsResolverProvider" order="first"/>
     <importModulePathStrategy order="after TypeScript"
                               implementation="org.jetbrains.mpxjs.lang.VueImportModulePathStrategy"/>
-    <!--suppress PluginXmlValidity -->
     <languageServiceProvider order="first" implementation="org.jetbrains.mpxjs.lang.typescript.service.VueLanguageServiceProvider"/>
     <importCandidatesFactory implementation="org.jetbrains.mpxjs.codeInsight.imports.VueScriptCandidatesProviderFactory"/>
     <importCandidatesFactory implementation="org.jetbrains.mpxjs.codeInsight.imports.VueComponentImportCandidatesProviderFactory"/>
     <scanningFileListenerContributor implementation="org.jetbrains.mpxjs.libraries.nuxt.library.NuxtFolderScanningListenerContributor"/>
     <moduleExportsProvider id="mpx" implementation="org.jetbrains.mpxjs.codeInsight.imports.VueModuleExportsProvider"/>
     <componentUsageProvider language="Mpx" implementationClass="org.jetbrains.mpxjs.codeInsight.hints.VueComponentUsageProvider"/>
+      <typeScriptCompilerTypePatcher implementation="org.jetbrains.mpxjs.libraries.nuxt.codeInsight.NuxtTypeScriptTypePatcher"/>
   </extensions>
 
   <extensions defaultExtensionNs="intellij.webpack">
-    <!--suppress PluginXmlValidity -->
     <webpackLocator implementation="org.jetbrains.mpxjs.cli.VueCliWebpackConfigLocator"/>
-    <!--suppress PluginXmlValidity -->
     <webpackLocator implementation="org.jetbrains.mpxjs.libraries.nuxt.codeInsight.NuxtWebpackConfigLocator"/>
   </extensions>
 </idea-plugin>

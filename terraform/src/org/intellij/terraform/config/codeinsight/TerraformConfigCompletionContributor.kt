@@ -2,14 +2,14 @@
 package org.intellij.terraform.config.codeinsight
 
 import com.intellij.codeInsight.completion.*
-import com.intellij.codeInsight.lookup.LookupElement
-import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.codeInsight.lookup.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder.create
-import com.intellij.codeInsight.lookup.LookupElementWeigher
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.debug
+import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.patterns.PlatformPatterns.not
 import com.intellij.patterns.PlatformPatterns.psiElement
 import com.intellij.psi.PsiElement
@@ -21,7 +21,6 @@ import com.intellij.psi.util.parentOfType
 import com.intellij.util.Plow.Companion.toPlow
 import com.intellij.util.ProcessingContext
 import com.intellij.util.Processor
-import org.intellij.terraform.TerraformIcons
 import org.intellij.terraform.config.Constants
 import org.intellij.terraform.config.Constants.HCL_BACKEND_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_DATASOURCE_IDENTIFIER
@@ -35,6 +34,7 @@ import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.createP
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.dumpPsiFileModel
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getClearTextValue
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getIncomplete
+import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getLookupIcon
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getOriginalObject
 import org.intellij.terraform.config.documentation.psi.FakeHCLElementPsiFactory
 import org.intellij.terraform.config.model.*
@@ -42,6 +42,7 @@ import org.intellij.terraform.config.patterns.TerraformPatterns
 import org.intellij.terraform.config.patterns.TerraformPatterns.DependsOnPattern
 import org.intellij.terraform.config.patterns.TerraformPatterns.TerraformConfigFile
 import org.intellij.terraform.config.patterns.TerraformPatterns.TerraformVariablesFile
+import org.intellij.terraform.hcl.HCLBundle
 import org.intellij.terraform.hcl.HCLElementTypes
 import org.intellij.terraform.hcl.HCLTokenTypes
 import org.intellij.terraform.hcl.codeinsight.HCLCompletionContributor
@@ -62,6 +63,10 @@ import org.intellij.terraform.hcl.psi.HCLPsiUtil.getPrevSiblingNonWhiteSpace
 import org.intellij.terraform.hil.HILFileType
 import org.intellij.terraform.hil.codeinsight.ReferenceCompletionHelper.findByFQNRef
 import org.intellij.terraform.hil.psi.ILExpression
+import org.intellij.terraform.opentofu.OpenTofuConstants.TOFU_ENCRYPTION_METHOD_BLOCK
+import org.intellij.terraform.opentofu.OpenTofuConstants.TOFU_KEY_PROVIDER
+import org.intellij.terraform.opentofu.model.encryptionKeyProviders
+import org.intellij.terraform.opentofu.model.encryptionMethods
 
 class TerraformConfigCompletionContributor : HCLCompletionContributor() {
   init {
@@ -102,12 +107,12 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
       .withSuperParent(4, Block), BlockPropertiesCompletionProvider)
     extend(CompletionType.BASIC, psiElement().withElementType(HCLTokenTypes.IDENTIFYING_LITERALS)
       .inFile(TerraformConfigFile)
+      .and(psiElement().insideStarting(Block))
       .withParent(IdentifierOrStringLiteral)
       .withSuperParent(2, Block)
       .withSuperParent(3, Object)
       .withSuperParent(4, Block), BlockPropertiesCompletionProvider)
-
-    // Leftmost identifier of block could be start of new property in case of eol betwen it ant next identifier
+    // Leftmost identifier of block could be start of new property in case of eol between it and the next identifier
     //```
     //resource "X" "Y" {
     //  count<caret>
@@ -250,33 +255,14 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
 
     override fun addCompletions(parameters: CompletionParameters, context: ProcessingContext, result: CompletionResultSet) {
       val position = parameters.position
-      doCompletion(position, Processor {
+      doCompletion(position, parameters, result, Processor {
         result.addElement(it)
         !result.isStopped
       })
     }
 
-    private fun buildProviderTypeText(provider: ProviderType): String =
-      """${provider.fullName}${if (provider.version.isNotBlank()) " ${provider.version}" else ""}"""
 
-
-    private fun buildResourceDisplayString(block: BlockType, providerLocalNames: Map<String, String>): String {
-      return when (block) {
-        is ResourceOrDataSourceType -> {
-          val providerLocalName = providerLocalNames[block.provider.fullName] ?: return block.type
-          return providerLocalName + "_" + TypeModel.getResourceName(block.type)
-        }
-        is ProviderType -> {
-          val providerLocalName = providerLocalNames[block.fullName] ?: return block.type
-          providerLocalName
-        }
-        else -> {
-          block.literal
-        }
-      }
-    }
-
-    private fun doCompletion(position: PsiElement, consumer: Processor<LookupElement>): Boolean {
+    private fun doCompletion(position: PsiElement, parameters: CompletionParameters, result: CompletionResultSet, consumer: Processor<LookupElement>): Boolean {
       val parent = position.parent
       LOG.debug { "TF.BlockTypeOrNameCompletionProvider{position=$position, parent=$parent}" }
       val obj = when {
@@ -290,23 +276,29 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
       LOG.debug { "TF.BlockTypeOrNameCompletionProvider{position=$position, parent=$parent, obj=$obj, lnws=$leftNWS}" }
       val type = getClearTextValue(leftNWS) ?: return true
       val typeModel = TypeModelProvider.getModel(position)
+      val localProviders = TypeModel.collectProviderLocalNames(position)
+      val tiers = setOf(ProviderTier.TIER_BUILTIN, ProviderTier.TIER_OFFICIAL, ProviderTier.TIER_LOCAL)
+      if (parameters.invocationCount == 1) {
+        val message = HCLBundle.message("popup.advertisement.press.to.show.partner.community.providers", KeymapUtil.getFirstKeyboardShortcutText(IdeActions.ACTION_CODE_COMPLETION))
+        result.addLookupAdvertisement(message)
+      }
       return when (type) {
         HCL_RESOURCE_IDENTIFIER -> {
-          val providerLocalNamesReversed = TypeModel.collectProviderLocalNames(position).entries.associateBy({ it.value }) { it.key }
           typeModel.allResources().toPlow()
-            .map { buildLookupElement(it, buildResourceDisplayString(it, providerLocalNamesReversed), buildProviderTypeText(it.provider), position) }
+            .filter { parameters.invocationCount > 1 || it.provider.tier in tiers || localProviders.containsValue(it.provider.fullName) }
+            .map { buildResourceOrDataLookupElement(it, position) }
             .processWith(consumer)
         }
         HCL_DATASOURCE_IDENTIFIER -> {
-          val providerLocalNamesReversed = TypeModel.collectProviderLocalNames(position).entries.associateBy({ it.value }) { it.key }
           typeModel.allDatasources().toPlow()
-            .map { buildLookupElement(it, buildResourceDisplayString(it, providerLocalNamesReversed), buildProviderTypeText(it.provider), position) }
+            .filter { parameters.invocationCount > 1 || it.provider.tier in tiers || localProviders.containsValue(it.provider.fullName) }
+            .map { buildResourceOrDataLookupElement(it, position) }
             .processWith(consumer)
         }
         HCL_PROVIDER_IDENTIFIER -> {
-          val providerLocalNamesReversed = TypeModel.collectProviderLocalNames(position).entries.associateBy({ it.value }) { it.key }
           typeModel.allProviders().toPlow()
-            .map { buildProviderLookupElement(it, buildResourceDisplayString(it, providerLocalNamesReversed), position) }
+            .filter { parameters.invocationCount > 1 || it.tier in tiers || localProviders.containsValue(it.fullName)}
+            .map { buildProviderLookupElement(it, position) }
             .processWith(consumer)
         }
         HCL_PROVISIONER_IDENTIFIER ->
@@ -317,22 +309,52 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
           typeModel.backends.toPlow()
             .map { buildLookupElement(it, it.type, it.description, position) }
             .processWith(consumer)
+        TOFU_KEY_PROVIDER ->
+          encryptionKeyProviders.values.toPlow()
+            .map { buildLookupElement(it, it.type, it.description, position) }
+            .processWith(consumer)
+        TOFU_ENCRYPTION_METHOD_BLOCK ->
+          encryptionMethods.values.toPlow()
+            .map { buildLookupElement(it, it.type, it.description, position) }
+            .processWith(consumer)
         else -> true
       }
     }
 
-    private fun buildProviderLookupElement(it: ProviderType, typeName: String, position: PsiElement) = create(typeName)
-      .withTailText(" ${it.namespace}", true)
-      .withTypeText(it.version, true)
-      .withIcon(TerraformIcons.Terraform)
-      .withLookupStrings(setOf(it.fullName, it.type))
-      .withInsertHandler(ResourceBlockSubNameInsertHandler(it))
-      .withPsiElement(position.project.service<FakeHCLElementPsiFactory>().createFakeHCLBlock(it.literal, it.type, position.containingFile.originalFile))
+    private fun buildResourceOrDataLookupElement(it: ResourceOrDataSourceType, position: PsiElement): LookupElementBuilder {
+      val providerLocalNamesReversed = TypeModel.collectProviderLocalNames(position).entries.associateBy({ it.value }) { it.key }
+      return create(it, it.type)
+        .withRenderer(object : LookupElementRenderer<LookupElement>() {
+          override fun renderElement(element: LookupElement, presentation: LookupElementPresentation) {
+            presentation.setItemText(TerraformCompletionUtil.buildResourceDisplayString(it as BlockType, providerLocalNamesReversed))
+            presentation.typeText = TerraformCompletionUtil.buildProviderTypeText(it.provider)
+            presentation.isTypeGrayed = true
+            presentation.icon = getLookupIcon(position)
+          }
+        })
+        .withInsertHandler(BlockSubNameInsertHandler(it as BlockType))
+        .withPsiElement(position.project.service<FakeHCLElementPsiFactory>().createFakeHCLBlock(it, position.containingFile.originalFile))
+    }
+
+    private fun buildProviderLookupElement(it: ProviderType, position: PsiElement): LookupElementBuilder {
+      return create(it, it.type)
+        .withRenderer(object : LookupElementRenderer<LookupElement>() {
+          override fun renderElement(element: LookupElement, presentation: LookupElementPresentation) {
+            presentation.setItemText(it.type)
+            presentation.tailText = " (${it.namespace})"
+            presentation.typeText = it.version
+            presentation.isTypeGrayed = true
+            presentation.icon = getLookupIcon(position)
+          }
+        })
+        .withInsertHandler(BlockSubNameInsertHandler(it))
+        .withPsiElement(position.project.service<FakeHCLElementPsiFactory>().createFakeHCLBlock(it, position.containingFile.originalFile))
+    }
 
     private fun buildLookupElement(it: BlockType, typeName: String, typeText: String?, position: PsiElement): LookupElementBuilder = create(typeName)
       .withTypeText(typeText, true)
-      .withIcon(TerraformIcons.Terraform)
-      .withInsertHandler(ResourceBlockSubNameInsertHandler(it))
+      .withIcon(getLookupIcon(position))
+      .withInsertHandler(BlockSubNameInsertHandler(it))
       .withPsiElement(position.project.service<FakeHCLElementPsiFactory>().createFakeHCLBlock(it.literal, typeName, position.containingFile.originalFile))
   }
 

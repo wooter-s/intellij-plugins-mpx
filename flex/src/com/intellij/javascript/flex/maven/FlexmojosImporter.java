@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.maven;
 
 import com.intellij.lang.javascript.flex.FlexBundle;
@@ -32,7 +32,6 @@ import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenPlugin;
 import org.jetbrains.idea.maven.project.*;
 import org.jetbrains.idea.maven.server.MavenEmbedderWrapper;
-import org.jetbrains.idea.maven.server.NativeMavenProjectHolder;
 import org.jetbrains.idea.maven.utils.MavenLog;
 import org.jetbrains.idea.maven.utils.MavenProcessCanceledException;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
@@ -65,8 +64,7 @@ public class FlexmojosImporter extends MavenImporter implements FlexConfigInform
   }
 
   @Override
-  @NotNull
-  public ModuleType getModuleType() {
+  public @NotNull ModuleType getModuleType() {
     return FlexModuleType.getInstance();
   }
 
@@ -85,17 +83,7 @@ public class FlexmojosImporter extends MavenImporter implements FlexConfigInform
     Collections.addAll(result, "merged", "internal", "external", "caching", "rsl");
   }
 
-  public void resolve(Project project, MavenProject mavenProject, NativeMavenProjectHolder nativeMavenProject,
-                      MavenEmbedderWrapper embedder) throws MavenProcessCanceledException {
-    final MavenPlugin plugin = getFlexmojosPlugin(mavenProject);
-    final String version = plugin.getVersion();
-    if (version != null && StringUtil.compareVersionNumbers(version, "4") < 0) {
-      embedder.resolvePlugin(plugin, nativeMavenProject, MavenProjectsManager.getInstance(project).getForceUpdateSnapshots());
-    }
-  }
-
-  @NotNull
-  private MavenPlugin getFlexmojosPlugin(final MavenProject mavenProject) {
+  private @NotNull MavenPlugin getFlexmojosPlugin(final MavenProject mavenProject) {
     final MavenPlugin plugin = mavenProject.findPlugin(myPluginGroupID, myPluginArtifactID);
     assert plugin != null;
     return plugin;
@@ -107,8 +95,7 @@ public class FlexmojosImporter extends MavenImporter implements FlexConfigInform
   }
 
   @Override
-  @Nullable
-  public Pair<String, String> getExtraArtifactClassifierAndExtension(MavenArtifact artifact, MavenExtraArtifactType type) {
+  public @Nullable Pair<String, String> getExtraArtifactClassifierAndExtension(MavenArtifact artifact, MavenExtraArtifactType type) {
     if (!DEPENDENCY_TYPES_FOR_IMPORT.contains(artifact.getType())) return null;
     if (type == MavenExtraArtifactType.DOCS) return Pair.create("asdoc", "zip");
     return null;
@@ -141,8 +128,7 @@ public class FlexmojosImporter extends MavenImporter implements FlexConfigInform
                                            FlexProjectConfigurationEditor
                                              .createModelProvider(moduleToModifiableModel, projectLibrariesModel, null)) {
         @Override
-        @Nullable
-        protected Module findModuleWithBC(final BuildConfigurationEntry bcEntry) {
+        protected @Nullable Module findModuleWithBC(final BuildConfigurationEntry bcEntry) {
           // don't check BC presence here because corresponding BC may appear later in next import cycle
           return modelAdapter.findModuleByName(bcEntry.getModuleName());
         }
@@ -221,8 +207,7 @@ public class FlexmojosImporter extends MavenImporter implements FlexConfigInform
     return result;
   }
 
-  @Nullable
-  private String getDefaultLocale(final MavenProject mavenProject) {
+  private @Nullable String getDefaultLocale(final MavenProject mavenProject) {
     return "true".equals(findConfigValue(mavenProject, "useDefaultLocale", "true"))
            ? findConfigValue(mavenProject, "defaultLocale", "en_US")
            : null;
@@ -237,7 +222,7 @@ public class FlexmojosImporter extends MavenImporter implements FlexConfigInform
   private synchronized void doShowFlexConfigWarning(final Project project) {
     final NotificationListener listener = new NotificationListener() {
       @Override
-      public void hyperlinkUpdate(@NotNull final Notification notification, @NotNull final HyperlinkEvent event) {
+      public void hyperlinkUpdate(final @NotNull Notification notification, final @NotNull HyperlinkEvent event) {
         Messages
           .showWarningDialog(project, FlexBundle.message("flexmojos.warning.detailed"), FlexBundle.message("flexmojos.project.import"));
         notification.expire();

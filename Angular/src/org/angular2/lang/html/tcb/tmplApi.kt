@@ -8,26 +8,22 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.ResolveResult
 import com.intellij.psi.util.childrenOfType
-import com.intellij.psi.util.elementType
 import com.intellij.psi.util.parentOfTypes
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.SmartList
 import com.intellij.util.applyIf
-import com.intellij.util.asSafely
 import com.intellij.webSymbols.WebSymbol
 import com.intellij.webSymbols.WebSymbolDelegate
 import com.intellij.xml.util.XmlTagUtil
-import org.angular2.codeInsight.attributes.Angular2AttributeDescriptor
+import org.angular2.codeInsight.Angular2DeclarationsScope
+import org.angular2.codeInsight.attributes.Angular2ApplicableDirectivesProvider
 import org.angular2.codeInsight.blocks.*
-import org.angular2.codeInsight.tags.Angular2ElementDescriptor
-import org.angular2.codeInsight.template.Angular2TemplateElementsScopeProvider
 import org.angular2.codeInsight.template.Angular2TemplateScope
-import org.angular2.codeInsight.template.Angular2TemplateScopesResolver
+import org.angular2.codeInsight.template.getTemplateElementsScopeFor
 import org.angular2.codeInsight.template.isTemplateTag
 import org.angular2.entities.*
 import org.angular2.lang.Angular2LangUtil.OUTPUT_CHANGE_SUFFIX
-import org.angular2.lang.expr.lexer.Angular2TokenTypes
 import org.angular2.lang.expr.psi.*
 import org.angular2.lang.expr.psi.impl.Angular2BlockParameterVariableImpl
 import org.angular2.lang.html.Angular2HtmlFile
@@ -43,7 +39,9 @@ internal sealed interface TmplAstNodeWithChildren : TmplAstNode {
   val children: List<TmplAstNode>
 }
 
-internal sealed interface TmplAstExpressionSymbol : TmplAstNode {
+internal sealed interface TemplateEntity : TmplAstNode
+
+internal sealed interface TmplAstExpressionSymbol : TemplateEntity {
   val name: String
   val keySpan: TextRange?
   val value: String?
@@ -73,6 +71,13 @@ internal class TmplAstVariable(
   override val keySpan: TextRange?,
   override val valueSpan: TextRange?,
 ) : TmplAstExpressionSymbol
+
+internal class TmplAstLetDeclaration(
+  val name: String,
+  val nameSpan: TextRange?,
+  val value: JSExpression?,
+  val sourceSpan: TextRange,
+) : TemplateEntity
 
 internal class TmplAstElement(
   val name: String,
@@ -170,6 +175,7 @@ internal class TmplAstDeferredBlock(
   override val nameSpan: TextRange?,
   val triggers: TmplAstDeferredBlockTriggers,
   val prefetchTriggers: TmplAstDeferredBlockTriggers,
+  val hydrateTriggers: TmplAstDeferredBlockTriggers,
   val error: TmplAstDeferredBlockError?,
   val loading: TmplAstDeferredBlockLoading?,
   val placeholder: TmplAstDeferredBlockPlaceholder?,
@@ -232,6 +238,11 @@ internal class TmplAstSwitchBlockCase(
   val expression: JSExpression?,
   override val children: List<TmplAstNode>,
 ) : TmplAstBlockNodeWithChildren
+
+internal class TmplAstLetBlock(
+  override val nameSpan: TextRange?,
+  val declaration: TmplAstLetDeclaration?,
+) : TmplAstBlockNode
 
 internal class TmplDirectiveMetadata(
   val directive: Angular2Directive,
@@ -296,26 +307,28 @@ internal enum class ParsedEventType {
 
 internal class BoundTarget(component: Angular2Component) {
 
-  private val referenceMap: Map<Any?, TmplAstExpressionSymbol>
+  private val referenceMap: Map<Any?, TemplateEntity>
 
-  val pipes: Map<String, Angular2Pipe> = component.declarationsInScope.filterIsInstance<Angular2Pipe>().associateBy { it.getName() }
+  val pipes: Map<String, Angular2Pipe> = Angular2DeclarationsScope(component).importsOwner
+                                           ?.declarationsInScope?.filterIsInstance<Angular2Pipe>()?.associateBy { it.getName() }
+                                         ?: emptyMap()
 
   val templateFile: Angular2HtmlFile?
 
   val templateRoots: List<TmplAstNode>
 
   init {
-    val referenceMap = mutableMapOf<Any, TmplAstExpressionSymbol>()
+    val referenceMap = mutableMapOf<Any, TemplateEntity>()
     templateFile = component.templateFile as? Angular2HtmlFile
     templateRoots = templateFile?.let {
       buildTmplAst(it, object : ReferenceResolver {
-        override fun set(element: PsiElement, exprSymbol: TmplAstExpressionSymbol) {
-          referenceMap[element] = exprSymbol
+        override fun set(element: PsiElement, localSymbol: TemplateEntity) {
+          referenceMap[element] = localSymbol
         }
 
 
-        override fun set(implicitSymbol: WebSymbol, source: PsiElement, exprSymbol: TmplAstExpressionSymbol) {
-          referenceMap[ImplicitSymbolWithSource(implicitSymbol, source)] = exprSymbol
+        override fun set(implicitSymbol: WebSymbol, source: PsiElement, localSymbol: TemplateEntity) {
+          referenceMap[ImplicitSymbolWithSource(implicitSymbol, source)] = localSymbol
         }
 
       })
@@ -340,7 +353,8 @@ internal class BoundTarget(component: Angular2Component) {
     val exportAs = ref.value.takeIf { it.isNotBlank() }
     return if (exportAs != null) {
       ref.parent?.directives?.find { it.exportAs.contains(exportAs) }
-    } else {
+    }
+    else {
       ref.parent?.directives?.find { it.directive.isComponent }
       ?: ref.parent
     }
@@ -367,32 +381,30 @@ internal class BoundTarget(component: Angular2Component) {
    * This is only defined for `AST` expressions that read or write to a property of an
    * `ImplicitReceiver`.
    */
-  fun getExpressionTarget(expr: JSReferenceExpression): TmplAstExpressionSymbol? {
+  fun getExpressionTarget(expr: JSReferenceExpression): TemplateEntity? {
     if (expr.qualifier != null && expr.qualifier !is JSThisExpression) {
       return null
     }
     val referencedName = expr.referenceName ?: return null
     var result: Any? = null
-    for (curScope in Angular2TemplateScopesResolver.getScopes(expr, listOf(Angular2TemplateElementsScopeProvider()))) {
-      var scope: Angular2TemplateScope? = curScope
-      while (scope != null && result == null) {
-        scope.resolve { resolveResult ->
-          val element = resolveResult.element as? JSPsiElementBase
-          if (result == null
-              && resolveResult.isValidResult
-              && element != null
-              && referencedName == element.name) {
-            result = resolveResult
-          }
+    var scope: Angular2TemplateScope? = getTemplateElementsScopeFor(expr)
+    while (scope != null && result == null) {
+      scope.resolve { resolveResult ->
+        val element = resolveResult.element as? JSPsiElementBase
+        if (result == null
+            && resolveResult.isValidResult
+            && element != null
+            && referencedName == element.name
+            && (expr.qualifier == null || !isLetDeclarationVariable(element))) {
+          result = resolveResult
         }
-        for (symbol in scope.symbols) {
-          if (result == null && symbol.name == referencedName) {
-            result = ImplicitSymbolWithSource((symbol as? WebSymbolDelegate<*>)?.delegate ?: symbol, scope.source)
-          }
-        }
-        scope = scope.parent
       }
-      if (result != null) break
+      for (symbol in scope.symbols) {
+        if (result == null && symbol.name == referencedName) {
+          result = ImplicitSymbolWithSource((symbol as? WebSymbolDelegate<*>)?.delegate ?: symbol, scope.source)
+        }
+      }
+      scope = scope.parent
     }
 
     return when (result) {
@@ -497,8 +509,8 @@ private data class ImplicitSymbolWithSource(
 )
 
 private interface ReferenceResolver {
-  operator fun set(element: PsiElement, exprSymbol: TmplAstExpressionSymbol)
-  operator fun set(implicitSymbol: WebSymbol, source: PsiElement, exprSymbol: TmplAstExpressionSymbol)
+  operator fun set(element: PsiElement, localSymbol: TemplateEntity)
+  operator fun set(implicitSymbol: WebSymbol, source: PsiElement, localSymbol: TemplateEntity)
 }
 
 private fun buildTmplAst(
@@ -531,16 +543,14 @@ private fun XmlTag.toTmplAstDirectiveContainer(
     .groupBy { it.second.type }
 
   val isTemplateTag = isTemplateTag(this)
+  val scope = Angular2DeclarationsScope(this)
 
   val templateBindingAttribute = attributesByKind[TEMPLATE_BINDINGS]?.firstOrNull()?.first
-  val templateBindings = buildInfo(templateBindingAttribute, referenceResolver)
+  val templateBindings = buildInfo(scope, templateBindingAttribute, referenceResolver)
 
-  val directives = attributes.asSequence()
-    .flatMap { attr ->
-      attr.descriptor.asSafely<Angular2AttributeDescriptor>()?.takeIf { it.info.type != TEMPLATE_BINDINGS }?.sourceDirectives
-      ?: emptyList()
-    }.plus(descriptor.asSafely<Angular2ElementDescriptor>()?.sourceDirectives ?: emptyList())
-    .distinct()
+  val directives = Angular2ApplicableDirectivesProvider(this, scope = scope)
+    .matched
+    .asSequence()
     .flatMap { directive -> buildMetadata(directive) }
     .toSet()
 
@@ -604,7 +614,7 @@ private fun XmlTag.toTmplAstDirectiveContainer(
         value = attr.value ?: "",
         valueSpan = attr.valueElement?.textRange,
       ).apply {
-        referenceResolver[attr] = this
+        referenceResolver.set(attr, this)
       }
     })
 
@@ -616,7 +626,7 @@ private fun XmlTag.toTmplAstDirectiveContainer(
         value = attr.value ?: "",
         valueSpan = attr.valueTextRange.takeIf { it.length > 0 },
       ).apply {
-        referenceResolver[attr] = this
+        referenceResolver.set(attr, this)
       }
     })
 
@@ -733,17 +743,22 @@ private fun Angular2Directive.toDirectiveMetadata(
 )
 
 private fun buildInfo(
+  scope: Angular2DeclarationsScope,
   attribute: XmlAttribute?,
   referenceResolver: ReferenceResolver,
 ): TemplateBindingsInfo? {
   if (attribute == null) return null
+  val template = Angular2TemplateBindings.get(attribute)
   val templateBindings = Angular2TemplateBindings.get(attribute).bindings
-  val templateName = attribute.name.substring(1)
+  val templateName = attribute.name.removePrefix("*")
   val hasDefaultBinding = templateBindings.any { !it.keyIsVar() && it.key == templateName }
   val attributeNameRange = attribute.nameElement?.textRange ?: return null
   return TemplateBindingsInfo(
-    directives = attribute.descriptor.asSafely<Angular2AttributeDescriptor>()?.sourceDirectives?.asSequence()
-                   ?.flatMap { buildMetadata(it) }?.toSet() ?: emptySet(),
+    directives = Angular2ApplicableDirectivesProvider(template, scope = scope)
+      .matched
+      .asSequence()
+      .flatMap { buildMetadata(it) }
+      .toSet(),
     inputs = templateBindings.asSequence()
       .filter { !it.keyIsVar() }
       .map {
@@ -759,7 +774,7 @@ private fun buildInfo(
       .filter { it.keyIsVar() }
       .map {
         Pair(it.key, TmplAstVariable(it.key, it.name, it.variableDefinition?.textRange, null).apply {
-          referenceResolver[it] = this
+          referenceResolver.set(it, this)
         })
       }
       .toMap(),
@@ -874,8 +889,9 @@ private fun Angular2HtmlBlock.toTmplAstBlock(referenceResolver: ReferenceResolve
     )
     BLOCK_DEFER -> TmplAstDeferredBlock(
       nameSpan = nameElement.textRange,
-      triggers = this.buildTriggers(false),
-      prefetchTriggers = this.buildTriggers(true),
+      triggers = this.buildTriggers(null),
+      prefetchTriggers = this.buildTriggers(PARAMETER_PREFIX_PREFETCH),
+      hydrateTriggers = this.buildTriggers(PARAMETER_PREFIX_HYDRATE),
       error = blockSiblingsForward().find { it.name == BLOCK_ERROR }?.toTmplAstBlock(referenceResolver) as? TmplAstDeferredBlockError,
       loading = blockSiblingsForward().find { it.name == BLOCK_LOADING }?.toTmplAstBlock(referenceResolver) as? TmplAstDeferredBlockLoading,
       placeholder = blockSiblingsForward().find { it.name == BLOCK_PLACEHOLDER }?.toTmplAstBlock(referenceResolver) as? TmplAstDeferredBlockPlaceholder,
@@ -893,12 +909,17 @@ private fun Angular2HtmlBlock.toTmplAstBlock(referenceResolver: ReferenceResolve
       nameSpan = nameElement.textRange,
       children = contents.mapChildren(referenceResolver),
     )
+    BLOCK_LET -> TmplAstLetBlock(
+      nameSpan = nameElement.textRange,
+      declaration = parameters.getOrNull(0)
+        ?.variables?.firstOrNull()?.toTmplAstLetDeclaration(referenceResolver)
+    )
     else -> null
   }
 
-private fun Angular2HtmlBlock.buildTriggers(prefetch: Boolean): TmplAstDeferredBlockTriggers =
+private fun Angular2HtmlBlock.buildTriggers(prefix: String?): TmplAstDeferredBlockTriggers =
   TmplAstDeferredBlockTriggers(
-    `when` = parameters.find { it.name == PARAMETER_WHEN && prefetch == hasPrefetch(it) }?.let {
+    `when` = parameters.find { it.name == PARAMETER_WHEN && it.prefix == prefix }?.let {
       TmplAstBoundDeferredTrigger(
         nameSpan = it.nameElement?.textRange,
         value = it.expression
@@ -907,7 +928,7 @@ private fun Angular2HtmlBlock.buildTriggers(prefetch: Boolean): TmplAstDeferredB
   )
 
 private fun hasPrefetch(parameter: Angular2BlockParameter) =
-  parameter.getChildren().firstOrNull { it.elementType == Angular2TokenTypes.BLOCK_PARAMETER_NAME }?.text == PARAMETER_PREFIX_PREFETCH
+  parameter.prefix == PARAMETER_PREFIX_PREFETCH
 
 private fun JSVariable.toTmplAstVariable(referenceResolver: ReferenceResolver): TmplAstVariable =
   TmplAstVariable(
@@ -916,7 +937,7 @@ private fun JSVariable.toTmplAstVariable(referenceResolver: ReferenceResolver): 
     valueSpan = null,
     value = null
   ).apply {
-    referenceResolver[this@toTmplAstVariable] = this
+    referenceResolver.set(this@toTmplAstVariable, this)
   }
 
 private fun WebSymbol.toTmplAstVariable(block: Angular2HtmlBlock, referenceResolver: ReferenceResolver): TmplAstVariable =
@@ -926,7 +947,17 @@ private fun WebSymbol.toTmplAstVariable(block: Angular2HtmlBlock, referenceResol
     valueSpan = null,
     value = null
   ).apply {
-    referenceResolver[this@toTmplAstVariable, block] = this
+    referenceResolver.set(this@toTmplAstVariable, block, this)
+  }
+
+private fun JSVariable.toTmplAstLetDeclaration(referenceResolver: ReferenceResolver): TmplAstLetDeclaration =
+  TmplAstLetDeclaration(
+    name = name!!,
+    nameSpan = nameIdentifier?.textRange,
+    value = initializer,
+    sourceSpan = textRange
+  ).apply {
+    referenceResolver.set(this@toTmplAstLetDeclaration, this)
   }
 
 private fun buildContextVariables(forOfBlock: Angular2HtmlBlock, referenceResolver: ReferenceResolver): Map<String, TmplAstVariable> {

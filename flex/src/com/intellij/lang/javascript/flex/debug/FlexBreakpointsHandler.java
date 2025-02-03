@@ -1,8 +1,10 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.debug;
 
 import com.intellij.javascript.flex.resolve.ActionScriptClassResolver;
 import com.intellij.lang.javascript.flex.FlexUtils;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
@@ -17,6 +19,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiCompiledFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.util.concurrency.AppExecutorUtil;
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread;
 import com.intellij.xdebugger.XSourcePosition;
 import com.intellij.xdebugger.breakpoints.XBreakpointHandler;
 import com.intellij.xdebugger.breakpoints.XBreakpointProperties;
@@ -107,15 +111,20 @@ public final class FlexBreakpointsHandler {
     }
 
     @Override
-    public void registerBreakpoint(@NotNull final XLineBreakpoint<XBreakpointProperties> breakpoint) {
+    public void registerBreakpoint(final @NotNull XLineBreakpoint<XBreakpointProperties> breakpoint) {
       final XSourcePosition position = breakpoint.getSourcePosition();
       if (position != null) {
-        if (isValidSourceBreakpoint(position)) {
-          myDebugProcess.sendCommand(new InsertBreakpointCommand(breakpoint));
-        }
+        ReadAction.nonBlocking(() -> isValidSourceBreakpoint(position))
+          .finishOnUiThread(ModalityState.nonModal(), valid -> {
+            if (valid) {
+              myDebugProcess.sendCommand(new InsertBreakpointCommand(breakpoint));
+            }
+          })
+          .submit(AppExecutorUtil.getAppExecutorService());
       }
     }
 
+    @RequiresBackgroundThread
     private boolean isValidSourceBreakpoint(XSourcePosition position) {
       final Project project = myDebugProcess.getSession().getProject();
       final ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
@@ -170,17 +179,23 @@ public final class FlexBreakpointsHandler {
     }
 
     @Override
-    public void unregisterBreakpoint(@NotNull final XLineBreakpoint<XBreakpointProperties> breakpoint, final boolean temporary) {
+    public void unregisterBreakpoint(final @NotNull XLineBreakpoint<XBreakpointProperties> breakpoint, final boolean temporary) {
       final XSourcePosition position = breakpoint.getSourcePosition();
-      if (position != null && isValidSourceBreakpoint(position)) {
-        myDebugProcess.sendCommand(new RemoveBreakpointCommand(breakpoint));
+      if (position != null) {
+        ReadAction.nonBlocking(() -> isValidSourceBreakpoint(position))
+          .finishOnUiThread(ModalityState.nonModal(), valid -> {
+            if (valid) {
+              myDebugProcess.sendCommand(new RemoveBreakpointCommand(breakpoint));
+            }
+          })
+          .submit(AppExecutorUtil.getAppExecutorService());
       }
     }
   }
 
   private class InsertBreakpointCommand extends DebuggerCommand {
     private @Nullable XLineBreakpoint<XBreakpointProperties> myBreakpoint; // null if this is breakpoint for 'Run To Cursor' action
-    private @NotNull final XSourcePosition mySourcePosition;
+    private final @NotNull XSourcePosition mySourcePosition;
 
     InsertBreakpointCommand(@NotNull XSourcePosition sourcePosition) {
       super(buildInsertBreakpointCommandText(sourcePosition), CommandOutputProcessingType.SPECIAL_PROCESSING);

@@ -1,5 +1,6 @@
 package org.angular2.lang.html.lexer;
 
+import com.intellij.lang.javascript.JSTokenTypes;
 import com.intellij.lexer.FlexLexer;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
@@ -7,7 +8,9 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.xml.XmlTokenType;
 import org.angular2.codeInsight.blocks.Angular2HtmlBlockUtils;
 import org.angular2.lang.expr.parser.Angular2EmbeddedExprTokenType;
+import org.angular2.lang.html.Angular2TemplateSyntax;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 %%
 
 %unicode
@@ -15,20 +18,22 @@ import org.jetbrains.annotations.Nullable;
 %{
   private boolean tokenizeExpansionForms;
   private boolean enableBlockSyntax;
+  private boolean enableLetSyntax;
 
   private String interpolationStart;
   private String interpolationEnd;
 
   public int expansionFormNestingLevel;
   public int interpolationStartPos;
+  private boolean inInterpolationComment;
+  private Character interpolationQuote;
 
   public String blockName;
   public int parameterIndex;
   public int parameterStart;
   public int blockParenLevel;
 
-  public _Angular2HtmlLexer(boolean tokenizeExpansionForms,
-                            boolean enableBlockSyntax,
+  public _Angular2HtmlLexer(@NotNull Angular2TemplateSyntax templateSyntax,
                             @Nullable Pair<String, String> interpolationConfig) {
     this(null);
     if (interpolationConfig == null) {
@@ -38,8 +43,9 @@ import org.jetbrains.annotations.Nullable;
       interpolationStart = interpolationConfig.first;
       interpolationEnd = interpolationConfig.second;
     }
-    this.tokenizeExpansionForms = tokenizeExpansionForms;
-    this.enableBlockSyntax = enableBlockSyntax;
+    this.tokenizeExpansionForms = templateSyntax.getTokenizeExpansionForms();
+    this.enableBlockSyntax = templateSyntax.getEnableBlockSyntax();
+    this.enableLetSyntax = templateSyntax.getEnableLetSyntax();
   }
 
   private boolean tryConsumeInterpolationBoundary(String boundary) {
@@ -83,6 +89,47 @@ import org.jetbrains.annotations.Nullable;
     }
   }
 
+  private void processInterpolationEntity() {
+    CharSequence entity = yytext();
+    char ch;
+    if (StringUtil.equals(entity, "&quot;") || StringUtil.equals(entity, "&#34;") || StringUtil.equals(entity, "&#x22;")) {
+      ch = '\"';
+    } else if (StringUtil.equals(entity, "&apos;") || StringUtil.equals(entity, "&#39;") || StringUtil.equals(entity, "&#x27;")) {
+      ch = '\'';
+    } else {
+      return;
+    }
+    processQuoteWithinInterpolation(ch);
+  }
+
+  private boolean processInterpolationChar(int nextStateIfEnd) {
+    if (interpolationQuote == null && inBuffer(interpolationEnd, 0)) {
+      yybegin(nextStateIfEnd);
+      yypushback(1);
+      return true;
+    }
+    if (interpolationStartPos <= 0) {
+      interpolationStartPos = zzStartRead;
+      inInterpolationComment = false;
+    }
+    if (inInterpolationComment) return false;
+
+    processQuoteWithinInterpolation(zzBuffer.charAt(zzMarkedPos - 1));
+    return false;
+  }
+
+  private void processQuoteWithinInterpolation(char ch) {
+    if (interpolationQuote != null) {
+      if (interpolationQuote == ch) {
+        interpolationQuote = null;
+      }
+    } else {
+      if (ch == '\"' || ch == '\'' || ch =='`') {
+        interpolationQuote = ch;
+      }
+    }
+  }
+
   private boolean isWithinInterpolation() {
     return zzLexicalState == INTERPOLATION
       || zzLexicalState == INTERPOLATION_DQ
@@ -95,6 +142,22 @@ import org.jetbrains.annotations.Nullable;
 
   public void setExpansionFormNestingLevel(int level) {
     expansionFormNestingLevel = level;
+  }
+
+  private void consumeLetString() {
+    char quote = zzBuffer.charAt(zzMarkedPos - 1);
+    if (quote != '\'' && quote != '"') throw new IllegalStateException("Wrong quote style: " + quote);
+    while (zzMarkedPos < zzEndRead) {
+      char ch = zzBuffer.charAt(zzMarkedPos);
+      if (ch == '\\' && zzMarkedPos + 1 < zzEndRead) {
+        zzMarkedPos += 2;
+      } else if (ch == quote){
+        zzMarkedPos++;
+        break;
+      } else {
+        zzMarkedPos++;
+      }
+    }
   }
 
 %}
@@ -138,6 +201,12 @@ import org.jetbrains.annotations.Nullable;
 %state BLOCK_PARAMETER_END
 %state BLOCK_PARAMETERS_END
 %state BLOCK_START
+
+%state LET_WHITESPACE
+%state LET_NAME
+%state LET_EQ
+%state LET_VALUE
+%state LET_VALUE_END
 
 ALPHA=[:letter:]
 DIGIT=[0-9]
@@ -287,14 +356,9 @@ CONDITIONAL_COMMENT_CONDITION=({ALPHA})({ALPHA}|{WHITE_SPACE_CHARS}|{DIGIT}|"."|
   yybegin(UNTERMINATED_INTERPOLATION_SQ);
 }
 
-<INTERPOLATION_DQ, INTERPOLATION_SQ>   [^] {
-  if (inBuffer(interpolationEnd, 0)) {
-    yybegin(yystate() == INTERPOLATION_DQ ? INTERPOLATION_END_DQ : INTERPOLATION_END_SQ);
-    yypushback(1);
+<INTERPOLATION_DQ, INTERPOLATION_SQ> [^] {
+  if (processInterpolationChar(yystate() == INTERPOLATION_DQ ? INTERPOLATION_END_DQ : INTERPOLATION_END_SQ)) {
     return Angular2EmbeddedExprTokenType.INTERPOLATION_EXPR;
-  }
-  if (interpolationStartPos <= 0) {
-    interpolationStartPos = zzStartRead;
   }
 }
 
@@ -330,17 +394,12 @@ CONDITIONAL_COMMENT_CONDITION=({ALPHA})({ALPHA}|{WHITE_SPACE_CHARS}|{DIGIT}|"."|
 "&nbsp;" |
 "&amp;" |
 "&#"{DIGIT}+";" |
-"&#"(x|X)({DIGIT}|[a-fA-F])+";" { if (!isWithinInterpolation()) return XmlTokenType.XML_CHAR_ENTITY_REF; }
-"&"{TAG_NAME}";" { if (!isWithinInterpolation()) return XmlTokenType.XML_ENTITY_REF_TOKEN; }
+"&#"(x|X)({DIGIT}|[a-fA-F])+";" { if (!isWithinInterpolation()) return XmlTokenType.XML_CHAR_ENTITY_REF; else processInterpolationEntity(); }
+"&"{TAG_NAME}";" { if (!isWithinInterpolation()) return XmlTokenType.XML_ENTITY_REF_TOKEN; else processInterpolationEntity(); }
 
 <INTERPOLATION> [^] {
-  if (inBuffer(interpolationEnd, 0)) {
-    yybegin(INTERPOLATION_END);
-    yypushback(1);
+  if (processInterpolationChar(INTERPOLATION_END)) {
     return Angular2EmbeddedExprTokenType.INTERPOLATION_EXPR;
-  }
-  if (interpolationStartPos <= 0) {
-    interpolationStartPos = zzStartRead;
   }
 }
 <INTERPOLATION_END> [^] {
@@ -350,10 +409,21 @@ CONDITIONAL_COMMENT_CONDITION=({ALPHA})({ALPHA}|{WHITE_SPACE_CHARS}|{DIGIT}|"."|
   }
   return XmlTokenType.XML_BAD_CHARACTER;
 }
+<INTERPOLATION, INTERPOLATION_SQ, INTERPOLATION_DQ> \\[^] {
+  // consume escaped char
+}
+<INTERPOLATION, INTERPOLATION_SQ, INTERPOLATION_DQ> \/\/ {
+  // comment start
+  inInterpolationComment = true;
+}
 <UNTERMINATED_INTERPOLATION> ([^<&\$# \n\r\t\f]|(\\#)) { return XmlTokenType.XML_DATA_CHARACTERS; }
 
 <YYINITIAL> "@"[a-zA-Z0-9_] {
-  if (enableBlockSyntax) {
+  if (enableLetSyntax && inBuffer("let", 0)) {
+    zzMarkedPos += 2;
+    yybegin(LET_WHITESPACE);
+    return Angular2HtmlTokenTypes.BLOCK_NAME;
+  } else if (enableBlockSyntax) {
     yypushback(2);
     yybegin(BLOCK_NAME);
   } else {
@@ -446,9 +516,65 @@ CONDITIONAL_COMMENT_CONDITION=({ALPHA})({ALPHA}|{WHITE_SPACE_CHARS}|{DIGIT}|"."|
 }
 <BLOCK_PARAMETERS_END> {
   ")" {
-        yybegin(BLOCK_START);
-        return Angular2HtmlTokenTypes.BLOCK_PARAMETERS_END;
-    }
+      yybegin(BLOCK_START);
+      return Angular2HtmlTokenTypes.BLOCK_PARAMETERS_END;
+  }
+}
+<LET_WHITESPACE> {
+  {WHITE_SPACE_CHARS} {
+    yybegin(LET_NAME);
+    return XmlTokenType.XML_WHITE_SPACE;
+  }
+  [^] {
+    yybegin(YYINITIAL);
+    yypushback(1);
+  }
+}
+<LET_NAME> {
+  [a-zA-Z$_][a-zA-Z$_0-9]* {
+    yybegin(LET_EQ);
+  }
+  [^] {
+    yybegin(YYINITIAL);
+    yypushback(1);
+  }
+}
+<LET_EQ> {
+  [\x09-\x20\xA0]* "=" { // tab-space, nbsp
+    yybegin(LET_VALUE);
+  }
+  [^] {
+    yybegin(YYINITIAL);
+    yypushback(1);
+    return Angular2EmbeddedExprTokenType.createBlockParameter("let", 0);
+  }
+}
+<LET_VALUE> {
+  [[^;'\"]\R]* {
+    // consume
+  }
+  ['\"] {
+    consumeLetString();
+  }
+  ";" {
+    yybegin(LET_VALUE_END);
+    yypushback(1);
+    return Angular2EmbeddedExprTokenType.createBlockParameter("let", 0);
+  }
+  <<EOF>> {
+    yybegin(YYINITIAL);
+    return Angular2EmbeddedExprTokenType.createBlockParameter("let", 0);
+  }
+}
+<LET_VALUE_END> {
+  ";" {
+    yybegin(YYINITIAL);
+    return Angular2HtmlTokenTypes.BLOCK_SEMICOLON;
+  }
+  [^] {
+    yybegin(YYINITIAL);
+    yypushback(1);
+  }
 }
 
 <YYINITIAL> ([^<&\$# \n\r\t\f]|(\\#)) {

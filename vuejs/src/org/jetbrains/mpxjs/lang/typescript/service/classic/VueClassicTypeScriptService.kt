@@ -18,7 +18,7 @@ import com.intellij.lang.typescript.compiler.languageService.protocol.commands.C
 import com.intellij.lang.typescript.compiler.languageService.protocol.commands.ConfigureRequestArguments
 import com.intellij.lang.typescript.compiler.languageService.protocol.commands.FileExtensionInfo
 import com.intellij.lang.typescript.tsconfig.TypeScriptConfigService
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
@@ -34,12 +34,13 @@ import org.jetbrains.mpxjs.index.findModule
 import org.jetbrains.mpxjs.lang.expr.psi.VueJSEmbeddedExpressionContent
 import org.jetbrains.mpxjs.lang.html.isVueFile
 import org.jetbrains.mpxjs.lang.typescript.service.isVueClassicTypeScriptServiceEnabled
+import org.jetbrains.mpxjs.lang.typescript.service.lsp.VueLspTypeScriptService
 import org.jetbrains.mpxjs.options.VueConfigurable
 import java.util.function.Consumer
 
 /**
  * Original [TypeScriptService] implementation for Vue.
- * Superseded by integration with [Vue Language Tools (Volar)][VolarTypeScriptService] through LSP.
+ * Superseded by integration with [Vue Language Tools (ex-Volar)][VueLspTypeScriptService] through LSP.
  *
  * Not used anymore by default but can be toggled in Settings for people that have problems with Vue LS, particularly some Vue 2.x users;
  * therefore, it's not reasonable to delete it.
@@ -68,17 +69,11 @@ class VueClassicTypeScriptService(project: Project) : TypeScriptServerServiceImp
     return VueTypeScriptServiceProtocol(myProject, mySettings, readyConsumer, createEventConsumer(), tsServicePath)
   }
 
-  override fun getInitialOpenCommands(): Map<JSLanguageServiceSimpleCommand, Consumer<JSLanguageServiceObject>> {
-    //commands
-    val initialCommands = super.getInitialOpenCommands()
-    val result: MutableMap<JSLanguageServiceSimpleCommand, Consumer<JSLanguageServiceObject>> = linkedMapOf()
-    addConfigureCommand(result)
-
-    result.putAll(initialCommands)
-    return result
+  override fun getInitialOpenCommands(): List<JSLanguageServiceSimpleCommand> {
+    return listOf(createConfigureCommand()) + super.getInitialOpenCommands()
   }
 
-  private fun addConfigureCommand(result: MutableMap<JSLanguageServiceSimpleCommand, Consumer<JSLanguageServiceObject>>) {
+  private fun createConfigureCommand(): JSLanguageServiceSimpleCommand {
     val arguments = ConfigureRequestArguments("IntelliJ")
     val fileExtensionInfo = FileExtensionInfo()
     fileExtensionInfo.extension = VUE_FILE_EXTENSION
@@ -91,22 +86,22 @@ class VueClassicTypeScriptService(project: Project) : TypeScriptServerServiceImp
     fileExtensionInfo.isMixedContent = false
     arguments.extraFileExtensions = arrayOf(fileExtensionInfo)
 
-    result[ConfigureRequest(arguments)] = Consumer {}
+    return ConfigureRequest(arguments)
   }
 
-  override fun postprocessErrors(file: PsiFile, errors: List<JSAnnotationError>): List<JSAnnotationError> {
-    if (file.virtualFile?.isVueFile == true) {
-      return ReadAction.compute<List<JSAnnotationError>, Throwable> {
-        val document = PsiDocumentManager.getInstance(file.project).getDocument(file) ?: return@compute emptyList()
+  override suspend fun postprocessErrors(file: PsiFile, errors: List<JSAnnotationError>): List<JSAnnotationError> {
+    return if (file.virtualFile?.isVueFile == true)
+      readAction {
+        val document = PsiDocumentManager.getInstance(file.project).getDocument(file) ?: return@readAction emptyList()
         val regularModuleRangeFilter = getRangeFilter(file, false, document)
         val scriptModuleRangeFilter = getRangeFilter(file, true, document)
-        return@compute errors.filter {
+        return@readAction errors.filter {
           it is JSLanguageServiceAnnotationResult && (
             regularModuleRangeFilter?.invoke(it) == true || (scriptModuleRangeFilter?.invoke(it) == true && !skipScriptSetupError(it)))
         }
       }
-    }
-    return super.postprocessErrors(file, errors)
+    else
+      super.postprocessErrors(file, errors)
   }
 
   /**

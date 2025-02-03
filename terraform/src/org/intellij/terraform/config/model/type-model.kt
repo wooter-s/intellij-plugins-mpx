@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.config.model
 
+import com.intellij.openapi.fileTypes.FileType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
@@ -11,6 +12,7 @@ import org.intellij.terraform.config.Constants.HCL_PROVIDER_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_PROVISIONER_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_RESOURCE_IDENTIFIER
 import org.intellij.terraform.config.Constants.OFFICIAL_PROVIDERS_NAMESPACE
+import org.intellij.terraform.config.Constants.REGISTRY_DOMAIN
 
 // Model for element types
 
@@ -290,13 +292,14 @@ fun Type.isConvertibleTo(other: Type): Boolean {
   return false
 }
 
-open class BaseModelType(val description: String? = null,
-                         val description_kind: String? = null,
-                         val optional: Boolean = false,
-                         val required: Boolean = false,
-                         val computed: Boolean = false,
-                         val deprecated: String? = null,
-                         val conflictsWith: List<String>? = null
+open class BaseModelType(
+  val description: String? = null,
+  val description_kind: String? = null,
+  val optional: Boolean = false,
+  val required: Boolean = false,
+  val computed: Boolean = false,
+  val deprecated: String? = null,
+  val conflictsWith: List<String>? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -332,16 +335,17 @@ open class ReferenceHint(vararg val hint: String) : Hint
 open class SimpleValueHint(vararg hint: String) : SimpleHint(*hint)
 //endregion hints
 
-open class PropertyType(override val name: String, val type: Type,
-                        val hint: Hint? = null,
-                        val injectionAllowed: Boolean = true,
-                        description: String? = null,
-                        description_kind: String? = null,
-                        optional: Boolean = true, required: Boolean = false, computed: Boolean = false,
-                        val sensitive: Boolean = false,
-                        deprecated: String? = null,
-                        conflictsWith: List<String>? = null,
-                        val has_default: Boolean = false
+open class PropertyType(
+  override val name: String, val type: Type,
+  val hint: Hint? = null,
+  val injectionAllowed: Boolean = true,
+  description: String? = null,
+  description_kind: String? = null,
+  optional: Boolean = true, required: Boolean = false, computed: Boolean = false,
+  val sensitive: Boolean = false,
+  deprecated: String? = null,
+  conflictsWith: List<String>? = null,
+  val has_default: Boolean = false,
 ) : BaseModelType(description = description, description_kind = description_kind,
                   optional = optional && !required, required = required, computed = computed,
                   deprecated = deprecated, conflictsWith = conflictsWith), PropertyOrBlockType {
@@ -402,14 +406,15 @@ enum class NestingType {
 
 data class NestingInfo(val type: NestingType, val mix: Int?, val max: Int?)
 
-open class BlockType(val literal: String, val args: Int = 0,
-                     description: String? = null,
-                     description_kind: String? = null,
-                     optional: Boolean = true, required: Boolean = false, computed: Boolean = false,
-                     deprecated: String? = null,
-                     conflictsWith: List<String>? = null,
-                     val nesting: NestingInfo? = null,
-                     val properties: Map<String, PropertyOrBlockType> = emptyMap()
+open class BlockType(
+  val literal: String, val args: Int = 0,
+  description: String? = null,
+  description_kind: String? = null,
+  optional: Boolean = true, required: Boolean = false, computed: Boolean = false,
+  deprecated: String? = null,
+  conflictsWith: List<String>? = null,
+  val nesting: NestingInfo? = null,
+  val properties: Map<String, PropertyOrBlockType> = emptyMap(),
 ) : BaseModelType(description = description, description_kind = description_kind,
                   optional = optional && !required, required = required, computed = computed,
                   deprecated = deprecated, conflictsWith = conflictsWith), PropertyOrBlockType, ObjectType {
@@ -484,6 +489,8 @@ interface PropertyOrBlockType {
 
   val configurable: Boolean
     get() = optional || required
+
+  fun canBeUsedIn(fileType: FileType): Boolean = true
 }
 
 object Types {
@@ -509,14 +516,31 @@ object Types {
   val Expression: Type = TypeImpl("expression")
 }
 
-interface ResourceOrDataSourceType {
+interface NamedType {
+  val literal: String
   val type: String
+}
+
+interface ResourceOrDataSourceType : NamedType {
   val provider: ProviderType
 }
 
-class ResourceType(override val type: String,
-                   override val provider: ProviderType,
-                   properties: List<PropertyOrBlockType>) : BlockType(HCL_RESOURCE_IDENTIFIER, 2, properties = withDefaults(properties, TypeModel.AbstractResource)), ResourceOrDataSourceType {
+class ResourceType(
+  override val type: String,
+  override val provider: ProviderType,
+  properties: List<PropertyOrBlockType>,
+  blockType: BlockType? = null,
+) : BlockType(literal = HCL_RESOURCE_IDENTIFIER,
+              args = 2,
+              description = blockType?.description,
+              description_kind = blockType?.description_kind,
+              optional = blockType?.optional == true,
+              required = blockType?.required == true,
+              computed = blockType?.computed == true,
+              deprecated = blockType?.deprecated,
+              conflictsWith = blockType?.conflictsWith,
+              nesting = blockType?.nesting,
+              properties = withDefaults(properties, TypeModel.AbstractResource.properties)), ResourceOrDataSourceType {
   override fun toString(): String {
     return "ResourceType (type='$type', provider='${provider.presentableText}')"
   }
@@ -525,9 +549,23 @@ class ResourceType(override val type: String,
     get() = "$literal ($type)"
 }
 
-class DataSourceType(override val type: String,
-                     override val provider: ProviderType,
-                     properties: List<PropertyOrBlockType>) : BlockType(HCL_DATASOURCE_IDENTIFIER, 2, properties = withDefaults(properties, TypeModel.AbstractDataSource)), ResourceOrDataSourceType {
+class DataSourceType(
+  override val type: String,
+  override val provider: ProviderType,
+  properties: List<PropertyOrBlockType>,
+  blockType: BlockType? = null,
+) :
+  BlockType(literal = HCL_DATASOURCE_IDENTIFIER,
+            args = 2,
+            description = blockType?.description,
+            description_kind = blockType?.description_kind,
+            optional = blockType?.optional == true,
+            required = blockType?.required == true,
+            computed = blockType?.computed == true,
+            deprecated = blockType?.deprecated,
+            conflictsWith = blockType?.conflictsWith,
+            nesting = blockType?.nesting,
+            properties = withDefaults(properties, TypeModel.AbstractDataSource.properties)), ResourceOrDataSourceType {
   override fun toString(): String {
     return "DataSourceType (type='$type', provider='${provider.presentableText}')"
   }
@@ -536,13 +574,24 @@ class DataSourceType(override val type: String,
     get() = "$literal ($type)"
 }
 
-class ProviderType(val type: String,
-                   properties: List<PropertyOrBlockType> = emptyList<PropertyOrBlockType>(),
-                   val namespace: String = "",
-                   tier: ProviderTier = ProviderTier.TIER_NONE,
-                   val version: String = ""
-) : BlockType(HCL_PROVIDER_IDENTIFIER, 1, properties = withDefaults(properties, TypeModel.AbstractProvider)) {
-
+class ProviderType(
+  override val type: String,
+  properties: List<PropertyOrBlockType> = emptyList<PropertyOrBlockType>(),
+  val namespace: String = "",
+  tier: ProviderTier = ProviderTier.TIER_NONE,
+  val version: String = "",
+  blockType: BlockType? = null,
+) : BlockType(literal = HCL_PROVIDER_IDENTIFIER,
+              args = 1,
+              description = blockType?.description,
+              description_kind = blockType?.description_kind,
+              optional = blockType?.optional == true,
+              required = blockType?.required == true,
+              computed = blockType?.computed == true,
+              deprecated = blockType?.deprecated,
+              conflictsWith = blockType?.conflictsWith,
+              nesting = blockType?.nesting,
+              properties = withDefaults(properties, TypeModel.AbstractProvider.properties)), NamedType {
   val fullName: String = "$namespace/$type"
   val tier: ProviderTier = if (tier == ProviderTier.TIER_NONE && OFFICIAL_PROVIDERS_NAMESPACE.contains(namespace)) ProviderTier.TIER_OFFICIAL else tier
 
@@ -552,9 +601,23 @@ class ProviderType(val type: String,
 
   override val presentableText: String
     get() = "$literal ($fullName: $version) "
+
+  companion object {
+    internal fun parseCoordinates(coordinates: String): ProviderCoordinates {
+      val stringList = coordinates.split("/")
+      return when (stringList.size) {
+        3 -> ProviderCoordinates(stringList[0], stringList[1], stringList[2])
+        2 -> ProviderCoordinates(REGISTRY_DOMAIN, stringList[0], stringList[1])
+        1 -> ProviderCoordinates("", stringList[0], "hashicorp")
+        else -> ProviderCoordinates("", "", "")
+      }
+    }
+  }
+
+  internal data class ProviderCoordinates(val registryUrl: String, val namespace: String, val name: String)
 }
 
-class ProvisionerType(val type: String, properties: List<PropertyOrBlockType>) : BlockType(HCL_PROVISIONER_IDENTIFIER, 1, properties = withDefaults(properties, TypeModel.AbstractResourceProvisioner)) {
+class ProvisionerType(val type: String, properties: List<PropertyOrBlockType>) : BlockType(HCL_PROVISIONER_IDENTIFIER, 1, properties = withDefaults(properties, TypeModel.AbstractResourceProvisioner.properties)) {
   override fun toString(): String {
     return "ProvisionerType (type='$type')"
   }
@@ -563,7 +626,7 @@ class ProvisionerType(val type: String, properties: List<PropertyOrBlockType>) :
     get() = "$literal ($type)"
 }
 
-class BackendType(val type: String, properties: List<PropertyOrBlockType>) : BlockType(HCL_BACKEND_IDENTIFIER, 1, properties = withDefaults(properties, TypeModel.AbstractBackend)) {
+class BackendType(val type: String, properties: List<PropertyOrBlockType>) : BlockType(HCL_BACKEND_IDENTIFIER, 1, properties = withDefaults(properties, TypeModel.AbstractBackend.properties)) {
   override fun toString(): String {
     return "BackendType (type='$type')"
   }
@@ -572,7 +635,7 @@ class BackendType(val type: String, properties: List<PropertyOrBlockType>) : Blo
     get() = "$literal ($type)"
 }
 
-class ModuleType(override val name: String, properties: List<PropertyOrBlockType>) : BlockType(HCL_MODULE_IDENTIFIER, 1, properties = withDefaults(properties, TypeModel.Module)) {
+class ModuleType(override val name: String, properties: List<PropertyOrBlockType>) : BlockType(HCL_MODULE_IDENTIFIER, 1, properties = withDefaults(properties, TypeModel.Module.properties)) {
   override fun toString(): String {
     return "ModuleType (name='$name')"
   }
@@ -581,15 +644,24 @@ class ModuleType(override val name: String, properties: List<PropertyOrBlockType
     get() = "$literal ($name)"
 }
 
-private fun withDefaults(properties: List<PropertyOrBlockType>, default: BlockType): Map<String, PropertyOrBlockType> {
-  if (properties.isEmpty()) return default.properties
-  val result = HashMap<String, PropertyOrBlockType>(default.properties.size + properties.size)
-  result.putAll(default.properties)
+internal fun withDefaults(properties: List<PropertyOrBlockType>, default: Map<String, PropertyOrBlockType>): Map<String, PropertyOrBlockType> {
+  if (properties.isEmpty()) return default
+  val result = HashMap<String, PropertyOrBlockType>(default.size + properties.size)
+  result.putAll(default)
   result.putAll(properties.toMap())
   return result
 }
 
 internal fun getContainingFile(psiElement: PsiElement): PsiFile? {
   val containingFile = psiElement.containingFile
-  return containingFile.getUserData<PsiFile>(PsiFileFactory.ORIGINAL_FILE) ?: containingFile?.originalFile
+  return containingFile?.getUserData<PsiFile>(PsiFileFactory.ORIGINAL_FILE) ?: containingFile?.originalFile
+}
+
+internal fun getProviderForBlockType(blockType: BlockType?): ProviderType? {
+  val provider = when (blockType) {
+    is ResourceOrDataSourceType -> blockType.provider
+    is ProviderType -> blockType
+    else -> null
+  }
+  return provider
 }

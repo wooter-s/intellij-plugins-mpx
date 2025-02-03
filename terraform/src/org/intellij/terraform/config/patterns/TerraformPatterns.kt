@@ -19,6 +19,7 @@ import org.intellij.terraform.config.Constants.HCL_PROVIDER_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_PROVISIONER_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_RESOURCE_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_TERRAFORM_IDENTIFIER
+import org.intellij.terraform.config.Constants.HCL_TERRAFORM_REQUIRED_PROVIDERS
 import org.intellij.terraform.config.Constants.HCL_VARIABLE_IDENTIFIER
 import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.TerraformLanguage
@@ -110,7 +111,7 @@ object TerraformPatterns {
 
   val RequiredProvidersBlock: PsiElementPattern.Capture<HCLBlock> =
     PlatformPatterns.psiElement(HCLBlock::class.java)
-      .with(createBlockPattern("required_providers"))
+      .with(createBlockPattern(HCL_TERRAFORM_REQUIRED_PROVIDERS))
       .withSuperParent(2, TerraformRootBlock)
 
   val RequiredProvidersData: PsiElementPattern.Capture<HCLProperty> =
@@ -164,8 +165,8 @@ object TerraformPatterns {
       .and(ModuleRootBlock)
       .with(object : PatternCondition<HCLBlock?>("ModuleWithEmptySource") {
         override fun accepts(t: HCLBlock, context: ProcessingContext?): Boolean {
-          val source = t.`object`?.findProperty("source")?.value as? HCLStringLiteral ?: return true
-          return source.value.isBlank()
+          val source = t.`object`?.findProperty("source") ?: return true
+          return source.value?.text?.isEmpty() == true
         }
       })
 
@@ -216,6 +217,10 @@ object TerraformPatterns {
         return t.name == "from"
       }
     })
+
+  val LocalProperty: PsiElementPattern.Capture<HCLProperty> = PlatformPatterns.psiElement(HCLProperty::class.java)
+    .withSuperParent(1, HCLObject::class.java)
+    .withSuperParent(2, LocalsRootBlock)
 
   val DescriptionProperty: PsiElementPattern.Capture<HCLProperty> = propertyWithName("description")
 

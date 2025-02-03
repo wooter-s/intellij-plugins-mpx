@@ -19,13 +19,16 @@ import com.intellij.psi.ResolveResult
 import com.intellij.util.SmartList
 import org.angular2.codeInsight.Angular2ComponentPropertyResolveResult
 import org.angular2.codeInsight.Angular2DeclarationsScope
+import org.angular2.codeInsight.blocks.isLetDeclarationVariable
 import org.angular2.codeInsight.template.Angular2TemplateScopesResolver
 import org.angular2.entities.Angular2EntitiesProvider
 import org.angular2.lang.expr.psi.Angular2PipeReferenceExpression
 
-class Angular2ReferenceExpressionResolver(expression: JSReferenceExpressionImpl,
-                                          ignorePerformanceLimits: Boolean) : TypeScriptReferenceExpressionResolver(expression,
-                                                                                                                    ignorePerformanceLimits) {
+class Angular2ReferenceExpressionResolver(
+  expression: JSReferenceExpressionImpl,
+  ignorePerformanceLimits: Boolean,
+) : TypeScriptReferenceExpressionResolver(expression,
+                                          ignorePerformanceLimits) {
 
   override fun resolve(expression: JSReferenceExpressionImpl, incompleteCode: Boolean): Array<ResolveResult> {
     if (myReferencedName == null) return ResolveResult.EMPTY_ARRAY
@@ -70,7 +73,7 @@ class Angular2ReferenceExpressionResolver(expression: JSReferenceExpressionImpl,
     val results = SmartList<ResolveResult>()
     Angular2TemplateScopesResolver.resolve(myRef) { resolveResult ->
       val element = resolveResult.element as? JSPsiElementBase
-      if (element != null && myReferencedName == element.name) {
+      if (element != null && myReferencedName == element.name && (myRef.qualifier == null || !isLetDeclarationVariable(element))) {
         remapSetterGetterIfNeeded(results, resolveResult, access)
         return@resolve false
       }
@@ -81,9 +84,11 @@ class Angular2ReferenceExpressionResolver(expression: JSReferenceExpressionImpl,
 
   companion object {
 
-    private fun remapSetterGetterIfNeeded(results: MutableList<ResolveResult>,
-                                          resolveResult: ResolveResult,
-                                          access: ReadWriteAccessDetector.Access) {
+    private fun remapSetterGetterIfNeeded(
+      results: MutableList<ResolveResult>,
+      resolveResult: ResolveResult,
+      access: ReadWriteAccessDetector.Access,
+    ) {
       val element = resolveResult.element as JSPsiElementBase?
       if (element !is TypeScriptFunction) {
         results.add(resolveResult)
@@ -110,9 +115,11 @@ class Angular2ReferenceExpressionResolver(expression: JSReferenceExpressionImpl,
     }
 
     @JvmStatic
-    fun findPropertyAccessor(function: TypeScriptFunction,
-                             isSetter: Boolean,
-                             processor: (JSFunction) -> Unit) {
+    fun findPropertyAccessor(
+      function: TypeScriptFunction,
+      isSetter: Boolean,
+      processor: (JSFunction) -> Unit,
+    ) {
       val parent = function.parent as? TypeScriptClass
       val name = function.name
       if (name != null && parent != null) {

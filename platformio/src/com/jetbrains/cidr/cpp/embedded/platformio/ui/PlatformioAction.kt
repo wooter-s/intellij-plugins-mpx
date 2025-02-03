@@ -13,7 +13,7 @@ import javax.swing.Icon
 
 abstract class PlatformioAction(text: () -> @Nls String,
                                 toolTip: () -> @Nls String?,
-                                icon: Icon? = ClionEmbeddedPlatformioIcons.Platformio)
+                                icon: Icon? = ClionEmbeddedPlatformioIcons.LogoPlatformIO)
   : PlatformioActionBase(text, toolTip, icon) {
 
   override fun update(e: AnActionEvent) {
@@ -24,7 +24,7 @@ abstract class PlatformioAction(text: () -> @Nls String,
 class PlatformioMonitorAction : PlatformioAction({ ClionEmbeddedPlatformioBundle.message("task.monitor") }, { "pio device monitor" },
                                                  pioIcon(AllIcons.Nodes.Console)) {
   override fun actionPerformed(e: AnActionEvent) =
-    actionPerformed(e, false, true, false, "device", "monitor")
+    actionPerformedKillAlreadyRunning(e, false, true, false, "device", "monitor")
 }
 
 class PlatformioPkgUpdateAction : PlatformioAction({ ClionEmbeddedPlatformioBundle.message("platformio.update") }, { "pio pkg update" },
@@ -42,7 +42,7 @@ class PlatformioCheckAction : PlatformioAction({ ClionEmbeddedPlatformioBundle.m
 open class PlatformioTargetAction(val target: String,
                                   @Nls text: () -> String,
                                   @Nls toolTip: () -> String?,
-                                  icon: Icon? = ClionEmbeddedPlatformioIcons.Platformio)
+                                  icon: Icon? = ClionEmbeddedPlatformioIcons.LogoPlatformIO)
   : PlatformioAction(text, toolTip, icon) {
 
   override fun displayTextInToolbar(): Boolean = true
@@ -62,10 +62,10 @@ private const val UPLOAD_MONITOR_COMMAND = "pio run -t upload -t monitor"
 object PlatformioUploadMonitorAction : PlatformioTargetAction(target = "upload-monitor",
                                                               text = { ClionEmbeddedPlatformioBundle.message("action.upload.n.monitor") },
                                                               toolTip = { UPLOAD_MONITOR_COMMAND },
-                                                              icon = ClionEmbeddedPlatformioIcons.Platformio) {
+                                                              icon = ClionEmbeddedPlatformioIcons.LogoPlatformIO) {
 
   override fun actionPerformed(e: AnActionEvent) {
-    super.actionPerformed(e, false, true, true, "run", "-t", "upload", "-t", "monitor")
+    super.actionPerformedKillAlreadyRunning(e, false, true, true, "run", "-t", "upload", "-t", "monitor")
   }
 
 }

@@ -1,10 +1,10 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.uml;
 
 import com.intellij.diagram.*;
 import com.intellij.diagram.actions.DiagramCreateNewElementAction;
 import com.intellij.diagram.actions.DiagramCreateNewNodeElementAction;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.ecmal4.XmlBackedJSClassFactory;
@@ -79,7 +79,7 @@ public final class FlashUmlProvider extends DiagramProvider<Object> {
     if (element instanceof JSFile) {
       element = JSPsiImplUtils.findQualifiedElement((JSFile)element);
     }
-    else if (element instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile((PsiFile)element)) {
+    else if (element instanceof XmlFile && FlexSupportLoader.isFlexMxmFile((PsiFile)element)) {
       element = XmlBackedJSClassFactory.getXmlBackedClass((XmlFile)element);
     }
     else if (element instanceof PsiDirectory directory) {
@@ -98,9 +98,8 @@ public final class FlashUmlProvider extends DiagramProvider<Object> {
     return myColorManager;
   }
 
-  @NotNull
   @Override
-  public FlashUmlExtras getExtras() {
+  public @NotNull FlashUmlExtras getExtras() {
     return myExtras;
   }
 

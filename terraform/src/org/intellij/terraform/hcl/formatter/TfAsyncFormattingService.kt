@@ -1,77 +1,75 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.hcl.formatter
 
+import com.intellij.application.options.CodeStyle
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.CapturingProcessAdapter
-import com.intellij.execution.process.OSProcessHandler
-import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.formatting.service.AsyncDocumentFormattingService
 import com.intellij.formatting.service.AsyncFormattingRequest
 import com.intellij.formatting.service.FormattingService
-import com.intellij.notification.NotificationType
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.PsiFile
 import org.intellij.terraform.config.Constants.TF_FMT
-import org.intellij.terraform.config.Constants.isTerraformFmtEnabled
 import org.intellij.terraform.config.TerraformConstants.EXECUTION_NOTIFICATION_GROUP
-import org.intellij.terraform.config.actions.isTerraformExecutable
-import org.intellij.terraform.config.isTerraformFile
+import org.intellij.terraform.config.TerraformFileType
+import org.intellij.terraform.config.actions.isExecutableToolFileConfigured
 import org.intellij.terraform.config.util.TFExecutor
+import org.intellij.terraform.config.util.getApplicableToolType
 import org.intellij.terraform.hcl.HCLBundle
-import org.intellij.terraform.hcl.psi.HCLFile
-import java.nio.charset.StandardCharsets
+import org.intellij.terraform.install.TfToolType
 
-class TfAsyncFormattingService : AsyncDocumentFormattingService() {
+internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
   override fun getName(): String = TF_FMT
 
   override fun getNotificationGroupId(): String = EXECUTION_NOTIFICATION_GROUP.displayId
 
   override fun getFeatures(): Set<FormattingService.Feature> = emptySet()
 
-  override fun canFormat(file: PsiFile): Boolean = file is HCLFile && isTerraformFmtEnabled
+  override fun canFormat(file: PsiFile): Boolean {
+    val settings = CodeStyle.getCustomSettings(file, HclCodeStyleSettings::class.java)
+    return (file.fileType is TerraformFileType || file.name.endsWith(TestsExtension)) && settings.RUN_TF_FMT_ON_REFORMAT
+  }
 
-  override fun createFormattingTask(formattingRequest: AsyncFormattingRequest): FormattingTask? {
-    val context = formattingRequest.context
+  override fun createFormattingTask(request: AsyncFormattingRequest): FormattingTask? {
+    val context = request.context
     val project = context.project
-    if (!isTerraformExecutable(project)) {
-      return null
-    }
-
     val virtualFile = context.virtualFile ?: return null
-    if (!virtualFile.extension.isTerraformFile()) {
-      EXECUTION_NOTIFICATION_GROUP.createNotification(
-        HCLBundle.message("terraform.formatter.error.title"),
-        HCLBundle.message("terraform.formatter.file.extension.error"),
-        NotificationType.ERROR).notify(project)
-
+    val toolType = getApplicableToolType(virtualFile)
+    if (!isExecutableToolFileConfigured(project, toolType)) {
       return null
     }
 
-    val filePath = virtualFile.canonicalPath ?: return null
-    val commandLine = createCommandLine(project, filePath)
-    val handler = OSProcessHandler(commandLine.withCharset(StandardCharsets.UTF_8))
+    val commandLine = createCommandLine(project, toolType)
 
     return object : FormattingTask {
-      override fun run() {
-        handler.addProcessListener(object : CapturingProcessAdapter() {
-          override fun processTerminated(event: ProcessEvent) {
-            val exitCode = event.exitCode
-            if (exitCode == 0) {
-              VfsUtil.markDirtyAndRefresh(true, true, true, virtualFile)
-              formattingRequest.onTextReady(null)
-            }
-            else {
-              formattingRequest.onError(HCLBundle.message("terraform.formatter.error.title"), output.stderr)
-            }
-          }
-        })
+      private var processHandler: CapturingProcessHandler? = null
 
-        handler.startNotify()
+      override fun run() {
+        try {
+          processHandler = CapturingProcessHandler(commandLine)
+
+          val handler = processHandler ?: return
+          handler.processInput.write(request.documentText.toByteArray())
+          handler.processInput.close()
+
+          val output = handler.runProcess()
+          if (output.exitCode == 0) {
+            request.onTextReady(output.stdout)
+          }
+          else {
+            request.onError(HCLBundle.message("terraform.formatter.error.title", toolType.executableName), output.stderr)
+          }
+        }
+        catch (e: Exception) {
+          logger<TfAsyncFormattingService>().warn("Failed to run FormattingTask", e)
+          request.onError(HCLBundle.message("terraform.formatter.error.title", toolType.executableName),
+                          HCLBundle.message("terraform.formatter.error.message", virtualFile.name, toolType.executableName))
+        }
       }
 
       override fun cancel(): Boolean {
-        handler.destroyProcess()
+        processHandler?.destroyProcess()
         return true
       }
 
@@ -79,9 +77,11 @@ class TfAsyncFormattingService : AsyncDocumentFormattingService() {
     }
   }
 
-  private fun createCommandLine(project: Project, filePath: String): GeneralCommandLine =
-    TFExecutor.`in`(project)
-      .withPresentableName(TF_FMT)
-      .withParameters("fmt", filePath)
+  private fun createCommandLine(project: Project, applicableToolType: TfToolType): GeneralCommandLine =
+    TFExecutor.`in`(project, applicableToolType)
+      .withPresentableName(HCLBundle.message("tool.format.display", applicableToolType.displayName))
+      .withParameters("fmt", "-")
       .createCommandLine()
 }
+
+private const val TestsExtension = "tftest.hcl"

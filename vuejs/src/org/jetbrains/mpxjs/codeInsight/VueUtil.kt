@@ -10,11 +10,12 @@ import com.intellij.lang.ecmascript6.resolve.ES6PsiUtil
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.documentation.JSDocumentationUtils
-import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider.withTypeEvaluationLocation
 import com.intellij.lang.javascript.index.JSSymbolUtil
 import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.ecma6.JSComputedPropertyNameOwner
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptAsExpression
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptPropertySignature
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptVariable
 import com.intellij.lang.javascript.psi.impl.JSPsiImplUtils
 import com.intellij.lang.javascript.psi.resolve.JSClassResolver
@@ -76,6 +77,8 @@ const val ATTR_EVENT_SHORTHAND = '@'
 const val ATTR_SLOT_SHORTHAND = '#'
 const val ATTR_ARGUMENT_PREFIX = ':'
 const val ATTR_MODIFIER_PREFIX = '.'
+
+const val FUNCTIONAL_COMPONENT_TYPE = "FunctionalComponent"
 
 const val VITE_PKG = "vite"
 
@@ -206,14 +209,15 @@ fun <T : PsiElement> resolveElementTo(element: PsiElement?, vararg classes: KCla
                 else null
               }
               is JSVariable -> cur.initializerOrStub
+              is TypeScriptPropertySignature -> JSStubBasedPsiTreeUtil.calculateMeaningfulElement(cur).takeIf { it != cur }
               else -> null
             }
-            ?: JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(element, Supplier {
+            ?: withTypeEvaluationLocation(element) {
               // Try extract reference name from type
               JSPsiImplUtils.getInitializerReference(cur)?.let { JSStubBasedPsiTreeUtil.resolveLocally(it, cur) }
               // Most expensive solution through substitution, works with function calls
               ?: getFromType(cur)
-            })
+            }
           )?.let { queue.addLast(it) }
         }
         is PsiPolyVariantReference -> cur.multiResolve(false)
@@ -249,7 +253,10 @@ fun <T : PsiElement> resolveElementTo(element: PsiElement?, vararg classes: KCla
 }
 
 private fun getFromType(cur: PsiElement?): PsiElement? {
-  val jsType = (cur as? JSTypeOwner)?.jsType?.substitute() ?: return null
+  val jsType = (cur as? JSTypeOwner)?.jsType
+                 // Functional components do not have source - save on substitution time
+                 ?.takeIf { it !is JSGenericTypeImpl || it.type.typeText != FUNCTIONAL_COMPONENT_TYPE }
+                 ?.substitute() ?: return null
   val sourceElement = jsType.sourceElement
   return when {
     jsType is JSFunctionType -> sourceElement

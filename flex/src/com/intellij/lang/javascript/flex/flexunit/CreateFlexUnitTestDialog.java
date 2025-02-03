@@ -1,8 +1,8 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.flexunit;
 
 import com.intellij.codeInsight.CodeInsightBundle;
-import com.intellij.ide.projectView.actions.MarkRootActionBase;
+import com.intellij.ide.projectView.actions.MarkRootsManager;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.javascript.flex.resolve.ActionScriptClassResolver;
 import com.intellij.lang.javascript.JavaScriptBundle;
@@ -99,7 +99,7 @@ public class CreateFlexUnitTestDialog extends DialogWrapper {
 
   private static String suggestTestSourceRootPath(final Module module, final VirtualFile file) {
     if (file != null) {
-      final ContentEntry contentEntry = MarkRootActionBase.findContentEntry(ModuleRootManager.getInstance(module), file);
+      final ContentEntry contentEntry = MarkRootsManager.findContentEntry(ModuleRootManager.getInstance(module), file);
       if (contentEntry != null) {
         boolean mavenStyle = false;
         for (VirtualFile srcRoot : contentEntry.getSourceFolderFiles()) {
@@ -208,8 +208,11 @@ public class CreateFlexUnitTestDialog extends DialogWrapper {
     }
   }
 
-  @Nullable
-  private static PsiDirectory createTestSourceFolderAndPackage(final Module module, final String srcRootPath, final String packageName) {
+  public @Nullable JSClass getSuperClass() {
+    return mySuperClass;
+  }
+
+  private static @Nullable PsiDirectory createTestSourceFolderAndPackage(final Module module, final String srcRootPath, final String packageName) {
     final String path = FileUtil.toSystemIndependentName(srcRootPath);
 
     VirtualFile contentRoot = null;
@@ -230,7 +233,7 @@ public class CreateFlexUnitTestDialog extends DialogWrapper {
               VfsUtil.createDirectoryIfMissing(finalContentRoot, path.substring((finalContentRoot.getPath() + "/").length()));
             final VirtualFile folder1 =
               packageName.isEmpty() ? srcRoot : VfsUtil.createDirectoryIfMissing(srcRoot, packageName.replace('.', '/'));
-            final ContentEntry contentEntry = MarkRootActionBase.findContentEntry(model, folder1);
+            final ContentEntry contentEntry = MarkRootsManager.findContentEntry(model, folder1);
             if (contentEntry != null) {
               contentEntry.addSourceFolder(srcRoot, true);
               model.commit();
@@ -255,19 +258,6 @@ public class CreateFlexUnitTestDialog extends DialogWrapper {
     return null;
   }
 
-  @Nullable
-  private static PsiDirectory findExistingTestSourceRoot(final Module module) {
-    PsiDirectory testSourceRoot = null;
-    final ModuleRootManager manager = ModuleRootManager.getInstance(module);
-    for (VirtualFile srcRoot : manager.getSourceRoots(true)) {
-      if (manager.getFileIndex().isInTestSourceContent(srcRoot)) {
-        testSourceRoot = PsiManager.getInstance(module.getProject()).findDirectory(srcRoot);
-        break;
-      }
-    }
-    return testSourceRoot;
-  }
-
   private static GlobalSearchScope getSuperClassScope(final Module module) {
     return GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module);
   }
@@ -288,9 +278,16 @@ public class CreateFlexUnitTestDialog extends DialogWrapper {
     return myTargetDirectory;
   }
 
-  @Nullable
-  public JSClass getSuperClass() {
-    return mySuperClass;
+  private static @Nullable PsiDirectory findExistingTestSourceRoot(final Module module) {
+    PsiDirectory testSourceRoot = null;
+    final ModuleRootManager manager = ModuleRootManager.getInstance(module);
+    for (VirtualFile srcRoot : manager.getSourceRoots(true)) {
+      if (manager.getFileIndex().isInTestSourceContent(srcRoot)) {
+        testSourceRoot = PsiManager.getInstance(module.getProject()).findDirectory(srcRoot);
+        break;
+      }
+    }
+    return testSourceRoot;
   }
 
   public boolean isGenerateSetUp() {

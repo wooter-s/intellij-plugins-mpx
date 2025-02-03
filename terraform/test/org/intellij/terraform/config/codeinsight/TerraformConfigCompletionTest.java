@@ -1,6 +1,8 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.config.codeinsight;
 
+import com.intellij.codeInsight.completion.CompletionType;
+import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.openapi.util.registry.Registry;
 import org.intellij.terraform.config.model.*;
 
@@ -15,12 +17,14 @@ import static org.intellij.terraform.config.CompletionTestCase.Matcher.*;
 @SuppressWarnings({"ArraysAsListWithZeroOrOneArgument", "RedundantThrows"})
 public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
 
-  private static final int ENTRIES_LIST_SIZE = 1000; //x2 to the default registry value
+  private static final int ENTRIES_LIST_SIZE = 900; //almost x2 to the default registry value
+
+  private static final Set<ProviderTier> tiers = Set.of(ProviderTier.TIER_BUILTIN, ProviderTier.TIER_OFFICIAL, ProviderTier.TIER_LOCAL);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    Registry.get("ide.completion.variant.limit").setValue(ENTRIES_LIST_SIZE * 2, getTestRootDisposable());
+    Registry.get("ide.completion.variant.limit").setValue((ENTRIES_LIST_SIZE + 100) * 2, getTestRootDisposable());
   }
 
   @Override
@@ -55,6 +59,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(ResourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     final Predicate<Collection<String>> matcher =
@@ -71,6 +76,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(ResourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     final Predicate<Collection<String>> matcher =
@@ -87,6 +93,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(ResourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     final Predicate<Collection<String>> matcher =
@@ -267,6 +274,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allResources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(ResourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     then(set).contains("template_file", "vault_kv_secret");
@@ -290,6 +298,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(DataSourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     final Predicate<Collection<String>> matcher =
@@ -341,6 +350,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(DataSourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     final Predicate<Collection<String>> matcher =
@@ -357,6 +367,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(DataSourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     final Predicate<Collection<String>> matcher =
@@ -429,6 +440,7 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
     final TreeSet<String> set = StreamSupport.stream(
         Spliterators.spliteratorUnknownSize(TypeModelProvider.Companion.getGlobalModel().allDatasources().iterator(), Spliterator.ORDERED),
         false)
+      .filter(type -> tiers.contains(type.getProvider().getTier()))
       .map(DataSourceType::getType)
       .collect(Collectors.toCollection(TreeSet::new));
     then(set).contains("template_file", "vault_kv_secret");
@@ -796,4 +808,55 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
       """);
     myFixture.testCompletionVariants("main.tf", "aws_instance.example", "aws_instance.example1");
   }
+
+  public void testOfficialResourcesVariants() {
+    myFixture.configureByText("main.tf", """ 
+      resource "aws_ec2_host<caret>"
+      """);
+    LookupElement[] lookupElements = myFixture.complete(CompletionType.BASIC, 1);
+    assertEquals(2, lookupElements.length);
+    Set<String> lookupStrings = Arrays.stream(lookupElements).map(el -> {
+      ResourceType resourceType = (ResourceType)el.getObject();
+      String name = resourceType.getType();
+      String provider = resourceType.getProvider().getFullName();
+      return "%s %s".formatted(name, provider);
+    }).collect(Collectors.toSet());
+    assertEquals(lookupStrings, Set.of("aws_ec2_host hashicorp/aws", "awscc_ec2_host hashicorp/awscc"));
+  }
+
+  public void testAllResourcesVariants() {
+    myFixture.configureByText("main.tf", """ 
+      resource "aws_ec2_host<caret>"
+      """);
+    LookupElement[] lookupElements = myFixture.complete(CompletionType.BASIC, 2);
+    assertEquals(4, lookupElements.length);
+    Set<String> lookupStrings = Arrays.stream(lookupElements).map(el -> {
+      ResourceType resourceType = (ResourceType)el.getObject();
+      String name = resourceType.getType();
+      String provider = resourceType.getProvider().getFullName();
+      return "%s %s".formatted(name, provider);
+    }).collect(Collectors.toSet());
+    assertEquals(lookupStrings, Set.of("aws_ec2_host jandillenkofer/aws","aws_ec2_host hashicorp/aws", "aws_ec2_host msalman899/aws", "awscc_ec2_host hashicorp/awscc"));
+  }
+
+  public void testTerraformBlockCompletion() {
+    myFixture.configureByText("main.tf", """ 
+      terraform {
+        <caret>
+      }
+      """);
+    myFixture.testCompletionVariants("main.tf", "backend", "cloud", "experiments", "required_providers", "required_version");
+  }
+
+  public void testTerraformBlockCompletionBackend() {
+    myFixture.configureByText("main.tf", """ 
+      terraform {
+        backend "<caret>" {}
+      }
+      """);
+    TypeModel model = TypeModelProvider.getGlobalModel();
+    String[] backends = model.getBackends().stream().map(e -> e.getType()).toArray(String[]::new);
+    myFixture.testCompletionVariants("main.tf", backends);
+  }
 }
+

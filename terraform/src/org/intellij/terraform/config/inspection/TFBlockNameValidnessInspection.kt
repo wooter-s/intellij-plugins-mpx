@@ -13,8 +13,7 @@ import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ThrowableRunnable
-import org.intellij.terraform.config.TerraformFileType
-import org.intellij.terraform.config.codeinsight.InsertHandlersUtil
+import org.intellij.terraform.config.codeinsight.TfInsertHandlerService
 import org.intellij.terraform.config.codeinsight.TfModelHelper
 import org.intellij.terraform.config.patterns.TerraformPatterns
 import org.intellij.terraform.config.refactoring.TerraformElementRenameValidator
@@ -22,14 +21,15 @@ import org.intellij.terraform.hcl.HCLBundle
 import org.intellij.terraform.hcl.psi.HCLBlock
 import org.intellij.terraform.hcl.psi.HCLElementVisitor
 import org.intellij.terraform.hcl.psi.HCLStringLiteral
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 
 class TFBlockNameValidnessInspection : LocalInspectionTool() {
-  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
-    val ft = holder.file.fileType
-    if (ft != TerraformFileType) {
-      return PsiElementVisitor.EMPTY_VISITOR
-    }
 
+  override fun isAvailableForFile(file: PsiFile): Boolean {
+    return isTerraformCompatiblePsiFile(file)
+  }
+
+  override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
     return MyEV(holder)
   }
 
@@ -97,7 +97,7 @@ class TFBlockNameValidnessInspection : LocalInspectionTool() {
       WriteAction.run(ThrowableRunnable {
         val offset = nameElements.last().let { it.textOffset + it.textLength }
         editor.caretModel.moveToOffset(offset)
-        InsertHandlersUtil.addArguments(required, editor)
+        TfInsertHandlerService.addArguments(required, editor)
         editor.caretModel.moveToOffset(offset + required * 3 - 1)
       })
       CodeCompletionHandlerBase.createHandler(CompletionType.BASIC).invokeCompletion(project, editor)

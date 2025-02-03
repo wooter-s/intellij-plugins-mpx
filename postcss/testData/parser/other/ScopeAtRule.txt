@@ -6,8 +6,6 @@ PostCSS File:ScopeAtRule.pcss
         PsiWhiteSpace('\n')
         PsiElement(CSS_SCOPE)
           PsiElement(CSS_SCOPE_SYM)('@scope')
-          PsiErrorElement:'(' expected
-            <empty list>
           PsiWhiteSpace(' ')
           PsiElement(CSS_DECLARATION_BLOCK)
             PsiElement(CSS_LBRACE)('{')
@@ -40,8 +38,7 @@ PostCSS File:ScopeAtRule.pcss
           PsiElement(CSS_SCOPE_SYM)('@scope')
           PsiErrorElement:'(' expected
             <empty list>
-        PsiWhiteSpace(' ')
-        PsiElement(CSS_RULESET)
+          PsiWhiteSpace(' ')
           PsiElement(CSS_SELECTOR_LIST)
             PsiElement(CSS_SELECTOR)
               PsiElement(CSS_SIMPLE_SELECTOR)

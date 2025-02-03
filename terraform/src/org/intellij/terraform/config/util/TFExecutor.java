@@ -8,18 +8,24 @@ import com.intellij.execution.configurations.PtyCommandLine;
 import com.intellij.execution.process.*;
 import com.intellij.execution.wsl.WSLCommandLineOptions;
 import com.intellij.execution.wsl.WslPath;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ObjectUtils;
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread;
 import org.intellij.terraform.config.TerraformConstants;
 import org.intellij.terraform.hcl.HCLBundle;
-import org.intellij.terraform.runtime.TerraformPathDetector;
+import org.intellij.terraform.install.TfToolType;
+import org.intellij.terraform.runtime.TerraformToolConfigurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,14 +50,16 @@ public final class TFExecutor {
   private @Nullable @Nls String myPresentableName;
   private OSProcessHandler myProcessHandler;
   private final Collection<ProcessListener> myProcessListeners = new ArrayList<>();
+  private final TfToolType myToolType;
 
-  private TFExecutor(@NotNull Project project) {
+  private TFExecutor(@NotNull Project project, TfToolType toolType) {
     myProject = project;
-    myExePath = TerraformPathDetector.Companion.getInstance(myProject).getActualTerraformPath();
+    myToolType = toolType;
+    myExePath = toolType.getToolSettings(project).getToolPath();
   }
 
-  public static @NotNull TFExecutor in(@NotNull Project project) {
-    return new TFExecutor(project);
+  public static @NotNull TFExecutor in(@NotNull Project project, TfToolType toolType) {
+    return new TFExecutor(project, toolType);
   }
 
   public @NotNull TFExecutor withPresentableName(@Nullable @Nls String presentableName) {
@@ -116,12 +124,16 @@ public final class TFExecutor {
     return this;
   }
 
+  public @Nullable String getWorkDirectory() {
+    return myWorkDirectory;
+  }
+
   public boolean execute() {
     return execute(new ExecutionModes.SameThreadMode(getPresentableName()));
   }
 
+  @RequiresBackgroundThread
   public boolean execute(ExecutionMode executionMode) {
-    ApplicationManager.getApplication().assertIsNonDispatchThread();
     Logger.getInstance(getClass()).assertTrue(myProcessHandler == null, "Process has already run with this executor instance");
     final Ref<Boolean> result = Ref.create(false);
     GeneralCommandLine commandLine = null;
@@ -186,7 +198,16 @@ public final class TFExecutor {
     ApplicationManager.getApplication().invokeLater(
         () -> {
           String title = getPresentableName();
-          Notifications.Bus.notify(TerraformConstants.EXECUTION_NOTIFICATION_GROUP.createNotification(title, message, type), myProject);
+          Notification notification = TerraformConstants.EXECUTION_NOTIFICATION_GROUP.createNotification(title, message, type);
+          if (type == NotificationType.ERROR) {
+            notification.addAction(new NotificationAction(HCLBundle.message("terraform.open.settings")) {
+              @Override
+              public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+                ShowSettingsUtil.getInstance().showSettingsDialog(e.getProject(), TerraformToolConfigurable.class);
+              }
+            });
+          }
+          Notifications.Bus.notify(notification, myProject);
         });
   }
 
@@ -221,7 +242,6 @@ public final class TFExecutor {
     commandLine.withCharset(StandardCharsets.UTF_8);
     if(wslPath != null){
       var wslOptions = new WSLCommandLineOptions()
-        .setLaunchWithWslExe(true)
         .setExecuteCommandInShell(false)
         .setPassEnvVarsUsingInterop(true);
       commandLine = wslPath.getDistribution().patchCommandLine(commandLine, myProject, wslOptions);
@@ -229,7 +249,7 @@ public final class TFExecutor {
     return commandLine;
   }
 
-  private @NotNull @Nls String getPresentableName() {
-    return ObjectUtils.notNull(myPresentableName, HCLBundle.message("terraform.name.lowercase"));
+  @NotNull @Nls String getPresentableName() {
+    return ObjectUtils.notNull(myPresentableName, myToolType.getDisplayName());
   }
 }

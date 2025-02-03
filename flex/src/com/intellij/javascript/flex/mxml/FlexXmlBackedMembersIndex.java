@@ -1,6 +1,7 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.mxml;
 
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.XmlBackedJSClassImpl;
 import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.JSFunction;
@@ -33,19 +34,16 @@ public final class FlexXmlBackedMembersIndex extends ScalarIndexExtension<String
   public static final ID<String, Void> NAME = ID.create("FlexXmlBackedMembersIndex");
 
   @Override
-  @NotNull
-  public ID<String, Void> getName() {
+  public @NotNull ID<String, Void> getName() {
     return NAME;
   }
 
   @Override
-  @NotNull
-  public DataIndexer<String, Void, FileContent> getIndexer() {
+  public @NotNull DataIndexer<String, Void, FileContent> getIndexer() {
     return new DataIndexer<>() {
 
       @Override
-      @NotNull
-      public Map<String, Void> map(@NotNull FileContent inputData) {
+      public @NotNull Map<String, Void> map(@NotNull FileContent inputData) {
         final XmlFile file = (XmlFile)inputData.getPsiFile();
 
         final Map<String, Void> result = new HashMap<>();
@@ -94,19 +92,17 @@ public final class FlexXmlBackedMembersIndex extends ScalarIndexExtension<String
     });
   }
 
-  @NotNull
   @Override
-  public KeyDescriptor<String> getKeyDescriptor() {
+  public @NotNull KeyDescriptor<String> getKeyDescriptor() {
     return EnumeratorStringDescriptor.INSTANCE;
   }
 
-  @NotNull
   @Override
-  public FileBasedIndex.InputFilter getInputFilter() {
-    return new DefaultFileTypeSpecificInputFilter(JavaScriptSupportLoader.getMxmlFileType()) {
+  public @NotNull FileBasedIndex.InputFilter getInputFilter() {
+    return new DefaultFileTypeSpecificInputFilter(FlexSupportLoader.getMxmlFileType()) {
       @Override
       public boolean acceptInput(@NotNull VirtualFile file) {
-        return JavaScriptSupportLoader.isMxmlOrFxgFile(file);
+        return FlexSupportLoader.isMxmlOrFxgFile(file);
       }
     };
   }
@@ -122,8 +118,7 @@ public final class FlexXmlBackedMembersIndex extends ScalarIndexExtension<String
   }
 
 
-  @Nullable
-  static String getName(PsiElement element) {
+  static @Nullable String getName(PsiElement element) {
     if (element instanceof XmlTag) {
       return ((XmlTag)element).getAttributeValue("id");
     }

@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.projectStructure.detection;
 
 import com.intellij.ide.util.importProject.ModuleDescriptor;
@@ -7,8 +7,8 @@ import com.intellij.ide.util.projectWizard.importSources.DetectedProjectRoot;
 import com.intellij.ide.util.projectWizard.importSources.DetectedSourceRoot;
 import com.intellij.lang.LanguageParserDefinitions;
 import com.intellij.lang.javascript.JSTokenTypes;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.FlexModuleType;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lexer.Lexer;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.text.StringUtil;
@@ -30,7 +30,7 @@ import java.util.zip.ZipInputStream;
 public class FlexModuleInsight extends ModuleInsight {
 
 
-  public FlexModuleInsight(@Nullable final ProgressIndicator progress,
+  public FlexModuleInsight(final @Nullable ProgressIndicator progress,
                            Set<String> existingModuleNames,
                            Set<String> existingProjectLibraryNames) {
     super(progress, existingModuleNames, existingProjectLibraryNames);
@@ -49,7 +49,7 @@ public class FlexModuleInsight extends ModuleInsight {
 
   @Override
   protected void scanSourceFileForImportedPackages(final CharSequence chars, final Consumer<? super String> result) {
-    Lexer lexer = LanguageParserDefinitions.INSTANCE.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).createLexer(null);
+    Lexer lexer = LanguageParserDefinitions.INSTANCE.forLanguage(FlexSupportLoader.ECMA_SCRIPT_L4).createLexer(null);
     lexer.start(chars);
 
     if (FlexProjectStructureDetector.readPackageName(chars, lexer) == null) {

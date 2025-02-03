@@ -10,6 +10,8 @@ import com.intellij.lang.LanguageHtmlScriptContentProvider
 import com.intellij.lang.css.CSSLanguage
 import com.intellij.lang.css.CSSParserDefinition
 import com.intellij.lang.html.HTMLParserDefinition
+import com.intellij.lang.javascript.BackendJavaScriptStubElementTypesSupplierService
+import com.intellij.lang.javascript.BasicJavaScriptStubElementTypesSupplierService
 import com.intellij.lang.javascript.JavascriptLanguage
 import com.intellij.lang.javascript.JavascriptParserDefinition
 import com.intellij.lang.javascript.dialects.ECMA6ParserDefinition
@@ -29,12 +31,13 @@ import com.intellij.psi.impl.BlockSupportImpl
 import com.intellij.psi.impl.DebugUtil
 import com.intellij.psi.tree.CustomLanguageASTComparator
 import com.intellij.testFramework.UsefulTestCase
+import org.angular2.Angular2TestUtil
 import org.angular2.lang.expr.parser.Angular2HtmlASTComparator
 import org.angular2.lang.expr.parser.Angular2ParserDefinition
 import org.angular2.lang.html.lexer.Angular2HtmlEmbeddedContentSupport
 import org.angular2.lang.html.parser.Angular17HtmlParserDefinition
+import org.angular2.lang.html.parser.Angular181HtmlParserDefinition
 import org.angular2.lang.html.parser.Angular2HtmlParserDefinition
-import org.angular2.Angular2TestUtil
 import java.io.File
 
 open class Angular2HtmlParsingTest : HtmlParsingTest("", "html") {
@@ -46,8 +49,11 @@ open class Angular2HtmlParsingTest : HtmlParsingTest("", "html") {
 
     configureFromParserDefinition(
       when (templateSyntax) {
+        Angular2TemplateSyntax.V_18_1 -> Angular181HtmlParserDefinition()
         Angular2TemplateSyntax.V_17 -> Angular17HtmlParserDefinition()
-        else -> Angular2HtmlParserDefinition()
+        Angular2TemplateSyntax.V_2_NO_EXPANSION_FORMS,
+        Angular2TemplateSyntax.V_2,
+          -> Angular2HtmlParserDefinition()
       }, "html")
 
     addExplicitExtension(CustomLanguageASTComparator.EXTENSION_POINT_NAME, Angular2HtmlLanguage, Angular2HtmlASTComparator())
@@ -65,7 +71,14 @@ open class Angular2HtmlParsingTest : HtmlParsingTest("", "html") {
     registerExtension(CssElementDescriptorProvider.EP_NAME, CssElementDescriptorProviderImpl())
     application.registerService(
       CssElementDescriptorFactory2::class.java,
-      CssElementDescriptorFactory2("css-parsing-tests.xml"))
+      CssElementDescriptorFactory2("css-parsing-tests.xml"),
+      testRootDisposable
+    )
+    application.registerService(
+      BasicJavaScriptStubElementTypesSupplierService::class.java,
+      BackendJavaScriptStubElementTypesSupplierService(),
+      testRootDisposable
+    )
     assert(JSLanguageLevel.DEFAULT == JSLanguageLevel.ES6)
     sequenceOf(Angular2ParserDefinition(),
                Angular2HtmlParserDefinition(),
@@ -86,19 +99,18 @@ open class Angular2HtmlParsingTest : HtmlParsingTest("", "html") {
 
   override fun checkResult(fullDataPath: String, targetDataName: String, file: PsiFile) {
     val dataPathNoSlash = fullDataPath.removeSuffix("/")
-    val adjustedDataPath = when {
-      File("${dataPathNoSlash}_$templateSyntax/$targetDataName.txt").exists() -> {
-        "${dataPathNoSlash}_$templateSyntax/"
-      }
-      File("$fullDataPath$targetDataName.txt").exists() || templateSyntax == Angular2TemplateSyntax.V_2 -> {
-        fullDataPath
-      }
-      else -> {
-        "${dataPathNoSlash}_$templateSyntax/"
-      }
-    }
+    val adjustedDataPath = // Iterate over syntax versions starting from the `templateSyntax` down to V_2
+      Angular2TemplateSyntax.entries.toList().asReversed().asSequence()
+        .dropWhile { it != templateSyntax }
+        .filter { it != Angular2TemplateSyntax.V_2_NO_EXPANSION_FORMS }
+        .firstNotNullOfOrNull { syntax ->
+          "${dataPathNoSlash}${syntax.dirSuffix}/".takeIf { File("$it$targetDataName.txt").exists() }
+        }
+      ?: "${dataPathNoSlash}${templateSyntax.dirSuffix}/"
     super.checkResult(adjustedDataPath, targetDataName, file)
   }
+
+  private val Angular2TemplateSyntax.dirSuffix: String get() = if (this == Angular2TemplateSyntax.V_2) "" else "_$this"
 
   fun testNgParseElementsInsideNgTemplate() {
     doTestHtml("<ng-template><span></span></ng-template>")
@@ -428,6 +440,36 @@ open class Angular2HtmlParsingTest : HtmlParsingTest("", "html") {
     doTestHtml("""
       @if 
       else (
+    """.trimIndent())
+  }
+
+  fun testLetBlockValid() {
+    doTestHtml("""
+      @let foo = test(12); the end
+    """.trimIndent())
+  }
+
+  fun testTypeOfSimple() {
+    doTestHtml("""
+      {{typeof value === 'string'}}
+    """.trimIndent())
+  }
+
+  fun testDoubleBracesWithinStringInterpolation() {
+    doTestHtml("""
+      <label>{{ 'Version: {{version}}' | translate { version: '13}}' } }}</label>
+    """.trimIndent())
+  }
+
+  fun testInterpolationEscape() {
+    doTestHtml("""
+      <label>{{ 'Version: \<a>' }}</label>
+    """.trimIndent())
+  }
+
+  fun testInterpolationComment() {
+    doTestHtml("""
+      <label>{{ 'Version:' // ' }}</label>
     """.trimIndent())
   }
 

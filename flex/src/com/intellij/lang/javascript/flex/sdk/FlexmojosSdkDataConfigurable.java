@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.sdk;
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
@@ -8,10 +8,8 @@ import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.ui.LabeledComponent;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -75,22 +73,13 @@ public class FlexmojosSdkDataConfigurable implements AdditionalDataConfigurable 
     }
 
     private void initAdlChooser() {
-      final FileChooserDescriptor descriptor = new FileChooserDescriptor(true, false, false, false, false, false) {
-        @Override
-        public boolean isFileVisible(final VirtualFile file, final boolean showHiddenFiles) {
-          return super.isFileVisible(file, showHiddenFiles) &&
-                 (file.isDirectory() || (file.getName().startsWith("adl") && isExecutableExtension(file.getExtension())));
-        }
-
-        private static boolean isExecutableExtension(final String extension) {
-          return SystemInfo.isWindows ? "exe".equalsIgnoreCase(extension) : extension == null || "uexe".equalsIgnoreCase(extension);
-        }
-      };
+      final FileChooserDescriptor descriptor = new FileChooserDescriptor(true, false, false, false, false, false)
+        .withTitle("Select ADL executable file");
 
       myAdlComponent.getComponent()
-        .addBrowseFolderListener("Select ADL executable file", null, null, descriptor, new TextComponentAccessor<>() {
+        .addBrowseFolderListener(null, descriptor, new TextComponentAccessor<>() {
           @Override
-          public void setText(final JTextField component, @NotNull final String text) {
+          public void setText(final JTextField component, final @NotNull String text) {
             component.setText(text);
             final String adlPath = FileUtil.toSystemDependentName(text);
             if (adlPath.endsWith(FlexSdkUtils.ADL_RELATIVE_PATH)) {
@@ -108,15 +97,12 @@ public class FlexmojosSdkDataConfigurable implements AdditionalDataConfigurable 
     }
 
     private void initAirRuntimeChooser() {
-      final FileChooserDescriptor descriptor = new FileChooserDescriptor(true, true, true, false, false, false) {
-        @Override
-        public boolean isFileVisible(final VirtualFile file, final boolean showHiddenFiles) {
-          return super.isFileVisible(file, showHiddenFiles) && (file.isDirectory() || ("zip".equalsIgnoreCase(file.getExtension())));
-        }
-      };
-      myAirRuntimeComponent.getComponent().addBrowseFolderListener("Select AIR Runtime",
-                                                                   "Select AIR Runtime as a directory like <Flex SDK>/runtimes/AIR/win/ or as a .zip file",
-                                                                   null, descriptor);
+      var descriptor = new FileChooserDescriptor(true, true, true, false, false, false)
+        .withExtensionFilter("zip")
+        .withTitle("Select AIR Runtime")
+        .withDescription("Select AIR Runtime as a directory like <Flex SDK>/runtimes/AIR/win/ or as a .zip file");
+      TextFieldWithBrowseButton button = myAirRuntimeComponent.getComponent();
+      button.addBrowseFolderListener(null, descriptor);
     }
 
     JComponent getMainPanel() {

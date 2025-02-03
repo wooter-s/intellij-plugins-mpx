@@ -64,9 +64,17 @@ class PlatformioService(val project: Project) : PersistentStateComponentWithModi
   val metadataJson: Map<String, String?>
     get() = state.metadataJson
 
+  var compileDbDeflatedBase64: String?
+    get() = state.compileDbDeflatedBase64
+    set(value) {
+      state.compileDbDeflatedBase64 = value
+      stateModCounter.incrementAndGet()
+    }
+
   fun cleanCache() {
     state.metadataJson.clear()
     state.configJson = null
+    state.compileDbDeflatedBase64 = null
     stateModCounter.incrementAndGet()
   }
 
@@ -134,13 +142,23 @@ class PlatformioService(val project: Project) : PersistentStateComponentWithModi
   override fun getStateModificationCount(): Long = stateModCounter.get()
 }
 
-val PlatformioProjectResolvePolicyCleanCache: PlatformioProjectResolvePolicy = PlatformioProjectResolvePolicy(true)
-val PlatformioProjectResolvePolicyPreserveCache: PlatformioProjectResolvePolicy = PlatformioProjectResolvePolicy(false)
+val PlatformioProjectResolvePolicyCleanCache: PlatformioProjectResolvePolicy = PlatformioProjectResolvePolicy(true, false)
+val PlatformioProjectResolvePolicyPreserveCache: PlatformioProjectResolvePolicy = PlatformioProjectResolvePolicy(false, false)
+val PlatformioProjectResolvePolicyInitialize: PlatformioProjectResolvePolicy = PlatformioProjectResolvePolicy(false, true)
 
 fun refreshProject(project: Project, cleanCache: Boolean) {
   ApplicationManager.getApplication().invokeLater {
     WriteAction.run<Throwable> {
       val policy = if (cleanCache) PlatformioProjectResolvePolicyCleanCache else PlatformioProjectResolvePolicyPreserveCache
+      ExternalSystemUtil.refreshProject(project.basePath!!, ImportSpecBuilder(project, ID).projectResolverPolicy(policy))
+    }
+  }
+}
+
+fun initializeProject(project: Project) {
+  ApplicationManager.getApplication().invokeLater {
+    WriteAction.run<Throwable> {
+      val policy = PlatformioProjectResolvePolicyInitialize
       ExternalSystemUtil.refreshProject(project.basePath!!, ImportSpecBuilder(project, ID).projectResolverPolicy(policy))
     }
   }
@@ -171,6 +189,9 @@ class PlatformioState {
 
   @MapAnnotation(keyAttributeName = "env")
   val metadataJson: MutableMap<String, String?> = mutableMapOf()
+
+  @Tag
+  var compileDbDeflatedBase64: String? = null
 
 }
 

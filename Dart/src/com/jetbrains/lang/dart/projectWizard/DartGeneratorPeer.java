@@ -6,12 +6,14 @@ import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.ide.util.projectWizard.SettingsStep;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.HtmlBuilder;
 import com.intellij.openapi.util.text.HtmlChunk;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.platform.ProjectGeneratorPeer;
 import com.intellij.platform.WebProjectGenerator;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.ComboboxWithBrowseButton;
@@ -34,7 +36,7 @@ import java.awt.*;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<DartProjectWizardData> {
+public class DartGeneratorPeer implements ProjectGeneratorPeer<DartProjectWizardData> {
   private static final String DART_PROJECT_TEMPLATE = "DART_PROJECT_TEMPLATE";
   private static final String CREATE_SAMPLE_UNCHECKED = "CREATE_SAMPLE_UNCHECKED";
 
@@ -225,7 +227,11 @@ public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<Dart
 
   @NotNull
   @Override
-  public JComponent getComponent() {
+  public JComponent getComponent(@NotNull TextFieldWithBrowseButton myLocationField, @NotNull Runnable checkValid) {
+    return myMainPanel;
+  }
+
+  @NotNull JPanel getMainPanel() {
     return myMainPanel;
   }
 

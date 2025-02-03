@@ -4,7 +4,7 @@ package org.angular2.inspections
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.javascript.webSymbols.jsType
-import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider.withTypeEvaluationLocation
 import com.intellij.lang.javascript.psi.JSEmptyExpression
 import com.intellij.lang.javascript.psi.types.JSNamedTypeFactory
 import com.intellij.lang.javascript.psi.types.JSStringLiteralTypeImpl
@@ -29,13 +29,14 @@ import org.angular2.lang.html.parser.Angular2AttributeType
 import org.angular2.lang.html.psi.PropertyBindingType
 import org.angular2.lang.types.BindingsTypeResolver
 import org.angular2.web.NG_DIRECTIVE_ONE_TIME_BINDINGS
-import java.util.function.Supplier
 
 class AngularBindingTypeMismatchInspection : AngularHtmlLikeTemplateLocalInspectionTool() {
 
-  override fun visitAngularAttribute(holder: ProblemsHolder,
-                                     attribute: XmlAttribute,
-                                     descriptor: Angular2AttributeDescriptor) {
+  override fun visitAngularAttribute(
+    holder: ProblemsHolder,
+    attribute: XmlAttribute,
+    descriptor: Angular2AttributeDescriptor,
+  ) {
     val kind = descriptor.info.type
     when (kind) {
       Angular2AttributeType.REGULAR -> checkOneTimeBindingType(holder, attribute, descriptor)
@@ -66,9 +67,12 @@ class AngularBindingTypeMismatchInspection : AngularHtmlLikeTemplateLocalInspect
              && (descriptor.info as Angular2AttributeNameParser.PropertyBindingInfo).bindingType == PropertyBindingType.PROPERTY
              && expression != null && expression !is JSEmptyExpression
              // Maybe a fake structural directive input
-             && descriptor.sourceDirectives.asSequence().filter { it.directiveKind.isStructural }
-               .flatMap { it.inputs }
-               .none { it.name == descriptor.info.name }) {
+             && descriptor.sourceDirectives.filter { it.directiveKind.isStructural }
+               .let { directives ->
+                 directives.isNotEmpty() && directives.flatMap { it.inputs }
+                   .none { it.name == descriptor.info.name }
+               }
+    ) {
       holder.registerProblem(attribute.nameElement ?: attribute,
                              Angular2Bundle.htmlMessage(
                                "angular.inspection.undefined-binding.message.embedded.property-not-provided",
@@ -91,7 +95,7 @@ class AngularBindingTypeMismatchInspection : AngularHtmlLikeTemplateLocalInspect
     holder: ProblemsHolder, attribute: XmlAttribute, descriptor: Angular2AttributeDescriptor,
     value: String?, bindingsTypeResolver: BindingsTypeResolver, reportOnValue: Boolean,
   ) {
-    JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(attribute, Supplier {
+    withTypeEvaluationLocation(attribute) {
       val valueType = if (value != null)
         JSStringLiteralTypeImpl(value, true, JSTypeSource.EMPTY_TS_EXPLICITLY_DECLARED)
       else
@@ -110,6 +114,6 @@ class AngularBindingTypeMismatchInspection : AngularHtmlLikeTemplateLocalInspect
                                  highlightType,
                                  *getCreateInputTransformFixes(attribute, "string").toTypedArray())
         }
-    })
+    }
   }
 }

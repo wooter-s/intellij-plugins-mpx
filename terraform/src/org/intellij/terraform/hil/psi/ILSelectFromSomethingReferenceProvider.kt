@@ -2,6 +2,10 @@
 package org.intellij.terraform.hil.psi
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.Attachment
+import com.intellij.openapi.diagnostic.RuntimeExceptionWithAttachments
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parents
@@ -61,7 +65,8 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
       for (reference in references) {
         if (reference is SpeciallyHandledPsiReference) {
           reference.collectReferences(element, name, refs)
-        } else {
+        }
+        else {
           refs.add(HCLElementLazyReference(element, false) { incompleteCode, fake ->
             val containingBlockType = guessContainingBlockType(element)
             val resolved = resolve(reference, incompleteCode, fake)
@@ -118,12 +123,36 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
   }
 
   fun collectReferences(r: PsiElement, name: String, found: MutableList<HCLElement>, fake: Boolean, initialContextType: HilContainingBlockType = HilContainingBlockType.UNSPECIFIED) {
+    try {
+      ProgressManager.checkCanceled()
+      return collectReferencesInner(r, name, found, fake, initialContextType, mutableSetOf())
+    }
+    catch (e: StackOverflowError) {
+      val containingFile = r.containingFile ?: throw e
+      throw RuntimeExceptionWithAttachments(
+        "collectReferencesInner stack-overflow for $name in ${r.text}", e,
+        Attachment(containingFile.name, containingFile.text).apply { this.isIncluded = false },
+      )
+    }
+
+  }
+
+
+  private fun collectReferencesInner(
+    r: PsiElement,
+    name: String,
+    found: MutableList<HCLElement>,
+    fake: Boolean,
+    initialContextType: HilContainingBlockType = HilContainingBlockType.UNSPECIFIED,
+    visited: MutableSet<PsiElement>,
+  ) {
+    if (!visited.add(r)) return
     when (r) {
       is HCLIdentifier -> {
         val p = r.parent
         if (p is HCLForIntro) {
           // Resolve container we're iterating on
-          return resolveForEachValueInner(p.container, name, found, fake, PsiTreeUtil.getParentOfType(p, HCLBlock::class.java))
+          return resolveForEachValueInner(p.container, name, found, fake, PsiTreeUtil.getParentOfType(p, HCLBlock::class.java), visited)
         }
       }
       is HCLObject -> {
@@ -131,7 +160,8 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
         val blocks = r.blockList.filter { it.nameElements.any { element -> element.name == name } }
         if (property != null) {
           found.add(property)
-        } else if (blocks.isNotEmpty()) {
+        }
+        else if (blocks.isNotEmpty()) {
           found.addAll(blocks)
         }
       }
@@ -139,11 +169,13 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
         val property = r.`object`?.findProperty(name)
         val blocks = r.`object`?.blockList?.filter { it.nameElements.any { it.name == name } }.orEmpty()
         val fqn = HCLQualifiedNameProvider.getQualifiedModelName(r)
-        if (ApplicationManager.getApplication().getService(TypeModelProvider::class.java).ignored_references.contains(fqn)) {
+        if (service<TypeModelProvider>().ignoredReferences.contains(fqn)) {
           if (fake) found.add(FakeHCLProperty(name, r))
-        } else if (isResourceReferencedFromImportBlock(r, initialContextType, name)) {
+        }
+        else if (isResourceReferencedFromImportBlock(r, initialContextType, name)) {
           found.add(r)
-        } else if (TerraformPatterns.ModuleRootBlock.accepts(r)) {
+        }
+        else if (TerraformPatterns.ModuleRootBlock.accepts(r)) {
           // TODO: Move this special TerraformPatters supports somewhere else
           val module = Module.getAsModuleBlock(r)
           if (module == null) {
@@ -151,8 +183,9 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
             if (fake) {
               found.add(FakeHCLProperty(name, r))
             }
-          } else {
-            val suitableResolveTargets = when(initialContextType) {
+          }
+          else {
+            val suitableResolveTargets = when (initialContextType) {
               HilContainingBlockType.IMPORT_OR_MOVED_BLOCK -> module.getDeclaredResources().filter { getResourceType(it) == name }
               HilContainingBlockType.UNSPECIFIED -> module.getDefinedOutputs().filter { it.name == name }
             }
@@ -160,45 +193,54 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
               found.addAll(suitableResolveTargets)
             }
           }
-        } else if (TerraformPatterns.VariableRootBlock.accepts(r)) {
+        }
+        else if (TerraformPatterns.VariableRootBlock.accepts(r)) {
           val variable = Variable(r)
           val prev = found.size
           when (val default = variable.getDefault()) {
-            is HCLObject -> collectReferences(default, name, found, fake)
+            is HCLObject -> collectReferencesInner(default, name, found, fake, visited = visited)
             is HCLArray -> default.elements.filterIsInstance<HCLObject>().forEach {
-              collectReferences(it, name, found, fake)
+              collectReferencesInner(it, name, found, fake, visited = visited)
             }
           }
           if (prev == found.size) {
             found.addIfNotNull(resolveInType(variable.getType(), r, name) ?: if (fake) FakeHCLProperty(name, r, true) else null)
           }
-        } else if (TerraformPatterns.DynamicBlock.accepts(r)) {
+        }
+        else if (TerraformPatterns.DynamicBlock.accepts(r)) {
           // Moved to DynamicBlockVariableReferenceProvider.DynamicValueReference
           return
-        } else if (TerraformPatterns.OutputRootBlock.accepts(r)) {
+        }
+        else if (TerraformPatterns.OutputRootBlock.accepts(r)) {
           // Probably reference to module output
           // If it's resource provide it's properties
           val value = r.`object`?.findProperty("value")?.value
           if (value == null) {
             if (fake) found.add(FakeHCLProperty(name, r))
-          } else if (value is HCLObject) {
-            collectReferences(value, name, found, fake)
-          } else if (value is HCLArray) {
+          }
+          else if (value is HCLObject) {
+            collectReferencesInner(value, name, found, fake, visited = visited)
+          }
+          else if (value is HCLArray) {
             value.elements.filterIsInstance<HCLObject>().forEach {
-              collectReferences(it, name, found, fake)
+              collectReferencesInner(it, name, found, fake, visited = visited)
             }
-          } else {
+          }
+          else {
             HCLPsiUtil.getReferencesSelectAware(value).forEach { ref ->
               resolve(ref, false, fake).forEach { resolved ->
-                collectReferences(resolved, name, found, fake)
+                collectReferencesInner(resolved, name, found, fake, visited = visited)
               }
             }
           }
-        } else if (property != null) {
+        }
+        else if (property != null) {
           found.add(property)
-        } else if (blocks.isNotEmpty()) {
+        }
+        else if (blocks.isNotEmpty()) {
           found.addAll(blocks)
-        } else {
+        }
+        else {
           if (fqn != null) {
             val type = TypeModelProvider.getModel(r).getByFQN(fqn, r)
             if (type is PropertyOrBlockType && type is BlockType && type.computed) {
@@ -239,20 +281,22 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
                 }
               }
             }
-            if (ApplicationManager.getApplication().getService(TypeModelProvider::class.java).ignored_references.contains(fqn)) {
+            if (ApplicationManager.getApplication().getService(TypeModelProvider::class.java).ignoredReferences.contains(fqn)) {
               found.add(FakeHCLProperty(name, r))
             }
           }
-        } else if (r.parent is HCLObject && r.parent.parents(false).any { TerraformPatterns.LocalsRootBlock.accepts(it) }) {
+        }
+        else if (r.parent is HCLObject && r.parent.parents(false).any { TerraformPatterns.LocalsRootBlock.accepts(it) }) {
           val value = r.value
           when {
-            value is HCLObject -> collectReferences(value, name, found, fake)
-            value is HCLArray -> collectReferences(value, name, found, fake)
-            value is HCLForArrayExpression -> collectReferences(value.expression, name, found, fake)
+            value is HCLObject -> collectReferencesInner(value, name, found, fake, visited = visited)
+            value is HCLArray -> collectReferencesInner(value, name, found, fake, visited = visited)
+            value is HCLForArrayExpression -> collectReferencesInner(value.expression, name, found, fake, visited = visited)
             value != null && r.name == name -> found.add(r)
-            value != null && isVariableReference(value) -> resolveForEachValueInner(value, name, found, fake, null)
+            value != null && isVariableReference(value) -> resolveForEachValueInner(value, name, found, fake, null, visited)
           }
-        } else {
+        }
+        else {
           val value = r.value
           if (value is HCLObject) {
             val property = value.findProperty(name)
@@ -275,11 +319,12 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
       is HCLArray -> {
         for (it in r.elements) {
           if (it is HCLObject) {
-            collectReferences(it, name, found, fake)
-          } else if (it is HCLSelectExpression) {
+            collectReferencesInner(it, name, found, fake, visited = visited)
+          }
+          else if (it is HCLSelectExpression) {
             HCLPsiUtil.getReferencesSelectAware(it).forEach { ref ->
               resolve(ref, false, fake).forEach { resolved ->
-                collectReferences(resolved, name, found, fake)
+                collectReferencesInner(resolved, name, found, fake, visited = visited)
               }
             }
           }
@@ -307,29 +352,37 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
         type.elements.elements?.get(name)?.let { type ->
           FakeTypeProperty(name, context, type, true)
         }
-      } else null
+      }
+      else null
       else -> null
     }
   }
 
-  fun resolveForEachValueInner(value: HCLExpression?, name: String, found: MutableList<HCLElement>, fake: Boolean, block: HCLBlock?) {
+  fun resolveForEachValueInner(
+    value: HCLExpression?,
+    name: String,
+    found: MutableList<HCLElement>,
+    fake: Boolean,
+    block: HCLBlock?,
+    visited: MutableSet<PsiElement>,
+  ) {
     when {
       value == null -> return
-      value is HCLForArrayExpression -> (value.expression as? HCLObject)?.let { collectReferences(it, name, found, fake) }
-      value is HCLForObjectExpression && value.value is HCLObject -> collectReferences(value.value, name, found, fake)
-      value is HCLArray -> collectReferences(value, name, found, fake)
+      value is HCLForArrayExpression -> (value.expression as? HCLObject)?.let { collectReferencesInner(it, name, found, fake, visited = visited) }
+      value is HCLForObjectExpression && value.value is HCLObject -> collectReferencesInner(value.value, name, found, fake, visited = visited)
+      value is HCLArray -> collectReferencesInner(value, name, found, fake, visited = visited)
       value is HCLMethodCallExpression -> if (fake && block != null) found.add(FakeHCLProperty(name, block))
-      value is HCLObject -> value.propertyList.forEach { property -> property.value?.let { collectReferences(it, name, found, fake) } }
+      value is HCLObject -> value.propertyList.forEach { property -> property.value?.let { collectReferencesInner(it, name, found, fake, visited = visited) } }
       isVariableReference(value) -> HCLPsiUtil.getReferencesSelectAware(value)
         .flatMap { resolve(it, false, fake) }
         .filterIsInstance<HCLBlock>()
         .filter { TerraformPatterns.VariableRootBlock.accepts(it) }
         .forEach {
-          resolveVariableElementFromIterable(it, name, found, fake)
+          resolveVariableElementFromIterable(it, name, found, fake, visited = visited)
         }
       else ->
         // e.g. 'local.name' reference or something else
-        collectReferenceFromForEachValue(value, name, found, fake)
+        collectReferenceFromForEachValue(value, name, found, fake, visited)
     }
   }
 
@@ -348,50 +401,59 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
   }
 
 
-  private fun resolveVariableElementFromIterable(block: HCLBlock, name: String, found: MutableList<HCLElement>, fake: Boolean) {
+  private fun resolveVariableElementFromIterable(
+    block: HCLBlock,
+    name: String,
+    found: MutableList<HCLElement>,
+    fake: Boolean,
+    visited: MutableSet<PsiElement>,
+  ) {
     val variable = Variable(block)
     val defaultMap = variable.getDefault()
     if (defaultMap is HCLObject) {
       defaultMap.propertyList.forEach {
-        collectReferences(it, name, found, fake)
+        collectReferencesInner(it, name, found, fake, visited = visited)
       }
       defaultMap.blockList.forEach {
-        collectReferences(it, name, found, fake)
+        collectReferencesInner(it, name, found, fake, visited = visited)
       }
-    } else if (defaultMap is HCLArray) {
-      collectReferences(defaultMap, name, found, fake)
+    }
+    else if (defaultMap is HCLArray) {
+      collectReferencesInner(defaultMap, name, found, fake, visited = visited)
     }
     found.addIfNotNull(resolveInType(variable.getType(), block, name))
     return
   }
 
-  private fun collectReferenceFromForEachValue(p: PsiElement, name: String, found: MutableList<HCLElement>, fake: Boolean) {
+  private fun collectReferenceFromForEachValue(p: PsiElement, name: String, found: MutableList<HCLElement>, fake: Boolean, visited: MutableSet<PsiElement>) {
     HCLPsiUtil.getReferencesSelectAware(p).forEach { ref ->
       resolve(ref, false, fake).forEach { resolved ->
         when (val value = getValueContainer(resolved, fake)) {
           is HCLObject -> {
             value.propertyList.forEach {
-              collectReferences(it, name, found, fake)
+              collectReferencesInner(it, name, found, fake, visited = visited)
             }
             value.blockList.forEach {
-              collectReferences(it, name, found, fake)
+              collectReferencesInner(it, name, found, fake, visited = visited)
             }
           }
-          is HCLArray -> collectReferences(value, name, found, fake)
-          else -> collectReferences(resolved, name, found, fake)
+          is HCLArray -> collectReferencesInner(value, name, found, fake, visited = visited)
+          else -> collectReferencesInner(resolved, name, found, fake, visited = visited)
         }
       }
     }
   }
 
-  private fun getValueContainer(r: PsiElement, fake: Boolean): HCLElement? {
+  private fun getValueContainer(r: PsiElement, fake: Boolean, handled: MutableSet<PsiElement> = mutableSetOf()): HCLElement? {
+    if (!handled.add(r)) return null
     when (r) {
       is HCLIdentifier -> {
         val p = r.parent
         if (p is HCLForIntro) {
           // Resolve container we're iterating on
           return HCLPsiUtil.getReferencesSelectAware(p.container).flatMap { ref ->
-            resolve(ref, false, fake).mapNotNull { resolved -> getValueContainer(resolved, fake) }
+            resolve(ref, false, fake)
+              .mapNotNull { resolved -> getValueContainer(resolved, fake, handled) }
           }.firstOrNull()
         }
       }
@@ -420,9 +482,11 @@ object ILSelectFromSomethingReferenceProvider : PsiReferenceProvider() {
   private fun addBlockProperty(properties: Map<String, PropertyOrBlockType>, name: String, r: PsiElement, found: MutableCollection<HCLElement>, addFake: Boolean = false) {
     if (properties.containsKey(name)) {
       found.add(FakeHCLProperty(name, r, properties[name].asSafely<PropertyType>()?.type == Types.Any))
-    } else if (properties.containsKey(Constants.HAS_DYNAMIC_ATTRIBUTES)) {
+    }
+    else if (properties.containsKey(Constants.HAS_DYNAMIC_ATTRIBUTES)) {
       found.add(FakeHCLProperty(name, r, true))
-    } else if (addFake) {
+    }
+    else if (addFake) {
       found.add(FakeHCLProperty(name, r))
     }
   }
@@ -458,6 +522,7 @@ fun getSelectFieldText(expression: BaseExpression): String? {
 }
 
 fun resolve(reference: PsiReference, incompleteCode: Boolean, fake: Boolean): SmartList<PsiElement> {
+  ProgressManager.checkCanceled()
   val resolved = SmartList<PsiElement>()
   when (reference) {
     is PsiFakeAwarePolyVariantReference ->
