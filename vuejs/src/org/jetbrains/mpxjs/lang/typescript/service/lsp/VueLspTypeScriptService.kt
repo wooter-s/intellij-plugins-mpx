@@ -1,5 +1,5 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.lang.typescript.service.lsp
+package org.jetbrains.mpxjs.lang.typescript.service.lsp
 
 import com.google.gson.JsonElement
 import com.intellij.lang.javascript.service.protocol.JSLanguageServiceObject
@@ -19,12 +19,12 @@ import com.intellij.psi.PsiFile
 import kotlinx.coroutines.delay
 import org.eclipse.lsp4j.Diagnostic
 import org.eclipse.lsp4j.MarkupContent
-import org.jetbrains.vuejs.VueBundle
-import org.jetbrains.vuejs.lang.expr.VueJSLanguage
-import org.jetbrains.vuejs.lang.expr.VueTSLanguage
-import org.jetbrains.vuejs.lang.typescript.service.VueServiceSetActivationRule
-import org.jetbrains.vuejs.options.VueServiceSettings
-import org.jetbrains.vuejs.options.VueSettings
+import org.jetbrains.mpxjs.VueBundle
+import org.jetbrains.mpxjs.lang.expr.VueJSLanguage
+import org.jetbrains.mpxjs.lang.expr.VueTSLanguage
+import org.jetbrains.mpxjs.lang.typescript.service.VueServiceSetActivationRule
+import org.jetbrains.mpxjs.options.VueServiceSettings
+import org.jetbrains.mpxjs.options.VueSettings
 
 class VueLspTypeScriptService(project: Project) : BaseLspTypeScriptService(project, VueLspServerSupportProvider::class.java) {
   override val name: String

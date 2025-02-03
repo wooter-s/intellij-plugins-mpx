@@ -6,10 +6,10 @@ import com.intellij.lang.javascript.psi.util.JSProjectUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.search.GlobalSearchScope
-import org.jetbrains.vuejs.context.hasNuxt
-import org.jetbrains.vuejs.lang.html.VueFile
-import org.jetbrains.vuejs.libraries.nuxt.NUXT_COMPONENTS_DEFS
-import org.jetbrains.vuejs.libraries.nuxt.NUXT_OUTPUT_FOLDER
+import org.jetbrains.mpxjs.context.hasNuxt
+import org.jetbrains.mpxjs.lang.html.VueFile
+import org.jetbrains.mpxjs.libraries.nuxt.NUXT_COMPONENTS_DEFS
+import org.jetbrains.mpxjs.libraries.nuxt.NUXT_OUTPUT_FOLDER
 
 class VueComponentUsageProvider : JSComponentUsageProvider {
   override fun contributeSearchScope(file: PsiFile): GlobalSearchScope? = buildNuxtGlobalComponentsScope(file)

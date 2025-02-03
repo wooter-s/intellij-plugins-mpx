@@ -1,5 +1,5 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.lang.typescript.service.lsp
+package org.jetbrains.mpxjs.lang.typescript.service.lsp
 
 import com.intellij.lang.typescript.lsp.JSFrameworkLspServerDescriptor
 import com.intellij.lang.typescript.lsp.JSLspServerWidgetItem
@@ -10,11 +10,11 @@ import com.intellij.platform.lsp.api.LspServer
 import com.intellij.platform.lsp.api.LspServerSupportProvider
 import com.intellij.platform.lsp.api.LspServerSupportProvider.LspServerStarter
 import com.intellij.platform.lsp.api.lsWidget.LspServerWidgetItem
-import org.jetbrains.vuejs.VuejsIcons
-import org.jetbrains.vuejs.lang.typescript.service.VueServiceSetActivationRule
-import org.jetbrains.vuejs.lang.typescript.service.vueLspNewEvalVersion
-import org.jetbrains.vuejs.options.VueConfigurable
-import org.jetbrains.vuejs.options.VueSettings
+import org.jetbrains.mpxjs.VuejsIcons
+import org.jetbrains.mpxjs.lang.typescript.service.VueServiceSetActivationRule
+import org.jetbrains.mpxjs.lang.typescript.service.vueLspNewEvalVersion
+import org.jetbrains.mpxjs.options.VueConfigurable
+import org.jetbrains.mpxjs.options.VueSettings
 
 
 class VueLspServerSupportProvider : LspServerSupportProvider {

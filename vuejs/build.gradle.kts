@@ -8,7 +8,7 @@ plugins {
 }
 
 intellij {
-  version.set("LATEST-EAP-SNAPSHOT")
+  version.set("2024.3.2.2")
   type.set("IU")
   pluginName.set("Mpx.js")
   downloadSources.set(true)
