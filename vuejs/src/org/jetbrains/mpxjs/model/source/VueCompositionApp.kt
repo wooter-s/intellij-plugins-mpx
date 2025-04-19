@@ -87,7 +87,7 @@ class VueCompositionApp(override val source: JSCallExpression) : VueDelegatedCon
   override fun hashCode(): Int = source.hashCode()
 
   override fun toString(): String {
-    return "VueCompositionApp($source)"
+    return "MpxCompositionApp($source)"
   }
 
   private fun getEntitiesAnalysis(): EntitiesAnalysis =
@@ -218,7 +218,7 @@ class VueCompositionApp(override val source: JSCallExpression) : VueDelegatedCon
       return EntitiesAnalysis(components, directives, mixins, filters, element, provides)
     }
 
-    private val IS_COMPOSITION_APP_COMPONENT_KEY = Key.create<Boolean>("vue.composition.app.component")
+    private val IS_COMPOSITION_APP_COMPONENT_KEY = Key.create<Boolean>("mpx.composition.app.component")
 
     fun isCompositionAppComponent(component: VueComponent) =
       component is UserDataHolder && component.getUserData(IS_COMPOSITION_APP_COMPONENT_KEY) == true

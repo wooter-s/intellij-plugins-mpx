@@ -34,9 +34,9 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   private val LOG = Logger.getInstance(VueCliProjectGenerator::class.java)
 
   private val DEFAULT_PROJECT_SETUP_INITIALLY_SELECTED = true
-  private val DEFAULT_PROJECT_SETUP_KEY = Key.create<Boolean>("vue.project.generator.default.setup")
+  private val DEFAULT_PROJECT_SETUP_KEY = Key.create<Boolean>("mpx.project.generator.default.setup")
 
-  private val CREATE_VUE_PACKAGE_NAME = "create-vue"
+  private val CREATE_VUE_PACKAGE_NAME = "create-mpx"
   private val VUE_CLI_PACKAGE_NAME = "@mpxjs/cli"
   private val VUE_EXECUTABLE = "mpx"
   private val CREATE_COMMAND = "create"
@@ -104,7 +104,7 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   }
 
   override fun executable(pkg: NodePackage): String {
-    return pkg.systemDependentPath + File.separator + "bin" + File.separator + "vue.js"
+    return pkg.systemDependentPath + File.separator + "bin" + File.separator + "mpx.js"
   }
 
   override fun packageName(): String {

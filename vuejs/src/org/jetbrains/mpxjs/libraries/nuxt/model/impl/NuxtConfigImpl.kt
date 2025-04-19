@@ -66,7 +66,7 @@ class NuxtConfigImpl(override val file: PsiFile, nuxt2_15: Boolean) : NuxtConfig
   companion object {
     const val DEFAULT_PATH = "~/components"
     const val DEFAULT_PREFIX = ""
-    val DEFAULT_EXTENSIONS = setOf("vue", "js", "ts", "tsx")
+    val DEFAULT_EXTENSIONS = setOf("mpx", "js", "ts", "tsx")
     const val DEFAULT_LEVEL = 0
   }
 

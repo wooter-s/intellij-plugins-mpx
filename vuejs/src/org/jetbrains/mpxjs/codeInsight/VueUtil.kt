@@ -83,7 +83,7 @@ const val FUNCTIONAL_COMPONENT_TYPE = "FunctionalComponent"
 const val VITE_PKG = "vite"
 
 val VUE_NOTIFICATIONS: NotificationGroup
-  get() = NotificationGroupManager.getInstance().getNotificationGroup("Vue")
+  get() = NotificationGroupManager.getInstance().getNotificationGroup("Mpx")
 
 /**
  * Convert to hyphen-case.

@@ -46,7 +46,7 @@ import org.jetbrains.mpxjs.model.source.VueSourceContainer
 
 class VueInjector : MultiHostInjector {
   internal object Holder {
-    private val delimitersOptionHolders = setOf("Vue.config.delimiters", "Vue.options.delimiters")
+    private val delimitersOptionHolders = setOf("Mpx.config.delimiters", "Mpx.options.delimiters")
 
     val BRACES_FACTORY: NullableFunction<PsiElement, Pair<String, String>> = JSInjectionBracesUtil.delimitersFactory(
       VueJSLanguage.INSTANCE.id, // might be slightly wrong for VueTSLanguage, but so far nothing was found

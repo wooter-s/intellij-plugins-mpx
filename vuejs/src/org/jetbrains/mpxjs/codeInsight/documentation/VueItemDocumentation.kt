@@ -42,18 +42,18 @@ interface VueItemDocumentation {
     @Nls
     fun typeOf(item: VueDocumentedItem): String =
       when (item) {
-        is VueFunctionComponent -> "vue.documentation.type.functional.component"
-        is VueComponent -> "vue.documentation.type.component"
-        is VueDirective -> "vue.documentation.type.directive"
-        is VueFilter -> "vue.documentation.type.filter"
-        is VueMethod -> "vue.documentation.type.component.method"
-        is VueEmitCall -> "vue.documentation.type.component.event"
-        is VueSlot -> "vue.documentation.type.slot"
-        is VueInputProperty -> "vue.documentation.type.component.property"
-        is VueComputedProperty -> "vue.documentation.type.component.computed.property"
-        is VueDataProperty -> "vue.documentation.type.component.data.property"
-        is VueDirectiveModifier -> "vue.documentation.type.directive.modifier"
-        is VueDirectiveArgument -> "vue.documentation.type.directive.argument"
+        is VueFunctionComponent -> "mpx.documentation.type.functional.component"
+        is VueComponent -> "mpx.documentation.type.component"
+        is VueDirective -> "mpx.documentation.type.directive"
+        is VueFilter -> "mpx.documentation.type.filter"
+        is VueMethod -> "mpx.documentation.type.component.method"
+        is VueEmitCall -> "mpx.documentation.type.component.event"
+        is VueSlot -> "mpx.documentation.type.slot"
+        is VueInputProperty -> "mpx.documentation.type.component.property"
+        is VueComputedProperty -> "mpx.documentation.type.component.computed.property"
+        is VueDataProperty -> "mpx.documentation.type.component.data.property"
+        is VueDirectiveModifier -> "mpx.documentation.type.directive.modifier"
+        is VueDirectiveArgument -> "mpx.documentation.type.directive.argument"
         else -> throw IncorrectOperationException(item.javaClass.name)
       }.let { VueBundle.message(it) }
 

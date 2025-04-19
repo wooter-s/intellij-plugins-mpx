@@ -63,7 +63,7 @@ class VueInsertHandler : XmlTagInsertHandler() {
     private fun isSkippedModule(nodeModule: VirtualFile?) =
       nodeModule != null
       && nodeModule.parent?.name == JSLibraryUtil.NODE_MODULES
-      && ("vue" == nodeModule.name || "vue-router" == nodeModule.name)
+      && ("mpx" == nodeModule.name || "mpx-router" == nodeModule.name)
 
   }
 }

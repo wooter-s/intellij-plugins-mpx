@@ -47,7 +47,7 @@ class VueComponentInplaceIntroducer(elementToRename: XmlTag,
   private var isCanceled = false
 
   companion object {
-    const val GROUP_ID: String = "VueExtractComponent"
+    const val GROUP_ID: String = "MpxExtractComponent"
   }
 
   override fun shouldSelectAll(): Boolean = false

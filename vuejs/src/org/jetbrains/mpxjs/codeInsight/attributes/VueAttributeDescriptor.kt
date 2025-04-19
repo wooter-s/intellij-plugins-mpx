@@ -35,7 +35,7 @@ open class VueAttributeDescriptor(protected val tag: XmlTag,
 
   override fun validateValue(context: XmlElement?, value: String?): String? {
     if (value != null && !acceptsValue) {
-      return VueBundle.message("vue.inspection.message.attribute.does.not.accept.value", name)
+      return VueBundle.message("mpx.inspection.message.attribute.does.not.accept.value", name)
     }
     return null
   }

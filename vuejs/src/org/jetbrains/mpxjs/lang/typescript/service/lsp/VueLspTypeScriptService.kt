@@ -74,7 +74,7 @@ class VueLspTypeScriptService(project: Project) : BaseLspTypeScriptService(proje
   }
 
   override fun supportsTypeEvaluation(virtualFile: VirtualFile, element: PsiElement): Boolean {
-    return virtualFile.extension == "vue" || super.supportsTypeEvaluation(virtualFile, element)
+    return virtualFile.extension == "mpx" || super.supportsTypeEvaluation(virtualFile, element)
   }
 
   override fun isTypeEvaluationEnabled(): Boolean =

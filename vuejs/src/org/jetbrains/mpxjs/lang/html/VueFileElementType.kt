@@ -24,7 +24,7 @@ import org.jetbrains.mpxjs.lang.html.parser.VueParsing
 import org.jetbrains.mpxjs.lang.html.parser.VueStubElementTypes
 import org.jetbrains.mpxjs.lang.html.stub.impl.VueFileStubImpl
 
-class VueFileElementType : IStubFileElementType<VueFileStubImpl>("vue", VueLanguage.INSTANCE) {
+class VueFileElementType : IStubFileElementType<VueFileStubImpl>("mpx", VueLanguage.INSTANCE) {
   companion object {
     @JvmStatic
     val INSTANCE: VueFileElementType = VueFileElementType()

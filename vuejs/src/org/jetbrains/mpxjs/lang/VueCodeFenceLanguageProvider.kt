@@ -18,7 +18,7 @@ class VueCodeFenceLanguageProvider : CodeFenceLanguageProvider {
 
   override fun getInfoStringForLanguage(language: Language, context: PsiElement?): String? {
     if (language == VueLanguage.INSTANCE) {
-      return "vue"
+      return "mpx"
     }
     return null
   }

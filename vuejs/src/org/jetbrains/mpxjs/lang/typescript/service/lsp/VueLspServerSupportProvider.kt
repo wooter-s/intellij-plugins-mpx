@@ -28,7 +28,7 @@ class VueLspServerSupportProvider : LspServerSupportProvider {
     JSLspServerWidgetItem(lspServer, currentFile, VuejsIcons.Vue, VuejsIcons.Vue, VueConfigurable::class.java)
 }
 
-class VueLspServerDescriptor(project: Project) : JSFrameworkLspServerDescriptor(project, VueServiceSetActivationRule, "Vue") {
+class VueLspServerDescriptor(project: Project) : JSFrameworkLspServerDescriptor(project, VueServiceSetActivationRule, "Mpx") {
   val newEvalMode = project.service<VueSettings>().useTypesFromServer
 
   init {

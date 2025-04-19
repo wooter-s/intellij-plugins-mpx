@@ -67,7 +67,7 @@ class VueFrameworkSpecificHandler : JSFrameworkSpecificHandler {
       ?.resolve()
       ?.containingFile?.virtualFile
       ?.let { NodeModuleSearchUtil.findDependencyRoot(it) }
-      ?.let { it.name == "vue" || it.parent?.name == "@vue" }
+      ?.let { it.name == "mpx" || it.parent?.name == "@mpx" }
     ?: false
 
   private fun getInjectType(call: JSCallExpression): JSType? {
