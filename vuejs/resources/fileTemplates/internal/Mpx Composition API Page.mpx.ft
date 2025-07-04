@@ -1,0 +1,27 @@
+<template>
+  #[[$END$]]#
+</template>
+
+<script ${SCRIPT_LANG_ATTR}>
+import {
+  createPage
+} from '@mpxjs/core'
+
+createPage({
+  setup() {
+    return {
+    }
+  }
+})
+</script>
+
+<style scoped${STYLE_LANG_ATTR}>
+
+</style>
+
+<script name="json">
+module.exports = {
+  "navigationBarTitleText": "",
+  "usingComponents": {},
+}
+</script>

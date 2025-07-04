@@ -24,6 +24,7 @@ import org.jetbrains.vuejs.lang.configureVueDependencies
 import org.jetbrains.vuejs.lang.typescript.service.classic.VueClassicTypeScriptService
 import org.jetbrains.vuejs.lang.vueRelativeTestDataPath
 import org.junit.Test
+import kotlin.Throws
 
 private fun CodeInsightTestFixture.configureFileAndCheckHighlighting(filePath: String) {
   val myFixture = this

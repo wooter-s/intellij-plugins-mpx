@@ -1,5 +1,5 @@
 <idea-plugin>
   <extensions defaultExtensionNs="org.intellij.markdown">
-    <fenceLanguageProvider implementation="org.jetbrains.vuejs.lang.VueCodeFenceLanguageProvider"/>
+    <fenceLanguageProvider implementation="org.jetbrains.mpxjs.lang.VueCodeFenceLanguageProvider"/>
   </extensions>
 </idea-plugin>
