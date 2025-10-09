@@ -49,10 +49,10 @@
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">
-    <registryKey defaultValue="true" description="Use bundled Mpx service" key="vue.language.server.bundled.enabled"/>
-    <registryKey defaultValue="" description="Mpx service version for downloading" key="vue.language.server.default.version"/>
-    <registryKey defaultValue="" description="Mpx TypeScript plugin version for downloading" key="vue.ts.plugin.default.version"/>
-    <registryKey defaultValue="true" description="Use bundled Mpx TypeScript plugin" key="vue.ts.plugin.bundled.enabled"/>
+    <registryKey defaultValue="true" description="Use bundled Mpx service" key="mpx.language.server.bundled.enabled"/>
+    <registryKey defaultValue="" description="Mpx service version for downloading" key="mpx.language.server.default.version"/>
+    <registryKey defaultValue="" description="Mpx TypeScript plugin version for downloading" key="mpx.ts.plugin.default.version"/>
+    <registryKey defaultValue="true" description="Use bundled Mpx TypeScript plugin" key="mpx.ts.plugin.bundled.enabled"/>
     <dependencySupport kind="javascript" coordinate="npm:vue" displayName="Vue.js"/>
     <dependencySupport kind="javascript" coordinate="npm:nuxt" displayName="Nuxt"/>
     <css.embeddedCssProvider implementation="org.jetbrains.mpxjs.css.VueEmbeddedCssProvider"/>
@@ -88,7 +88,7 @@
     <lang.syntaxHighlighterFactory language="Mpx"
                                    implementationClass="org.jetbrains.mpxjs.lang.html.highlighting.VueSyntaxHighlighterFactory"/>
 
-    <xml.xmlExtension implementation="org.jetbrains.vuejs.codeInsight.VueXmlExtension" order="before poly-symbols-react"/>
+    <xml.xmlExtension implementation="org.jetbrains.mpxjs.codeInsight.VueXmlExtension" order="before poly-symbols-react"/>
     <xml.xmlSuppressionProvider implementation="org.jetbrains.mpxjs.inspections.VueXmlSuppressionProvider" order="first"/>
     <notificationGroup displayType="BALLOON" id="Mpx" isLogByDefault="true"
                        bundle="messages.VueBundle" key="mpx.documentation.mpx"/>

@@ -1,5 +1,5 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.model.typed
+package org.jetbrains.mpxjs.model.typed
 
 import com.intellij.lang.javascript.psi.JSFunctionType
 import com.intellij.lang.javascript.psi.JSType
@@ -12,9 +12,9 @@ import com.intellij.psi.createSmartPointer
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
-import org.jetbrains.vuejs.model.VueDirective
-import org.jetbrains.vuejs.model.source.DIRECTIVE_MODIFIERS_PROP
-import org.jetbrains.vuejs.model.source.DIRECTIVE_MOUNTED_FUN
+import org.jetbrains.mpxjs.model.VueDirective
+import org.jetbrains.mpxjs.model.source.DIRECTIVE_MODIFIERS_PROP
+import org.jetbrains.mpxjs.model.source.DIRECTIVE_MOUNTED_FUN
 
 class VueTypedDirective(
   override val source: TypeScriptPropertySignature,

@@ -30,11 +30,11 @@ import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.util.contextOfType
 import com.intellij.util.asSafely
 import com.intellij.util.containers.MultiMap
-import org.jetbrains.vuejs.model.*
-import org.jetbrains.vuejs.web.*
-import org.jetbrains.vuejs.web.symbols.VueComponentSymbol
-import org.jetbrains.vuejs.web.symbols.VueDocumentedItemSymbol
-import org.jetbrains.vuejs.web.symbols.VueWebTypesMergedSymbol
+import org.jetbrains.mpxjs.model.*
+import org.jetbrains.mpxjs.web.*
+import org.jetbrains.mpxjs.web.symbols.VueComponentSymbol
+import org.jetbrains.mpxjs.web.symbols.VueDocumentedItemSymbol
+import org.jetbrains.mpxjs.web.symbols.VueWebTypesMergedSymbol
 import java.util.*
 
 class VueCodeModelSymbolScope<K>

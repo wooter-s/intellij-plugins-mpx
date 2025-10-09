@@ -3,8 +3,8 @@ package org.jetbrains.mpxjs.web.symbols
 
 import com.intellij.model.Pointer
 import com.intellij.polySymbols.PolySymbolOrigin
-import org.jetbrains.vuejs.model.VueComponent
-import org.jetbrains.vuejs.model.VueNamedSymbol
+import org.jetbrains.mpxjs.model.VueComponent
+import org.jetbrains.mpxjs.model.VueNamedSymbol
 
 abstract class VueNamedPolySymbol<T : VueNamedSymbol>(
   item: T,

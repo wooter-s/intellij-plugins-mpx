@@ -22,17 +22,17 @@ import com.intellij.polySymbols.query.PolySymbolQueryStack
 import com.intellij.polySymbols.query.PolySymbolWithPattern
 import com.intellij.polySymbols.utils.PolySymbolScopeWithCache
 import com.intellij.psi.util.PsiModificationTracker
-import org.jetbrains.vuejs.model.VueComputedProperty
-import org.jetbrains.vuejs.model.VueDataProperty
-import org.jetbrains.vuejs.model.VueModelVisitor
-import org.jetbrains.vuejs.model.source.VueSourceComponent
-import org.jetbrains.vuejs.web.VUE_COMPONENT_COMPUTED_PROPERTIES
-import org.jetbrains.vuejs.web.VUE_COMPONENT_DATA_PROPERTIES
-import org.jetbrains.vuejs.web.VueFramework
+import org.jetbrains.mpxjs.model.VueComputedProperty
+import org.jetbrains.mpxjs.model.VueDataProperty
+import org.jetbrains.mpxjs.model.VueModelVisitor
+import org.jetbrains.mpxjs.model.source.VueSourceComponent
+import org.jetbrains.mpxjs.web.VUE_COMPONENT_COMPUTED_PROPERTIES
+import org.jetbrains.mpxjs.web.VUE_COMPONENT_DATA_PROPERTIES
+import org.jetbrains.mpxjs.web.VueFramework
 import org.jetbrains.mpxjs.web.symbols.VueAnySymbol
-import org.jetbrains.vuejs.web.symbols.VueComputedPropertySymbol
-import org.jetbrains.vuejs.web.symbols.VueDataPropertySymbol
-import org.jetbrains.vuejs.web.symbols.VueScopeElementOrigin
+import org.jetbrains.mpxjs.web.symbols.VueComputedPropertySymbol
+import org.jetbrains.mpxjs.web.symbols.VueDataPropertySymbol
+import org.jetbrains.mpxjs.web.symbols.VueScopeElementOrigin
 
 class VueWatchSymbolScope(private val enclosingComponent: VueSourceComponent)
   : PolySymbolScopeWithCache<VueSourceComponent, Unit>(VueFramework.ID, enclosingComponent.source.project, enclosingComponent, Unit) {
@@ -89,7 +89,10 @@ class VueWatchSymbolScope(private val enclosingComponent: VueSourceComponent)
   companion object {
 
     private val anyJsDataSymbol = VueAnySymbol(
-      WebSymbolOrigin.create(VueFramework.ID),
+      object : PolySymbolOrigin {
+        override val framework: FrameworkId
+          get() = VueFramework.ID
+      },
       VUE_COMPONENT_DATA_PROPERTIES,
       "Unknown data property",
       JSAnyType.getWithLanguage(JSTypeSource.SourceLanguage.JS)

@@ -1,5 +1,5 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.web
+package org.jetbrains.mpxjs.web
 
 import com.intellij.javascript.nodejs.monorepo.JSMonorepoManager
 import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider.withTypeEvaluationLocation
@@ -22,14 +22,14 @@ import com.intellij.psi.xml.*
 import com.intellij.util.SmartList
 import com.intellij.util.asSafely
 import com.intellij.xml.util.HtmlUtil.SLOT_TAG_NAME
-import org.jetbrains.vuejs.codeInsight.fromAsset
-import org.jetbrains.vuejs.codeInsight.isGlobalDirectiveName
-import org.jetbrains.vuejs.codeInsight.isScriptSetupLocalDirectiveName
-import org.jetbrains.vuejs.index.findModule
-import org.jetbrains.vuejs.lang.html.isVueFile
-import org.jetbrains.vuejs.model.*
-import org.jetbrains.vuejs.model.source.*
-import org.jetbrains.vuejs.web.scopes.*
+import org.jetbrains.mpxjs.codeInsight.fromAsset
+import org.jetbrains.mpxjs.codeInsight.isGlobalDirectiveName
+import org.jetbrains.mpxjs.codeInsight.isScriptSetupLocalDirectiveName
+import org.jetbrains.mpxjs.index.findModule
+import org.jetbrains.mpxjs.lang.html.isVueFile
+import org.jetbrains.mpxjs.model.*
+import org.jetbrains.mpxjs.model.source.*
+import org.jetbrains.mpxjs.web.scopes.*
 
 val VUE_TOP_LEVEL_ELEMENTS: PolySymbolQualifiedKind = PolySymbolQualifiedKind[NAMESPACE_HTML, "vue-file-top-elements"]
 val VUE_COMPONENTS: PolySymbolQualifiedKind = PolySymbolQualifiedKind[NAMESPACE_HTML, "vue-components"]

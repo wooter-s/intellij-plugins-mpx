@@ -3,12 +3,20 @@ package org.jetbrains.mpxjs.web.symbols
 
 import com.intellij.lang.javascript.psi.JSType
 import com.intellij.model.Pointer
+import com.intellij.polySymbols.PolySymbol
+import com.intellij.polySymbols.PolySymbolOrigin
+import com.intellij.polySymbols.PolySymbolProperty
+import com.intellij.polySymbols.PolySymbolQualifiedKind
+import com.intellij.polySymbols.js.types.PROP_JS_TYPE
+import com.intellij.polySymbols.patterns.PolySymbolPattern
+import com.intellij.polySymbols.patterns.PolySymbolPatternFactory
+import com.intellij.polySymbols.query.PolySymbolWithPattern
 
 class VueAnySymbol(
-  override val origin: PolySymbolOrigin,
-  override val qualifiedKind: PolySymbolQualifiedKind,
-  override val name: String,
-  val type: JSType? = null,
+    override val origin: PolySymbolOrigin,
+    override val qualifiedKind: PolySymbolQualifiedKind,
+    override val name: String,
+    val type: JSType? = null,
 ) : PolySymbolWithPattern {
 
   override val pattern: PolySymbolPattern

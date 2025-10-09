@@ -1,12 +1,12 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.web.symbols
+package org.jetbrains.mpxjs.web.symbols
 
 import com.intellij.lang.javascript.psi.JSType
 import com.intellij.polySymbols.PolySymbolModifier
 import com.intellij.polySymbols.PolySymbolQualifiedKind
 import com.intellij.polySymbols.html.PolySymbolHtmlAttributeValue
-import org.jetbrains.vuejs.model.VueInputProperty
-import org.jetbrains.vuejs.web.VUE_COMPONENT_PROPS
+import org.jetbrains.mpxjs.model.VueInputProperty
+import org.jetbrains.mpxjs.web.VUE_COMPONENT_PROPS
 
 interface VueInputPropSymbolMixin : VuePropertySymbolMixin, VueInputProperty {
 

@@ -25,7 +25,7 @@ private val vueLspServerPackageVersion = PackageVersion.bundled<VueLspServerPack
   version = "2.2.10",
   pluginPath = "vuejs",
   localPath = "vue-language-server",
-  isBundledEnabled = { Registry.`is`("vue.language.server.bundled.enabled") },
+  isBundledEnabled = { Registry.`is`("mpx.language.server.bundled.enabled") },
 )
 
 private object VueLspServerPackageDescriptor : LspServerPackageDescriptor(
@@ -33,7 +33,7 @@ private object VueLspServerPackageDescriptor : LspServerPackageDescriptor(
   defaultVersion = vueLspServerPackageVersion,
   defaultPackageRelativePath = "/bin/vue-language-server.js",
 ) {
-  override val registryVersion: String get() = Registry.stringValue("vue.language.server.default.version")
+  override val registryVersion: String get() = Registry.stringValue("mpx.language.server.default.version")
 }
 
 @ApiStatus.Experimental
@@ -52,7 +52,7 @@ object VueLspServerLoader : LspServerLoader(VueLspServerPackageDescriptor) {
 
   private fun getNewEvalPath(): String {
     // work in progress
-    val registryValue = Registry.stringValue("vue.language.server.default.version")
+    val registryValue = Registry.stringValue("mpx.language.server.default.version")
     val version =
       if (registryValue.startsWith("1")) "tsc-vue1" // explicit Registry value is needed for old Vue LS 1 New Eval
       else "tsc-vue"
@@ -98,7 +98,7 @@ private val vueTSPluginPackageVersion = PackageVersion.bundled<VueTSPluginPackag
   version = "3.0.1",
   pluginPath = "vuejs",
   localPath = "typescript-vue-plugin",
-  isBundledEnabled = { Registry.`is`("vue.ts.plugin.bundled.enabled") },
+  isBundledEnabled = { Registry.`is`("mpx.ts.plugin.bundled.enabled") },
 )
 
 private object VueTSPluginPackageDescriptor : LspServerPackageDescriptor(
@@ -107,7 +107,7 @@ private object VueTSPluginPackageDescriptor : LspServerPackageDescriptor(
   defaultPackageRelativePath = "",
 ) {
   override val registryVersion: String
-    get() = Registry.stringValue("vue.ts.plugin.default.version")
+    get() = Registry.stringValue("mpx.ts.plugin.default.version")
 }
 
 @ApiStatus.Experimental

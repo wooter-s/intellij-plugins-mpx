@@ -1,5 +1,5 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.model.source
+package org.jetbrains.mpxjs.model.source
 
 import com.intellij.lang.ecmascript6.psi.ES6ImportedBinding
 import com.intellij.lang.javascript.navigation.JSDeclarationEvaluator
@@ -7,9 +7,9 @@ import com.intellij.lang.javascript.psi.*
 import com.intellij.model.Pointer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.createSmartPointer
-import org.jetbrains.vuejs.model.VueContainer
-import org.jetbrains.vuejs.model.VueEntitiesContainer
-import org.jetbrains.vuejs.model.VuePlugin
+import org.jetbrains.mpxjs.model.VueContainer
+import org.jetbrains.mpxjs.model.VueEntitiesContainer
+import org.jetbrains.mpxjs.model.VuePlugin
 
 @ConsistentCopyVisibility
 data class VueCompositionPlugin

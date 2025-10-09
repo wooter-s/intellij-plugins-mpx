@@ -1,5 +1,5 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.web.symbols
+package org.jetbrains.mpxjs.web.symbols
 
 import com.intellij.polySymbols.PolySymbolKind
 import com.intellij.polySymbols.PolySymbolNamespace

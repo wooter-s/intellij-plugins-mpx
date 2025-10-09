@@ -1,5 +1,5 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.web
+package org.jetbrains.mpxjs.web
 
 import com.intellij.polySymbols.html.StandardHtmlSymbol
 import com.intellij.lang.javascript.DialectDetector
@@ -22,10 +22,10 @@ import com.intellij.polySymbols.webTypes.WebTypesSymbol
 import com.intellij.psi.PsiElement
 import com.intellij.psi.createSmartPointer
 import com.intellij.xml.util.Html5TagAndAttributeNamesProvider
-import org.jetbrains.vuejs.codeInsight.detectVueScriptLanguage
-import org.jetbrains.vuejs.codeInsight.tags.VueInsertHandler
-import org.jetbrains.vuejs.model.VueModelVisitor
-import org.jetbrains.vuejs.web.symbols.VueWebTypesMergedSymbol
+import org.jetbrains.mpxjs.codeInsight.detectVueScriptLanguage
+import org.jetbrains.mpxjs.codeInsight.tags.VueInsertHandler
+import org.jetbrains.mpxjs.model.VueModelVisitor
+import org.jetbrains.mpxjs.web.symbols.VueWebTypesMergedSymbol
 
 class VueSymbolQueryResultsCustomizer(private val context: PsiElement) : PolySymbolQueryResultsCustomizer {
 

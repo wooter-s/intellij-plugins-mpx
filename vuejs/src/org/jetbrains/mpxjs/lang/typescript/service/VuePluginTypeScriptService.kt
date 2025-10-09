@@ -1,5 +1,5 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.lang.typescript.service
+package org.jetbrains.mpxjs.lang.typescript.service
 
 import com.intellij.lang.javascript.service.protocol.JSLanguageServiceSimpleCommand
 import com.intellij.lang.typescript.compiler.languageService.TypeScriptServiceWidgetItem
@@ -12,9 +12,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.lang.lsWidget.LanguageServiceWidgetItem
 import com.intellij.psi.PsiFile
-import org.jetbrains.vuejs.VuejsIcons
-import org.jetbrains.vuejs.lang.html.isVueFile
-import org.jetbrains.vuejs.options.VueConfigurable
+import org.jetbrains.mpxjs.VuejsIcons
+import org.jetbrains.mpxjs.lang.html.isVueFile
+import org.jetbrains.mpxjs.options.VueConfigurable
 
 private val vueTypeScriptPlugin = DownloadableTypeScriptServicePlugin(
   shortLabel = "Vue",

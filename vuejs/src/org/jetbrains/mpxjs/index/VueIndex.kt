@@ -12,8 +12,8 @@ import com.intellij.psi.stubs.StubIndexKey
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.util.Processor
 import com.intellij.util.SmartList
-import org.jetbrains.vuejs.codeInsight.fromAsset
-import org.jetbrains.vuejs.index.VueIndexBase.Companion.createJSKey
+import org.jetbrains.mpxjs.codeInsight.fromAsset
+import org.jetbrains.mpxjs.index.VueIndexBase.Companion.createJSKey
 
 const val VUE_FILE_EXTENSION = ".mpx"
 const val VUE_MODULE: String = "mpx"

@@ -42,6 +42,7 @@ kotlin {
     jvmTarget.set(JvmTarget.fromTarget(ext("kotlin.jvmTarget")))
     @Suppress("UNCHECKED_CAST")
     freeCompilerArgs.addAll(rootProject.extensions["kotlin.freeCompilerArgs"] as List<String>)
+    freeCompilerArgs.add("-Xwhen-guards")
   }
 }
 

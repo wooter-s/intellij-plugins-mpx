@@ -17,9 +17,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.contextOfType
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.asSafely
-import org.jetbrains.vuejs.index.isScriptSetupTag
-import org.jetbrains.vuejs.lang.html.isVueFileName
-import org.jetbrains.vuejs.web.symbols.VueComponentSymbol
+import org.jetbrains.mpxjs.index.isScriptSetupTag
+import org.jetbrains.mpxjs.lang.html.isVueFileName
+import org.jetbrains.mpxjs.web.symbols.VueComponentSymbol
 
 class VueCodeCompletionItemCustomizer :
   PolySymbolCodeCompletionItemCustomizer {

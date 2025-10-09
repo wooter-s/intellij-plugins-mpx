@@ -18,7 +18,7 @@ import org.jetbrains.mpxjs.codeInsight.resolveElementTo
 import org.jetbrains.mpxjs.lang.html.isVueFileName
 import org.jetbrains.mpxjs.model.VueModelManager
 import org.jetbrains.mpxjs.model.VueRegularComponent
-import org.jetbrains.vuejs.model.typed.VueTypedContainer
+import org.jetbrains.mpxjs.model.typed.VueTypedContainer
 
 class VueTypedComponent(
   override val source: PsiElement,

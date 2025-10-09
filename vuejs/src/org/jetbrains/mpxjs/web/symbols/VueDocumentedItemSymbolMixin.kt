@@ -1,5 +1,5 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.web.symbols
+package org.jetbrains.mpxjs.web.symbols
 
 import com.intellij.lang.javascript.psi.JSType
 import com.intellij.model.Pointer
@@ -13,10 +13,10 @@ import com.intellij.polySymbols.html.PROP_HTML_ATTRIBUTE_VALUE
 import com.intellij.polySymbols.html.PolySymbolHtmlAttributeValue
 import com.intellij.polySymbols.js.types.PROP_JS_TYPE
 import com.intellij.psi.PsiElement
-import org.jetbrains.vuejs.VueBundle
-import org.jetbrains.vuejs.codeInsight.documentation.VueDocumentedItem
-import org.jetbrains.vuejs.codeInsight.documentation.VueItemDocumentation
-import org.jetbrains.vuejs.web.vueEmptyOrigin
+import org.jetbrains.mpxjs.VueBundle
+import org.jetbrains.mpxjs.codeInsight.documentation.VueDocumentedItem
+import org.jetbrains.mpxjs.codeInsight.documentation.VueItemDocumentation
+import org.jetbrains.mpxjs.web.vueEmptyOrigin
 
 interface VueDocumentedItemSymbolMixin : PolySymbol, VueDocumentedItem {
 

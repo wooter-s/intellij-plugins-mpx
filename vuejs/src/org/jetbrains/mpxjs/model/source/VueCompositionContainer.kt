@@ -1,5 +1,5 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.model.source
+package org.jetbrains.mpxjs.model.source
 
 import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.stubs.JSImplicitElement
@@ -18,13 +18,13 @@ import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.asSafely
-import org.jetbrains.vuejs.codeInsight.getTextIfLiteral
-import org.jetbrains.vuejs.context.isVueContext
-import org.jetbrains.vuejs.index.VUE_COMPOSITION_APP_INDEX_JS_KEY
-import org.jetbrains.vuejs.index.VUE_COMPOSITION_APP_INDEX_KEY
-import org.jetbrains.vuejs.index.resolve
-import org.jetbrains.vuejs.model.*
-import org.jetbrains.vuejs.model.source.VueComponents.Companion.getComponentDescriptor
+import org.jetbrains.mpxjs.codeInsight.getTextIfLiteral
+import org.jetbrains.mpxjs.context.isVueContext
+import org.jetbrains.mpxjs.index.VUE_COMPOSITION_APP_INDEX_JS_KEY
+import org.jetbrains.mpxjs.index.VUE_COMPOSITION_APP_INDEX_KEY
+import org.jetbrains.mpxjs.index.resolve
+import org.jetbrains.mpxjs.model.*
+import org.jetbrains.mpxjs.model.source.VueComponents.Companion.getComponentDescriptor
 
 abstract class VueCompositionContainer() :
   VueDelegatedContainer<VueContainer>() {

@@ -12,12 +12,12 @@ import com.intellij.polySymbols.utils.PolySymbolScopeWithCache
 import com.intellij.polySymbols.utils.ReferencingPolySymbol
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.util.asSafely
-import org.jetbrains.vuejs.model.provides
-import org.jetbrains.vuejs.model.source.VueSourceComponent
-import org.jetbrains.vuejs.web.VUE_PROVIDES
-import org.jetbrains.vuejs.web.VueFramework
-import org.jetbrains.vuejs.web.symbols.VueProvideSymbol
-import org.jetbrains.vuejs.web.symbols.VueScopeElementOrigin
+import org.jetbrains.mpxjs.model.provides
+import org.jetbrains.mpxjs.model.source.VueSourceComponent
+import org.jetbrains.mpxjs.web.VUE_PROVIDES
+import org.jetbrains.mpxjs.web.VueFramework
+import org.jetbrains.mpxjs.web.symbols.VueProvideSymbol
+import org.jetbrains.mpxjs.web.symbols.VueScopeElementOrigin
 
 class VueInjectSymbolScope(private val enclosingComponent: VueSourceComponent)
   : PolySymbolScopeWithCache<VueSourceComponent, Unit>(VueFramework.ID, enclosingComponent.source.project, enclosingComponent, Unit) {

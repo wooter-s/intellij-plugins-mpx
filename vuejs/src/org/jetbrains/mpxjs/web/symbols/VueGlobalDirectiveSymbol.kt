@@ -1,5 +1,5 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.vuejs.web.symbols
+package org.jetbrains.mpxjs.web.symbols
 
 import com.intellij.model.Pointer
 import com.intellij.model.Symbol
@@ -11,12 +11,12 @@ import com.intellij.polySymbols.query.PolySymbolListSymbolsQueryParams
 import com.intellij.polySymbols.query.PolySymbolNameMatchQueryParams
 import com.intellij.polySymbols.query.PolySymbolQueryStack
 import org.jetbrains.mpxjs.web.symbols.VueAnySymbol
-import org.jetbrains.vuejs.model.VueModelVisitor
-import org.jetbrains.vuejs.model.typed.VueTypedDirective
-import org.jetbrains.vuejs.web.VUE_DIRECTIVE_ARGUMENT
-import org.jetbrains.vuejs.web.VUE_DIRECTIVE_MODIFIERS
-import org.jetbrains.vuejs.web.VUE_GLOBAL_DIRECTIVES
-import org.jetbrains.vuejs.web.asPolySymbolPriority
+import org.jetbrains.mpxjs.model.VueModelVisitor
+import org.jetbrains.mpxjs.model.typed.VueTypedDirective
+import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_ARGUMENT
+import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_MODIFIERS
+import org.jetbrains.mpxjs.web.VUE_GLOBAL_DIRECTIVES
+import org.jetbrains.mpxjs.web.asPolySymbolPriority
 
 class VueGlobalDirectiveSymbol(
   directive: VueTypedDirective,
