@@ -1,21 +1,16 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+
+// pluginManagement 必须在顶层,不能嵌套在 buildscript 内
+pluginManagement {
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+
 buildscript {
   repositories {
     mavenCentral()
-    maven("https://oss.sonatype.org/content/repositories/snapshots/")
     gradlePluginPortal()
-  }
-
-  pluginManagement {
-    repositories {
-      maven("https://oss.sonatype.org/content/repositories/snapshots/")
-      gradlePluginPortal()
-    }
-    plugins {
-      id("java")
-      id("org.jetbrains.kotlin.jvm") version "2.1.0"
-      id("org.jetbrains.intellij.platform") version "2.5.1-SNAPSHOT"
-      id("org.jetbrains.intellij.platform.settings") version "2.5.0"
-    }
   }
 }

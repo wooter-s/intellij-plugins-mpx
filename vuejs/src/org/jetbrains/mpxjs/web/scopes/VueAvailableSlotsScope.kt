@@ -1,0 +1,96 @@
+// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.web.scopes
+
+import com.intellij.model.Pointer
+import com.intellij.polySymbols.*
+import com.intellij.polySymbols.completion.PolySymbolCodeCompletionItem
+import com.intellij.polySymbols.html.HTML_ATTRIBUTES
+import com.intellij.polySymbols.patterns.PolySymbolPattern
+import com.intellij.polySymbols.patterns.PolySymbolPatternFactory
+import com.intellij.polySymbols.query.*
+import com.intellij.polySymbols.utils.match
+import com.intellij.psi.createSmartPointer
+import com.intellij.psi.xml.XmlTag
+import org.jetbrains.mpxjs.model.DEFAULT_SLOT_NAME
+import org.jetbrains.mpxjs.model.getAvailableSlots
+import org.jetbrains.mpxjs.model.getAvailableSlotsCompletions
+import org.jetbrains.mpxjs.model.getMatchingAvailableSlots
+import org.jetbrains.mpxjs.web.VUE_AVAILABLE_SLOTS
+import org.jetbrains.mpxjs.web.VueFramework
+
+class VueAvailableSlotsScope(private val tag: XmlTag) : PolySymbolScope {
+
+  override fun hashCode(): Int = tag.hashCode()
+
+  override fun equals(other: Any?): Boolean =
+    other is VueAvailableSlotsScope
+    && other.tag == tag
+
+  override fun getModificationCount(): Long = tag.containingFile.modificationStamp
+
+  override fun getMatchingSymbols(
+    qualifiedName: PolySymbolQualifiedName,
+    params: PolySymbolNameMatchQueryParams,
+    stack: PolySymbolQueryStack,
+  ): List<PolySymbol> =
+    when {
+      !params.queryExecutor.allowResolve -> emptyList()
+      qualifiedName.matches(HTML_ATTRIBUTES) ->
+        DefaultSlotSymbol.match(qualifiedName.name, params, stack)
+      qualifiedName.matches(VUE_AVAILABLE_SLOTS) ->
+        getMatchingAvailableSlots(tag, qualifiedName.name, true)
+      else -> emptyList()
+    }
+
+  override fun getSymbols(
+    qualifiedKind: PolySymbolQualifiedKind,
+    params: PolySymbolListSymbolsQueryParams,
+    stack: PolySymbolQueryStack,
+  ): List<PolySymbol> =
+    when {
+      !params.queryExecutor.allowResolve -> emptyList()
+      qualifiedKind == HTML_ATTRIBUTES ->
+        listOf(DefaultSlotSymbol)
+      qualifiedKind == VUE_AVAILABLE_SLOTS ->
+        getAvailableSlots(tag, params.expandPatterns, true)
+      else -> emptyList()
+    }
+
+  override fun getCodeCompletions(
+    qualifiedName: PolySymbolQualifiedName,
+    params: PolySymbolCodeCompletionQueryParams,
+    stack: PolySymbolQueryStack,
+  ): List<PolySymbolCodeCompletionItem> =
+    if (qualifiedName.matches(VUE_AVAILABLE_SLOTS) && params.queryExecutor.allowResolve)
+      getAvailableSlotsCompletions(tag, qualifiedName.name, params.position, true)
+    else emptyList()
+
+  override fun createPointer(): Pointer<VueAvailableSlotsScope> {
+    val tag = this.tag.createSmartPointer()
+    return Pointer {
+      tag.dereference()?.let { VueAvailableSlotsScope(it) }
+    }
+  }
+
+  object DefaultSlotSymbol : PolySymbolWithPattern {
+    override val qualifiedKind: PolySymbolQualifiedKind
+      get() = HTML_ATTRIBUTES
+
+    override val name: String
+      get() = "v-slot"
+
+    override val origin: PolySymbolOrigin = object : PolySymbolOrigin {
+      override val framework: FrameworkId
+        get() = VueFramework.ID
+    }
+
+    override val pattern: PolySymbolPattern =
+      PolySymbolPatternFactory.createSingleSymbolReferencePattern(
+        listOf(VUE_AVAILABLE_SLOTS.withName(DEFAULT_SLOT_NAME))
+      )
+
+    override fun createPointer(): Pointer<out PolySymbol> {
+      return Pointer.hardPointer(this)
+    }
+  }
+}

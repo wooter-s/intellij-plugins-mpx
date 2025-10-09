@@ -1,34 +1,64 @@
-// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.runtime
 
 import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
-import com.intellij.execution.lineMarker.RunLineMarkerContributor.Info
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.vfs.toNioPathOrNull
+import com.intellij.testFramework.TestModeFlags
 import com.intellij.ui.IconManager
-import javax.swing.Icon
 
-internal class TfRunLineMarkerContributorTest : TfBaseRunConfigurationTest() {
+internal class TfRunLineMarkerContributorTest : BaseRunConfigurationTest() {
 
-  private val warnedRunIcon: Icon =
-    IconManager.getInstance().createLayered(AllIcons.RunConfigurations.TestState.Run, AllIcons.Nodes.WarningMark)
+  override fun setUp() {
+    super.setUp()
+    TestModeFlags.set(TF_RUN_MOCK, true, testRootDisposable)
+  }
+
+  override fun tearDown() {
+    try {
+      val runManager = RunManager.getInstance(project)
+      runManager.allSettings.forEach { runManager.removeConfiguration(it) }
+    }
+    catch (e: Throwable) {
+      addSuppressedException(e)
+    }
+    finally {
+      super.tearDown()
+    }
+  }
 
   fun testSimpleLineMarker() {
-    val info = assertRunLineMarkerIcon("simple.tf")
-    runActionsAndCheckNames(info?.actions)
+    myFixture.configureFromExistingVirtualFile(myFixture.copyFileToProject("simple.tf", "src/simple.tf"))
+    val file = myFixture.file
+    val info = file.findElementAt(myFixture.caretOffset)?.let { TfRunLineMarkerContributor().getInfo(it) }
+    if (info == null) {
+      fail("Info of RunLineMarker not should be empty")
+      return
+    }
+
+    val warnedRun = IconManager.getInstance().createLayered(AllIcons.RunConfigurations.TestState.Run, AllIcons.Nodes.WarningMark)
+    assertEquals(warnedRun, info.icon)
+    runActionsAndCheckNames(info.actions)
   }
 
   fun testLineMarkerWithComment() {
-    val info = assertRunLineMarkerIcon("with_comment.tf")
+    myFixture.configureFromExistingVirtualFile(myFixture.copyFileToProject("with_comment.tf", "src/with_comment.tf"))
+    val file = myFixture.file
+    val info = file.findElementAt(myFixture.caretOffset)?.let { TfRunLineMarkerContributor().getInfo(it) }
+    if (info == null) {
+      fail("Info of RunLineMarker not should be empty")
+      return
+    }
 
-    testRunConfigActions(info?.actions)
-    runActionsAndCheckNames(info?.actions)
+    val warnedRun = IconManager.getInstance().createLayered(AllIcons.RunConfigurations.TestState.Run, AllIcons.Nodes.WarningMark)
+    assertEquals(warnedRun, info.icon)
+    testRunConfigActions(info.actions)
+    runActionsAndCheckNames(info.actions)
 
     val gutter = myFixture.findGutter("with_comment.tf")
     assertNotNull(gutter)
-    assertEquals(warnedRunIcon, gutter?.icon)
+    assertEquals(warnedRun, gutter?.icon)
   }
 
   fun testLineMarkerWithWholeCommented() {
@@ -40,28 +70,25 @@ internal class TfRunLineMarkerContributorTest : TfBaseRunConfigurationTest() {
   }
 
   fun testNotDuplicatedRunConfig() {
-    val info = assertRunLineMarkerIcon("with_duplicated.tf")
-    runActionsAndCheckNames(info?.actions)
-
-    myFixture.type(" ")
-    val updatedGutter = myFixture.file.findElementAt(myFixture.caretOffset)?.let { TfRunLineMarkerContributor().getInfo(it) }
-    if (updatedGutter == null) {
-      fail("Info of RunLineMarker not should be empty")
-      return
-    }
-    assertEquals(info?.actions?.size, updatedGutter.actions.size)
-  }
-
-  private fun assertRunLineMarkerIcon(fileName: String): Info? {
-    myFixture.configureFromExistingVirtualFile(myFixture.copyFileToProject(fileName, "src/$fileName"))
+    myFixture.configureFromExistingVirtualFile(myFixture.copyFileToProject("with_duplicated.tf", "src/with_duplicated.tf"))
     val file = myFixture.file
     val info = file.findElementAt(myFixture.caretOffset)?.let { TfRunLineMarkerContributor().getInfo(it) }
     if (info == null) {
       fail("Info of RunLineMarker not should be empty")
+      return
     }
 
-    assertEquals(warnedRunIcon, info?.icon)
-    return info
+    val actions = info.actions
+    val runnedAction = myFixture.testAction(actions.first())
+    assertEquals("Init src", runnedAction.text)
+
+    myFixture.type(" ")
+    val updatedGutter = file.findElementAt(myFixture.caretOffset)?.let { TfRunLineMarkerContributor().getInfo(it) }
+    if (updatedGutter == null) {
+      fail("Info of RunLineMarker not should be empty")
+      return
+    }
+    assertEquals(actions.size, updatedGutter.actions.size)
   }
 
   private fun runActionsAndCheckNames(actions: Array<AnAction>?) {

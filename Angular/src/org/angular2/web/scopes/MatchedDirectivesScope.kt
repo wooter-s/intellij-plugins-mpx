@@ -7,10 +7,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.createSmartPointer
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.xml.XmlTag
-import com.intellij.polySymbols.PolySymbol
-import com.intellij.polySymbols.html.HTML_ATTRIBUTES
-import com.intellij.polySymbols.PolySymbolQualifiedKind
-import com.intellij.polySymbols.utils.PolySymbolScopeWithCache
+import com.intellij.webSymbols.WebSymbol
+import com.intellij.webSymbols.WebSymbol.Companion.HTML_ATTRIBUTES
+import com.intellij.webSymbols.WebSymbolQualifiedKind
+import com.intellij.webSymbols.WebSymbolsScopeWithCache
 import org.angular2.Angular2Framework
 import org.angular2.codeInsight.Angular2LibrariesHacks
 import org.angular2.codeInsight.attributes.Angular2ApplicableDirectivesProvider
@@ -19,7 +19,7 @@ import org.angular2.entities.Angular2Directive
 import org.angular2.lang.selector.Angular2DirectiveSimpleSelector
 import org.angular2.web.*
 
-private val providedKinds: Set<PolySymbolQualifiedKind> = setOf(
+private val providedKinds: Set<WebSymbolQualifiedKind> = setOf(
   NG_DIRECTIVE_INPUTS,
   NG_DIRECTIVE_OUTPUTS,
   NG_DIRECTIVE_IN_OUTS,
@@ -29,7 +29,7 @@ private val providedKinds: Set<PolySymbolQualifiedKind> = setOf(
 )
 
 abstract class MatchedDirectivesScope<T : PsiElement>(dataHolder: T)
-  : PolySymbolScopeWithCache<T, Unit>(Angular2Framework.ID, dataHolder.project, dataHolder, Unit) {
+  : WebSymbolsScopeWithCache<T, Unit>(Angular2Framework.ID, dataHolder.project, dataHolder, Unit) {
 
   companion object {
     fun createFor(tag: XmlTag): MatchedDirectivesScope<XmlTag> =
@@ -43,16 +43,16 @@ abstract class MatchedDirectivesScope<T : PsiElement>(dataHolder: T)
 
   abstract fun matchDirectives(): List<Angular2Directive>
 
-  override fun provides(qualifiedKind: PolySymbolQualifiedKind): Boolean =
+  override fun provides(qualifiedKind: WebSymbolQualifiedKind): Boolean =
     qualifiedKind in providedKinds
 
-  override fun initialize(consumer: (PolySymbol) -> Unit, cacheDependencies: MutableSet<Any>) {
+  override fun initialize(consumer: (WebSymbol) -> Unit, cacheDependencies: MutableSet<Any>) {
     cacheDependencies.add(PsiModificationTracker.MODIFICATION_COUNT)
     JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(dataHolder) {
       matchDirectives().forEach { directive ->
         directive.exportAs.forEach { consumer(it.value) }
         collectSymbols(directive, isTemplateTagContext) { symbol ->
-          consumer(Angular2DirectiveSymbolWrapper.create(directive, symbol, dataHolder.containingFile, true, PolySymbol.Priority.HIGHEST))
+          consumer(Angular2DirectiveSymbolWrapper.create(directive, symbol, dataHolder.containingFile, true, WebSymbol.Priority.HIGHEST))
         }
       }
     }

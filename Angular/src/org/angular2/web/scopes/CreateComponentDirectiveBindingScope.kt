@@ -7,15 +7,14 @@ import com.intellij.lang.javascript.psi.JSObjectLiteralExpression
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptClass
 import com.intellij.lang.javascript.psi.resolve.JSResolveUtil
 import com.intellij.model.Pointer
-import com.intellij.polySymbols.PolySymbol
-import com.intellij.polySymbols.PolySymbolQualifiedKind
-import com.intellij.polySymbols.js.JS_STRING_LITERALS
-import com.intellij.polySymbols.query.PolySymbolScope
-import com.intellij.polySymbols.utils.PolySymbolScopeWithCache
 import com.intellij.psi.createSmartPointer
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.util.AstLoadingFilter
 import com.intellij.util.asSafely
+import com.intellij.webSymbols.WebSymbol
+import com.intellij.webSymbols.WebSymbolQualifiedKind
+import com.intellij.webSymbols.WebSymbolsScope
+import com.intellij.webSymbols.WebSymbolsScopeWithCache
 import org.angular2.Angular2Framework
 import org.angular2.entities.Angular2EntitiesProvider
 import org.angular2.index.getFunctionNameFromIndex
@@ -32,18 +31,18 @@ const val BINDINGS_PROP: String = "bindings"
 const val TYPE_PROP: String = "type"
 
 class CreateComponentDirectiveBindingScope(objectLiteral: JSObjectLiteralExpression)
-  : PolySymbolScopeWithCache<JSObjectLiteralExpression, Unit>(Angular2Framework.ID, objectLiteral.project, objectLiteral, Unit) {
+  : WebSymbolsScopeWithCache<JSObjectLiteralExpression, Unit>(Angular2Framework.ID, objectLiteral.project, objectLiteral, Unit) {
 
   companion object {
-    val INPUTS_SCOPE: PolySymbolScope = PolySymbolReferencingScope(JS_STRING_LITERALS, "Angular directive input",
-                                                                   true, Angular2SymbolOrigin.empty, NG_DIRECTIVE_INPUTS)
-    val OUTPUTS_SCOPE: PolySymbolScope = PolySymbolReferencingScope(JS_STRING_LITERALS, "Angular directive output",
-                                                                    true, Angular2SymbolOrigin.empty, NG_DIRECTIVE_OUTPUTS)
-    val IN_OUTS_SCOPE: PolySymbolScope = PolySymbolReferencingScope(JS_STRING_LITERALS, "Angular directive two-way binding",
-                                                                    true, Angular2SymbolOrigin.empty, NG_DIRECTIVE_IN_OUTS)
+    val INPUTS_SCOPE: WebSymbolsScope = WebSymbolReferencingScope(WebSymbol.JS_STRING_LITERALS, "Angular directive input",
+                                                                  true, Angular2SymbolOrigin.empty, NG_DIRECTIVE_INPUTS)
+    val OUTPUTS_SCOPE: WebSymbolsScope = WebSymbolReferencingScope(WebSymbol.JS_STRING_LITERALS, "Angular directive output",
+                                                                   true, Angular2SymbolOrigin.empty, NG_DIRECTIVE_OUTPUTS)
+    val IN_OUTS_SCOPE: WebSymbolsScope = WebSymbolReferencingScope(WebSymbol.JS_STRING_LITERALS, "Angular directive two-way binding",
+                                                                   true, Angular2SymbolOrigin.empty, NG_DIRECTIVE_IN_OUTS)
   }
 
-  override fun initialize(consumer: (PolySymbol) -> Unit, cacheDependencies: MutableSet<Any>) {
+  override fun initialize(consumer: (WebSymbol) -> Unit, cacheDependencies: MutableSet<Any>) {
     cacheDependencies.add(PsiModificationTracker.MODIFICATION_COUNT)
 
     val jsType =
@@ -69,7 +68,7 @@ class CreateComponentDirectiveBindingScope(objectLiteral: JSObjectLiteralExpress
     directive.inOuts.forEach(consumer)
   }
 
-  override fun provides(qualifiedKind: PolySymbolQualifiedKind): Boolean =
+  override fun provides(qualifiedKind: WebSymbolQualifiedKind): Boolean =
     qualifiedKind == NG_DIRECTIVE_INPUTS
     || qualifiedKind == NG_DIRECTIVE_OUTPUTS
     || qualifiedKind == NG_DIRECTIVE_IN_OUTS

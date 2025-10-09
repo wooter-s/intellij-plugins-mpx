@@ -1,28 +1,26 @@
-// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.hcl.formatter
 
 import com.intellij.application.options.CodeStyle
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.formatting.service.AsyncDocumentFormattingService
 import com.intellij.formatting.service.AsyncFormattingRequest
 import com.intellij.formatting.service.FormattingService
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
-import com.intellij.openapi.util.NlsSafe
-import com.intellij.platform.eel.EelProcess
-import com.intellij.platform.eel.provider.getEelDescriptor
-import com.intellij.platform.eel.provider.utils.readWholeText
-import com.intellij.platform.eel.provider.utils.sendWholeText
-import com.intellij.platform.eel.spawnProcess
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.coroutines.*
 import org.intellij.terraform.config.Constants.TF_FMT
 import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.TfConstants
+import org.intellij.terraform.config.util.TfExecutor
 import org.intellij.terraform.config.util.getApplicableToolType
 import org.intellij.terraform.hcl.HCLBundle
+import org.intellij.terraform.install.TfToolType
 import org.intellij.terraform.runtime.TfToolPathDetector
-import java.util.concurrent.CancellationException
+import org.intellij.terraform.runtime.showIncorrectPathNotification
 
 internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
   override fun getName(): String = TF_FMT
@@ -32,8 +30,6 @@ internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
   override fun getFeatures(): Set<FormattingService.Feature> = emptySet()
 
   override fun canFormat(file: PsiFile): Boolean {
-    if (ApplicationManager.getApplication().isUnitTestMode) return false
-
     val settings = CodeStyle.getCustomSettings(file, HclCodeStyleSettings::class.java)
     return (file.fileType is TerraformFileType || file.name.endsWith(TestsExtension)) && settings.RUN_TF_FMT_ON_REFORMAT
   }
@@ -45,51 +41,37 @@ internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
     val toolType = getApplicableToolType(virtualFile)
 
     return object : FormattingTask {
-      private var job: Job? = null
+      private var processHandler: CapturingProcessHandler? = null
 
       override fun run() {
         try {
-          runBlockingCancellable {
-            val isToolConfigured = TfToolPathDetector.getInstance(project).detectAndVerifyTool(toolType, false)
-            val exePath = toolType.getToolSettings(project).toolPath
-            if (!isToolConfigured) {
-              request.onError(
-                HCLBundle.message("run.configuration.terraform.path.title", toolType.displayName),
-                HCLBundle.message("run.configuration.terraform.path.incorrect", exePath.ifEmpty { toolType.executableName }, toolType.displayName)
-              )
-            }
-            else {
-              job = launch {
-                var process: EelProcess? = null
-                try {
-                  withContext(Dispatchers.IO) {
-                    val eelApi = project.getEelDescriptor().toEelApi()
-                    process = eelApi.exec.spawnProcess(exePath).args("fmt", "-").eelIt()
 
-                    process.stdin.sendWholeText(request.documentText)
-                    process.stdin.close()
+          val isToolConfigured = runBlockingCancellable {
+              TfToolPathDetector.getInstance(project).detectAndVerifyTool(toolType, false)
+          }
 
-                    val formattedText = process.stdout.readWholeText()
-                    val exitCode = process.exitCode.await()
-                    if (exitCode == 0) {
-                      request.onTextReady(formattedText)
-                    }
-                    else {
-                      @NlsSafe val errorMessage = process.stderr.readWholeText()
-                      request.onError(HCLBundle.message("terraform.formatter.error.title", toolType.executableName), errorMessage)
-                    }
-                  }
-                }
-                finally {
-                  withContext(NonCancellable) {
-                    process?.kill()
-                  }
-                }
-              }
-            }
+          if (!isToolConfigured) {
+            showIncorrectPathNotification(project, toolType)
+            throw ProcessCanceledException()
+          }
+
+          val commandLine = createCommandLine(project, toolType)
+
+          processHandler = CapturingProcessHandler(commandLine)
+
+          val handler = processHandler ?: return
+          handler.processInput.write(request.documentText.toByteArray())
+          handler.processInput.close()
+
+          val output = handler.runProcess()
+          if (output.exitCode == 0) {
+            request.onTextReady(output.stdout)
+          }
+          else {
+            request.onError(HCLBundle.message("terraform.formatter.error.title", toolType.executableName), output.stderr)
           }
         }
-        catch (e: CancellationException) {
+        catch (e: ProcessCanceledException) {
           throw e
         }
         catch (e: Exception) {
@@ -100,13 +82,19 @@ internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
       }
 
       override fun cancel(): Boolean {
-        job?.cancel()
+        processHandler?.destroyProcess()
         return true
       }
 
       override fun isRunUnderProgress(): Boolean = true
     }
   }
+
+  private fun createCommandLine(project: Project, applicableToolType: TfToolType): GeneralCommandLine =
+    TfExecutor.`in`(project, applicableToolType)
+      .withPresentableName(HCLBundle.message("tool.format.display", applicableToolType.displayName))
+      .withParameters("fmt", "-")
+      .createCommandLine()
 }
 
 private const val TestsExtension = "tftest.hcl"

@@ -33,7 +33,11 @@ object Angular2DecoratorUtil {
   const val PIPE_DEC: String = "Pipe"
   const val MODULE_DEC: String = "NgModule"
   const val INPUT_DEC: String = "Input"
+  const val INPUT_FUN: String = "input"
   const val OUTPUT_DEC: String = "Output"
+  const val OUTPUT_FUN: String = "output"
+  const val OUTPUT_FROM_OBSERVABLE_FUN: String = "outputFromObservable"
+  const val MODEL_FUN: String = "model"
   const val FORWARD_REF_FUN: String = "forwardRef"
   const val INJECT_FUN: String = "inject"
   const val ATTRIBUTE_DEC: String = "Attribute"
@@ -66,7 +70,7 @@ object Angular2DecoratorUtil {
   const val ALIAS_PROP: String = "alias"
   const val TRANSFORM_PROP: String = "transform"
   const val DIRECTIVE_PROP: String = "directive"
-  const val HOST_ATTRIBUTE_TOKEN_CLASS: String = "HostAttributeToken"
+  const val HOST_ATTRIBUTE_TOKEN_CLASS: String ="HostAttributeToken"
 
   @JvmStatic
   fun isLiteralInNgDecorator(element: PsiElement?, propertyName: String, vararg decoratorNames: String): Boolean {
@@ -234,16 +238,15 @@ object Angular2DecoratorUtil {
       ?.let { isHostBinding(it) } == true
 
   fun isAngularEntityInitializerProperty(property: JSProperty, allowAbstractClasses: Boolean, vararg names: String): Boolean =
-    property.context?.asSafely<JSObjectLiteralExpression>()
-      ?.context?.let {
-        if (it is JSArgumentList) it.context else it
-      }?.asSafely<JSCallExpression>()
-      ?.context?.asSafely<ES6Decorator>()
+    property.parent?.asSafely<JSObjectLiteralExpression>()
+      ?.parent?.asSafely<JSArgumentList>()
+      ?.parent?.asSafely<JSCallExpression>()
+      ?.parent?.asSafely<ES6Decorator>()
       ?.let { isAngularEntityDecorator(it, allowAbstractClasses, *names) } == true
 
   fun isHostBinding(property: JSProperty): Boolean =
-    property.context?.asSafely<JSObjectLiteralExpression>()
-      ?.context?.asSafely<JSProperty>()
+    property.parent?.asSafely<JSObjectLiteralExpression>()
+      ?.parent?.asSafely<JSProperty>()
       ?.takeIf { it.name == HOST_PROP }
       ?.let { isAngularEntityInitializerProperty(it, true, COMPONENT_DEC, DIRECTIVE_DEC) } == true
 

@@ -7,7 +7,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-internal class TfProjectSettingsTest : TfBaseRunConfigurationTest() {
+internal class TfProjectSettingsTest : BaseRunConfigurationTest() {
 
   fun testLoadingSimpleTfSettings() {
     val element = JDOMUtil.load(Paths.get("${getTestDataPath()}/tf-project-settings-simple.xml"))

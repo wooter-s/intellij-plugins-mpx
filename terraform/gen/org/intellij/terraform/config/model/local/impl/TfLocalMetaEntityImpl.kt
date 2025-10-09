@@ -3,7 +3,6 @@ package org.intellij.terraform.config.model.local.impl
 
 import com.intellij.platform.workspace.storage.ConnectionId
 import com.intellij.platform.workspace.storage.EntitySource
-import com.intellij.platform.workspace.storage.EntityType
 import com.intellij.platform.workspace.storage.GeneratedCodeApiVersion
 import com.intellij.platform.workspace.storage.GeneratedCodeImplVersion
 import com.intellij.platform.workspace.storage.MutableEntityStorage
@@ -19,7 +18,7 @@ import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.intellij.terraform.config.model.local.TfLocalMetaEntity
 
 @GeneratedCodeApiVersion(3)
-@GeneratedCodeImplVersion(7)
+@GeneratedCodeImplVersion(6)
 @OptIn(WorkspaceEntityInternalApi::class)
 internal class TfLocalMetaEntityImpl(private val dataSource: TfLocalMetaEntityData) : TfLocalMetaEntity, WorkspaceEntityBase(dataSource) {
 
@@ -64,8 +63,8 @@ internal class TfLocalMetaEntityImpl(private val dataSource: TfLocalMetaEntityDa
   }
 
 
-  internal class Builder(result: TfLocalMetaEntityData?) : ModifiableWorkspaceEntityBase<TfLocalMetaEntity, TfLocalMetaEntityData>(result),
-                                                           TfLocalMetaEntity.Builder {
+  internal class Builder(result: TfLocalMetaEntityData?) : ModifiableWorkspaceEntityBase<TfLocalMetaEntity, TfLocalMetaEntityData>(
+    result), TfLocalMetaEntity.Builder {
     internal constructor() : this(TfLocalMetaEntityData())
 
     override fun applyToBuilder(builder: MutableEntityStorage) {

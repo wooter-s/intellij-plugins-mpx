@@ -23,20 +23,11 @@ interface Angular2TokenTypes {
     val BLOCK_PARAMETER_PREFIX: IElementType = Angular2TokenType("NG:BLOCK_PARAMETER_PREFIX")
 
     @JvmField
-    val KEYWORDS_2: TokenSet = TokenSet.create(JSTokenTypes.VAR_KEYWORD, JSTokenTypes.LET_KEYWORD, JSTokenTypes.AS_KEYWORD, JSTokenTypes.NULL_KEYWORD,
-                                               JSTokenTypes.UNDEFINED_KEYWORD, JSTokenTypes.TRUE_KEYWORD, JSTokenTypes.FALSE_KEYWORD,
-                                               JSTokenTypes.IF_KEYWORD,
-                                               JSTokenTypes.ELSE_KEYWORD, JSTokenTypes.THIS_KEYWORD, BLOCK_PARAMETER_NAME,
-                                               JSTokenTypes.TYPE_KEYWORD, JSTokenTypes.IN_KEYWORD)
-
-    @JvmField
-    val KEYWORDS_20: TokenSet = TokenSet.orSet(KEYWORDS_2, TokenSet.create(JSTokenTypes.VOID_KEYWORD))
-
-    @JvmField
-    val ASSIGNMENT_OPERATORS: TokenSet = TokenSet.create(
-      JSTokenTypes.EQ,
-      JSTokenTypes.PLUSEQ, JSTokenTypes.MINUSEQ, JSTokenTypes.MULTEQ, JSTokenTypes.DIVEQ, JSTokenTypes.PERCEQ,
-      JSTokenTypes.MULTMULTEQ, JSTokenTypes.AND_AND_EQ, JSTokenTypes.OR_OR_EQ, JSTokenTypes.QUEST_QUEST_EQ)
+    val KEYWORDS: TokenSet = TokenSet.create(JSTokenTypes.VAR_KEYWORD, JSTokenTypes.LET_KEYWORD, JSTokenTypes.AS_KEYWORD, JSTokenTypes.NULL_KEYWORD,
+                                             JSTokenTypes.UNDEFINED_KEYWORD, JSTokenTypes.TRUE_KEYWORD, JSTokenTypes.FALSE_KEYWORD,
+                                             JSTokenTypes.IF_KEYWORD,
+                                             JSTokenTypes.ELSE_KEYWORD, JSTokenTypes.THIS_KEYWORD, BLOCK_PARAMETER_NAME,
+                                             JSTokenTypes.TYPE_KEYWORD, JSTokenTypes.IN_KEYWORD)
 
     @JvmField
     val STRING_PART_SPECIAL_SEQ: TokenSet = TokenSet.create(ESCAPE_SEQUENCE, INVALID_ESCAPE_SEQUENCE, XML_CHAR_ENTITY_REF)

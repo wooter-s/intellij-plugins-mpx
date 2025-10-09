@@ -18,7 +18,7 @@ import org.angular2.entities.source.Angular2SourceEntityListProcessor
 import org.jetbrains.annotations.Nls
 
 internal abstract class Angular2SourceEntityListValidator<T : Angular2Entity, E : Enum<*>>
-protected constructor(protected val decorator: ES6Decorator,
+protected constructor(private val decorator: ES6Decorator,
                       private val results: ValidationResults<in E>,
                       entityClass: Class<T>,
                       private val propertyName: String)
@@ -46,8 +46,8 @@ protected constructor(protected val decorator: ES6Decorator,
     }
   }
 
-  protected fun backtrace() =
-    myIterator.backtrace()
+  protected fun hasForwardRefCall(): Boolean =
+    myIterator.backtrace().any { isForwardRefCall(it) }
 
   private fun locateProblemElement(): PsiElement {
     val file = decorator.containingFile.originalFile

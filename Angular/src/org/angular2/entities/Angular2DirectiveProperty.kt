@@ -1,10 +1,9 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.entities
 
-import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
-import com.intellij.polySymbols.js.documentation.JSSymbolWithSubstitutor
-import com.intellij.polySymbols.js.types.PROP_JS_TYPE
-import com.intellij.polySymbols.js.types.TypeScriptSymbolTypeSupport
+import com.intellij.javascript.webSymbols.documentation.JSWebSymbolWithSubstitutor
+import com.intellij.javascript.webSymbols.jsType
+import com.intellij.javascript.webSymbols.types.TypeScriptSymbolTypeSupport
 import com.intellij.lang.javascript.psi.JSType
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptClass
 import com.intellij.lang.javascript.psi.types.JSTypeSubstitutor
@@ -12,18 +11,16 @@ import com.intellij.model.Pointer
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.platform.backend.presentation.TargetPresentation
-import com.intellij.polySymbols.PolySymbol
-import com.intellij.polySymbols.PolySymbolApiStatus
-import com.intellij.polySymbols.PolySymbolModifier
-import com.intellij.polySymbols.PolySymbolProperty
-import com.intellij.polySymbols.html.PROP_HTML_ATTRIBUTE_VALUE
-import com.intellij.polySymbols.html.PolySymbolHtmlAttributeValue
-import com.intellij.polySymbols.search.PolySymbolSearchTarget
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.css.impl.CssNamedItemPresentation
 import com.intellij.psi.util.contextOfType
 import com.intellij.util.ThreeState
+import com.intellij.util.applyIf
+import com.intellij.webSymbols.WebSymbol
+import com.intellij.webSymbols.WebSymbolApiStatus
+import com.intellij.webSymbols.html.WebSymbolHtmlAttributeValue
+import com.intellij.webSymbols.search.WebSymbolSearchTarget
 import icons.AngularIcons
 import org.angular2.codeInsight.documentation.Angular2ElementDocumentationTarget
 import org.angular2.lang.Angular2Bundle
@@ -34,11 +31,11 @@ import org.angular2.web.NG_DIRECTIVE_INPUTS
 import org.angular2.web.NG_DIRECTIVE_IN_OUTS
 import org.angular2.web.NG_DIRECTIVE_OUTPUTS
 
-interface Angular2DirectiveProperty : Angular2Symbol, Angular2Element, JSSymbolWithSubstitutor {
+interface Angular2DirectiveProperty : Angular2Symbol, Angular2Element, JSWebSymbolWithSubstitutor {
 
   override val name: String
 
-  val required: Boolean
+  override val required: Boolean
 
   val fieldName: String?
 
@@ -47,18 +44,7 @@ interface Angular2DirectiveProperty : Angular2Symbol, Angular2Element, JSSymbolW
   val virtualProperty: Boolean
 
   val isSignalProperty: Boolean
-
-  val transformParameterType: JSType?
-    get() = null
-
-  val isCoerced: Boolean
     get() = false
-
-  override val modifiers: Set<PolySymbolModifier>
-    get() = when (required) {
-      true -> setOf(PolySymbolModifier.REQUIRED)
-      false -> setOf(PolySymbolModifier.OPTIONAL)
-    }
 
   override val presentation: TargetPresentation
     get() = TargetPresentation
@@ -67,51 +53,43 @@ interface Angular2DirectiveProperty : Angular2Symbol, Angular2Element, JSSymbolW
       .containerText(
         when (qualifiedKind) {
           NG_DIRECTIVE_INPUTS -> Angular2Bundle.message("angular.entity.directive.input")
-          NG_DIRECTIVE_OUTPUTS -> Angular2Bundle.message("angular.entity.directive.output")
-          NG_DIRECTIVE_IN_OUTS -> Angular2Bundle.message("angular.entity.directive.inout")
-          else -> Angular2Bundle.message("angular.entity.directive.property")
+          NG_DIRECTIVE_OUTPUTS ->  Angular2Bundle.message("angular.entity.directive.output")
+          NG_DIRECTIVE_IN_OUTS ->  Angular2Bundle.message("angular.entity.directive.inout")
+          else ->  Angular2Bundle.message("angular.entity.directive.property")
         })
       .locationText((sourceElement as? NavigatablePsiElement)?.presentation?.locationString
                     ?: CssNamedItemPresentation.getLocationString(sourceElement))
       .presentation()
 
-  override val searchTarget: PolySymbolSearchTarget?
-    get() = PolySymbolSearchTarget.create(this)
+  override val searchTarget: WebSymbolSearchTarget?
+    get() = WebSymbolSearchTarget.create(this)
 
   override val project: Project
     get() = sourceElement.project
 
-  override val priority: PolySymbol.Priority?
-    get() = PolySymbol.Priority.LOW
+  override val priority: WebSymbol.Priority?
+    get() = WebSymbol.Priority.LOW
 
-  val type: JSType?
+  override val type: JSType?
     get() = if (qualifiedKind == NG_DIRECTIVE_OUTPUTS)
       Angular2TypeUtils.extractEventVariableType(rawJsType)
     else
       rawJsType
 
-  val attributeValue: PolySymbolHtmlAttributeValue?
-    get() = JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(sourceElement) {
-      if (TypeScriptSymbolTypeSupport.isBoolean(type) != ThreeState.NO) {
-        PolySymbolHtmlAttributeValue.create(null, null, false, null, null)
-      }
-      else {
-        null
-      }
+
+  override val attributeValue: WebSymbolHtmlAttributeValue?
+    get() = if (TypeScriptSymbolTypeSupport.isBoolean(type, sourceElement) != ThreeState.NO) {
+      WebSymbolHtmlAttributeValue.create(null, null, false, null, null)
+    }
+    else {
+      null
     }
 
-  override fun <T : Any> get(property: PolySymbolProperty<T>): T? =
-    when (property) {
-      PROP_JS_TYPE -> property.tryCast(type)
-      PROP_HTML_ATTRIBUTE_VALUE -> property.tryCast(attributeValue)
-      else -> super.get(property)
-    }
-
-  override val apiStatus: PolySymbolApiStatus
+  override val apiStatus: WebSymbolApiStatus
 
   override fun createPointer(): Pointer<out Angular2DirectiveProperty>
 
-  override fun getDocumentationTarget(location: PsiElement?): DocumentationTarget? =
+  override fun getDocumentationTarget(location: PsiElement?): DocumentationTarget =
     Angular2ElementDocumentationTarget.create(
       name, location, this,
       Angular2EntitiesProvider.getEntity(sourceElement.contextOfType<TypeScriptClass>(true)))

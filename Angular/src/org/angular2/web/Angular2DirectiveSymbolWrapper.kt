@@ -7,26 +7,24 @@ import com.intellij.model.Symbol
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.platform.backend.navigation.NavigationTarget
-import com.intellij.polySymbols.PolySymbol
-import com.intellij.polySymbols.PolySymbolApiStatus
-import com.intellij.polySymbols.PolySymbolModifier
-import com.intellij.polySymbols.PolySymbolProperty
-import com.intellij.polySymbols.html.PolySymbolHtmlAttributeValue
-import com.intellij.polySymbols.search.PsiSourcedPolySymbol
-import com.intellij.polySymbols.utils.coalesceWith
-import com.intellij.polySymbols.html.PROP_HTML_ATTRIBUTE_VALUE
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.createSmartPointer
+import com.intellij.webSymbols.PsiSourcedWebSymbol
+import com.intellij.webSymbols.WebSymbol
+import com.intellij.webSymbols.WebSymbolApiStatus
+import com.intellij.webSymbols.html.WebSymbolHtmlAttributeValue
+import com.intellij.webSymbols.utils.coalesceWith
 import org.angular2.codeInsight.documentation.Angular2ElementDocumentationTarget
 import org.angular2.entities.Angular2AliasedDirectiveProperty
 import org.angular2.entities.Angular2Directive
 import org.angular2.entities.Angular2DirectiveSelectorSymbol
+import java.util.*
 
 open class Angular2DirectiveSymbolWrapper private constructor(
   val directive: Angular2Directive,
   delegate: Angular2Symbol,
-  private val forcedPriority: PolySymbol.Priority? = null,
+  private val forcedPriority: WebSymbol.Priority? = null,
   private val location: PsiFile,
   val isMatchedDirective: Boolean = false,
 ) : Angular2SymbolDelegate<Angular2Symbol>(delegate) {
@@ -38,45 +36,41 @@ open class Angular2DirectiveSymbolWrapper private constructor(
       delegate: Angular2Symbol,
       location: PsiFile,
       isMatchedDirective: Boolean = false,
-      forcedPriority: PolySymbol.Priority? = null,
+      forcedPriority: WebSymbol.Priority? = null,
     ): Angular2DirectiveSymbolWrapper =
       when (delegate) {
-        is PsiSourcedPolySymbol -> Angular2PsiSourcedDirectiveSymbolWrapper(directive, delegate, forcedPriority, location, isMatchedDirective)
+        is PsiSourcedWebSymbol -> Angular2PsiSourcedDirectiveSymbolWrapper(directive, delegate, forcedPriority, location, isMatchedDirective)
         else -> Angular2DirectiveSymbolWrapper(directive, delegate, forcedPriority, location, isMatchedDirective)
       }
   }
 
-  override val modifiers: Set<PolySymbolModifier>
-    get() = super.modifiers.asSequence()
-      .filter { it != PolySymbolModifier.REQUIRED || isMatchedDirective }
-      .toSet()
+  override val required: Boolean?
+    get() = isMatchedDirective && super.required == true
 
-  override val priority: PolySymbol.Priority?
+  override val priority: WebSymbol.Priority?
     get() = forcedPriority ?: super.priority
+
+  override val attributeValue: WebSymbolHtmlAttributeValue?
+    get() = if (delegate is Angular2DirectiveSelectorSymbol)
+      WebSymbolHtmlAttributeValue.create(required = false)
+    else JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(location) {
+      super.attributeValue
+    }
 
   override fun createPointer(): Pointer<out Angular2DirectiveSymbolWrapper> =
     createPointer(::Angular2DirectiveSymbolWrapper)
 
-  override fun <T : Any> get(property: PolySymbolProperty<T>): T? =
-    when (property) {
-      PROP_SYMBOL_DIRECTIVE -> property.tryCast(directive)
-      PROP_HTML_ATTRIBUTE_VALUE -> property.tryCast(
-        if (delegate is Angular2DirectiveSelectorSymbol)
-          PolySymbolHtmlAttributeValue.create(required = false)
-        else JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(location) {
-          super[PROP_HTML_ATTRIBUTE_VALUE]
-        })
-      else -> super.get(property)
-    }
+  override val properties: Map<String, Any>
+    get() = super.properties + Pair(PROP_SYMBOL_DIRECTIVE, directive)
 
-  override val apiStatus: PolySymbolApiStatus
+  override val apiStatus: WebSymbolApiStatus
     get() = directive.apiStatus.coalesceWith(delegate.apiStatus)
 
   override fun isEquivalentTo(symbol: Symbol): Boolean {
     return this == symbol || delegate.isEquivalentTo(symbol)
   }
 
-  override fun getDocumentationTarget(location: PsiElement?): DocumentationTarget? =
+  override fun getDocumentationTarget(location: PsiElement?): DocumentationTarget =
     super.getDocumentationTarget(location).let {
       if (it is Angular2ElementDocumentationTarget)
         it.withDirective((delegate as? Angular2AliasedDirectiveProperty)?.directive ?: directive)
@@ -91,13 +85,13 @@ open class Angular2DirectiveSymbolWrapper private constructor(
     && other.delegate == delegate
 
   override fun hashCode(): Int =
-    31 * directive.hashCode() + delegate.hashCode()
+    Objects.hash(directive, delegate)
 
   protected fun <T : Angular2DirectiveSymbolWrapper> createPointer(
     create: (
       directive: Angular2Directive,
       delegate: Angular2Symbol,
-      forcedPriority: PolySymbol.Priority?,
+      forcedPriority: WebSymbol.Priority?,
       location: PsiFile,
       isMatchedDirective: Boolean,
     ) -> T,
@@ -118,13 +112,13 @@ open class Angular2DirectiveSymbolWrapper private constructor(
   private class Angular2PsiSourcedDirectiveSymbolWrapper(
     directive: Angular2Directive,
     delegate: Angular2Symbol,
-    forcedPriority: PolySymbol.Priority?,
+    forcedPriority: WebSymbol.Priority?,
     location: PsiFile,
     isMatchedDirective: Boolean,
-  ) : Angular2DirectiveSymbolWrapper(directive, delegate, forcedPriority, location, isMatchedDirective), PsiSourcedPolySymbol {
+  ) : Angular2DirectiveSymbolWrapper(directive, delegate, forcedPriority, location, isMatchedDirective), PsiSourcedWebSymbol {
 
     override val source: PsiElement?
-      get() = (this.delegate as PsiSourcedPolySymbol).source
+      get() = (this.delegate as PsiSourcedWebSymbol).source
 
     override fun getNavigationTargets(project: Project): Collection<NavigationTarget> =
       super<Angular2DirectiveSymbolWrapper>.getNavigationTargets(project)

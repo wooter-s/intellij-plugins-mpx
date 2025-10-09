@@ -5,10 +5,7 @@ import com.intellij.javascript.nodejs.execution.NodeTargetRun
 import com.intellij.javascript.nodejs.interpreter.NodeCommandLineConfigurator
 import com.intellij.javascript.nodejs.library.yarn.pnp.YarnPnpNodePackage
 import com.intellij.javascript.nodejs.util.NodePackage
-import com.intellij.lang.javascript.service.JSLanguageServiceBase
-import com.intellij.lang.javascript.service.JSLanguageServiceQueue
-import com.intellij.lang.javascript.service.JSLanguageServiceQueueImpl
-import com.intellij.lang.javascript.service.JSLanguageServiceUtil
+import com.intellij.lang.javascript.service.*
 import com.intellij.lang.javascript.service.protocol.*
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
@@ -17,12 +14,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.io.FileUtil
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.webcore.util.JsonUtil
 import kotlinx.coroutines.future.future
 import java.io.File
 import java.util.concurrent.CompletableFuture
+import java.util.function.Consumer
 
 class PrettierLanguageServiceImpl(
   project: Project,
@@ -35,6 +32,7 @@ class PrettierLanguageServiceImpl(
     text: String,
     prettierPackage: NodePackage,
     range: TextRange?,
+    cursorOffset: Int,
   ): CompletableFuture<PrettierLanguageService.FormatResult?>? {
     val process = process
     if (process == null || !process.isValid) {
@@ -45,7 +43,7 @@ class PrettierLanguageServiceImpl(
     // Prettier may remove a trailing line break in Vue (WEB-56144, WEB-52196, https://github.com/prettier/prettier/issues/13399),
     // even if the range doesn't include that line break. `forceLineBreakAtEof` helps to work around the problem.
     val forceLineBreakAtEof = range != null && range.endOffset < text.length && text.endsWith("\n")
-    val command = ReformatFileCommand(myProject, filePath, prettierPackage, ignoreFilePath, text, range, false, -1)
+    val command = ReformatFileCommand(myProject, filePath, prettierPackage, ignoreFilePath, text, range, false, cursorOffset)
     return project.service<PrettierLanguageServiceManager>().cs.future {
       val commandResult = process.execute(command)
       val answer = commandResult?.answer ?: return@future null
@@ -107,23 +105,19 @@ class PrettierLanguageServiceImpl(
     return PrettierLanguageService.ResolveConfigResult.config(prettierConfig)
   }
 
-  override suspend fun createLanguageServiceQueue(): JSLanguageServiceQueue =
+  override fun createLanguageServiceQueueBlocking(): JSLanguageServiceQueue =
     JSLanguageServiceQueueImpl(myProject,
-                               Protocol(myProject),
+                               Protocol(myProject, Consumer { o: Any? -> }),
                                null,
-                               myDefaultReporter)
+                               myDefaultReporter,
+                               JSLanguageServiceDefaultCacheData())
 
   private inner class Protocol(
     project: Project,
-  ) : JSLanguageServiceNodeStdProtocolBase("prettier", project) {
+    readyConsumer: Consumer<*>,
+  ) : JSLanguageServiceNodeStdProtocolBase("prettier", project, readyConsumer) {
     override fun addNodeProcessAdditionalArguments(targetRun: NodeTargetRun) {
       super.addNodeProcessAdditionalArguments(targetRun)
-      JSLanguageServiceUtil.addNodeProcessArgumentsFromRegistry(targetRun.commandLineBuilder, serviceName) {
-        Registry.stringValue("prettier.service.node.arguments")
-      }
-
-      // Check for Node.js version and add experimental strip types if needed
-      PrettierUtil.addExperimentalStripTypesIfNeeded(targetRun, serviceName)
       targetRun.path(JSLanguageServiceUtil.getPluginDirectory(this.javaClass, "prettierLanguageService")!!.absolutePath)
     }
 

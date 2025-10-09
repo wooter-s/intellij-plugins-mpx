@@ -41,7 +41,7 @@
 
   <dependencies>
     <plugin id="com.intellij.modules.lang"/>
-    <module name="intellij.json.backend"/>
+    <plugin id="com.intellij.modules.json"/>
     <module name="intellij.platform.collaborationTools"/>
   </dependencies>
 
@@ -107,7 +107,6 @@
     <registryKey defaultValue="true" description="Enable Qodana Cloud license agreement check" key="qd.license.agreement.callback.enabled"/>
     <registryKey defaultValue="false" description="Force enabling of Qodana local run" key="qd.force.local.run.enabled"/>
     <registryKey defaultValue="false" description="Force enabling of Qodana Setup CI" key="qd.force.setup.ci.enabled"/>
-    <registryKey defaultValue="false" description="Enable analysis scope extending" key="qd.scope.extending.enabled"/>
     <registryKey defaultValue="false" description="Open SARIF in editor" key="qd.open.sarif.in.editor"/>
     <registryKey defaultValue="" description="Qodana Web UI sources" key="qd.web.ui.sources.url"/>
     <registryKey defaultValue="true" description="Open coverage report from Qodana Cloud" key="qd.open.coverage.enabled"/>
@@ -268,9 +267,6 @@
     <extensionPoint name="highlightingListener"
                     interface="org.jetbrains.qodana.highlight.QodanaHighlightingListener"
                     dynamic="true"/>
-    <extensionPoint name="highlightInfoActionProvider"
-                    interface="org.jetbrains.qodana.highlight.QodanaHighlightInfoActionProvider"
-                    dynamic="true"/>
     <extensionPoint name="externalToolsConfigurationProvider"
                     interface="org.jetbrains.qodana.staticAnalysis.inspections.runner.externalTools.ExternalToolsConfigurationProvider"
                     dynamic="true"/>
@@ -286,7 +282,7 @@
     <extensionPoint name="setupCIProviderFactory"
                     interface="org.jetbrains.qodana.ui.ci.SetupCIProviderFactory"
                     dynamic="true"/>
-    <extensionPoint name="qodanaYamlItemProvider"
+    <extensionPoint name="defaultQodanaYamlItemProvider"
                     interface="org.jetbrains.qodana.settings.QodanaYamlItemProvider"
                     dynamic="true"/>
     <extensionPoint name="qodanaHighlightInfoTypeProvider"
@@ -339,17 +335,8 @@
     <extensionPoint name="customPluginsForKtsClasspathProvider"
                     interface="org.jetbrains.qodana.inspectionKts.CustomPluginsForKtsClasspathProvider"
                     dynamic="true"/>
-    <extensionPoint name="globalFlowFingerprintCalculator"
-                    interface="org.jetbrains.qodana.staticAnalysis.inspections.runner.globalOutput.CustomGlobalFlowFingerprintCalculator"
-                    dynamic="true"/>
     <extensionPoint name="loggingActivity"
                     interface="org.jetbrains.qodana.staticAnalysis.inspections.runner.log.QodanaLoggingActivity"
-                    dynamic="true"/>
-    <extensionPoint name="scopeExtenderProvider"
-                    interface="org.jetbrains.qodana.staticAnalysis.scopes.QodanaScopeExtenderProvider"
-                    dynamic="true"/>
-    <extensionPoint name="scopeExtender"
-                    interface="org.jetbrains.qodana.staticAnalysis.scopes.InspectionToolScopeExtender"
                     dynamic="true"/>
   </extensionPoints>
 
@@ -363,7 +350,6 @@
     <inspectionProfileProvider implementation="org.jetbrains.qodana.staticAnalysis.profile.providers.QodanaEmptyProfileProvider"/>
     <qodanaScriptFactory implementation="org.jetbrains.qodana.staticAnalysis.script.DefaultScriptFactory"/>
     <qodanaScriptFactory implementation="org.jetbrains.qodana.staticAnalysis.script.scoped.ScopedScriptFactory"/>
-    <qodanaScriptFactory implementation="org.jetbrains.qodana.staticAnalysis.script.scoped.ReverseScopedScriptFactory"/>
     <qodanaScriptFactory implementation="org.jetbrains.qodana.staticAnalysis.script.TeamCityChangesScriptFactory"/>
     <globalOutputConsumer implementation="org.jetbrains.qodana.staticAnalysis.inspections.runner.globalOutput.DuplicateCodeConsumer"/>
     <inspectionKtsDefaultImportProvider implementation="org.jetbrains.qodana.inspectionKts.api.MainInspectionKtsDefaultImportProvider"/>
@@ -378,17 +364,17 @@
     <setupCIProviderFactory implementation="org.jetbrains.qodana.ui.ci.providers.jenkins.SetupJenkinsProviderFactory"/>
     <setupCIProviderFactory implementation="org.jetbrains.qodana.ui.ci.providers.azure.SetupAzurePipelinesProviderFactory"/>
     <setupCIProviderFactory implementation="org.jetbrains.qodana.ui.ci.providers.circleci.SetupCircleCIProviderFactory"/>
+    <setupCIProviderFactory implementation="org.jetbrains.qodana.ui.ci.providers.space.SetupSpaceAutomationProviderFactory"/>
     <setupCIProviderFactory implementation="org.jetbrains.qodana.ui.ci.providers.bitbucket.SetupBitbucketCIProviderFactory"/>
 
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlHeaderItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlVersionItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlProfileItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlIncludeItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlExcludeItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlBootstrapItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlPluginItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlFailureConditionsItemProvider"/>
-    <qodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlLinterItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlHeaderItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlVersionItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlProfileItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlIncludeItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlExcludeItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlBootstrapItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlPluginItemProvider"/>
+    <defaultQodanaYamlItemProvider implementation="org.jetbrains.qodana.settings.QodanaYamlLinterItemProvider"/>
     <sarifReportContributor implementation="org.jetbrains.qodana.staticAnalysis.sarif.ResultSummaryContributor"/>
     <sarifReportContributor implementation="org.jetbrains.qodana.staticAnalysis.sarif.FailureConditionsContributor"/>
     <sarifReportContributor

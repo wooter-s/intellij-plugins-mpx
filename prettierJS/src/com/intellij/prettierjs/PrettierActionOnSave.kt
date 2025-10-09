@@ -10,10 +10,10 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.command.writeCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.prettierjs.formatting.PrettierFormattingApplier
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.util.concurrency.annotations.RequiresReadLock
@@ -39,7 +39,8 @@ private class PrettierActionOnSave : ActionsOnSaveFileDocumentManagerListener.Do
 
     if (prettierConfiguration.isRunOnReformat) {
       val onSaveOptions = FormatOnSaveOptions.getInstance(project)
-      if (onSaveOptions.isRunOnSaveEnabled && onSaveOptions.isFileTypeSelected(file.fileType)) { // already processed as com.intellij.prettierjs.PrettierPostFormatProcessor
+      if (onSaveOptions.isRunOnSaveEnabled && onSaveOptions.isFileTypeSelected(file.fileType)) {
+        // already processed as com.intellij.prettierjs.PrettierPostFormatProcessor
         return null
       }
     }
@@ -56,11 +57,21 @@ private class PrettierActionOnSave : ActionsOnSaveFileDocumentManagerListener.Do
       ensureConfigsSaved(listOf(file), project)
     }
 
-    val result = ReformatWithPrettierAction.performRequestForFile(psiFile, null, null) ?: return
+    val result = ReformatWithPrettierAction.performRequestForFile(psiFile, null) ?: return
     val formattedContent = result.result ?: return
-    val strategy = readAction { PrettierFormattingApplier.from(document, psiFile, formattedContent) }
+    val formattingDiff = computeFormattingDiff(
+      document.charsSequence,
+      formattedContent,
+      result.cursorOffset,
+    )
+
     writeCommandAction(project, PrettierBundle.message("reformat.with.prettier.command.name")) {
-      strategy.apply(project, psiFile)
+      applyFormattingDiff(project, document, file, formattingDiff)
+
+      val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return@writeCommandAction
+      if (!editor.isDisposed && editor.virtualFile == file && formattingDiff.cursorOffset >= 0) {
+        editor.caretModel.moveToOffset(formattingDiff.cursorOffset)
+      }
     }
   }
 }

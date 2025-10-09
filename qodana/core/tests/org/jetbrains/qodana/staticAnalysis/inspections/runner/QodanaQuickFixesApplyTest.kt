@@ -60,7 +60,7 @@ class QodanaQuickFixesApplyTest: QodanaQuickFixesCommonTests(FixesStrategy.APPLY
   }
 
   private fun assertIncorrectFormattingRegionInvariant() {
-    val results = manager.sarifRun.results
+    val results = manager.qodanaRunner.sarifRun.results
     results.filter { it.properties?.get("problemType") == ProblemType.INCORRECT_FORMATTING.toString() }.forEach { result ->
       for (location in result.locations) {
         assertEquals(location.physicalLocation?.region?.startLine, 0)
@@ -71,9 +71,12 @@ class QodanaQuickFixesApplyTest: QodanaQuickFixesCommonTests(FixesStrategy.APPLY
   }
 
   private fun withNewIncorrectFormattingOutput(action: () -> Unit) {
-    System.setProperty(QODANA_ENABLE_NEW_INCORRECT_FORMATTING_OUTPUT_PROPERTY, "true")
-    action()
-    System.clearProperty(QODANA_ENABLE_NEW_INCORRECT_FORMATTING_OUTPUT_PROPERTY)
+    try {
+      System.setProperty(QODANA_ENABLE_NEW_INCORRECT_FORMATTING_OUTPUT_PROPERTY, "true")
+      action()
+    } finally {
+      System.clearProperty(QODANA_ENABLE_NEW_INCORRECT_FORMATTING_OUTPUT_PROPERTY)
+    }
   }
 }
 
@@ -86,15 +89,15 @@ private class TestGlobalSimpleInspectionTool : GlobalSimpleInspectionTool() {
     return "testGroup"
   }
 
-  override fun checkFile(psiFile: PsiFile,
+  override fun checkFile(file: PsiFile,
                          manager: InspectionManager,
                          problemsHolder: ProblemsHolder,
                          context: GlobalInspectionContext,
                          processor: ProblemDescriptionsProcessor) {
-    val fileText = psiFile.text
+    val fileText = file.text
     if (!fileText.startsWith("// test")) {
       problemsHolder.registerProblem(
-        psiFile,
+        file,
         "The file does not start with '// test' comment",
         ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
         TextRange(0, 0),

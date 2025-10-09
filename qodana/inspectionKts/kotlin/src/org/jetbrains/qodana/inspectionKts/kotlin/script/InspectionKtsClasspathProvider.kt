@@ -13,20 +13,24 @@ import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.extensions.PluginDescriptor
 import com.intellij.openapi.progress.checkCanceled
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.vfs.JarFileSystem
 import com.intellij.openapi.vfs.StandardFileSystems
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.impl.PsiManagerEx
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.NonClasspathDirectoriesScope
 import com.intellij.util.application
 import com.intellij.util.io.URLUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import org.jetbrains.kotlin.idea.base.plugin.artifacts.KotlinArtifacts
+import org.jetbrains.kotlin.idea.base.projectStructure.scope.KotlinSourceFilterScope
+import org.jetbrains.kotlin.idea.base.projectStructure.toKaLibraryModule
+import org.jetbrains.kotlin.idea.core.script.ScriptDependencyAware
 import org.jetbrains.qodana.QodanaIntelliJYamlService
 import org.jetbrains.qodana.coroutines.QodanaDispatchers
 import org.jetbrains.qodana.inspectionKts.CustomPluginsForKtsClasspathProvider
@@ -35,91 +39,64 @@ import org.jetbrains.qodana.registry.QodanaRegistry
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.*
 import kotlin.script.experimental.jvm.util.scriptCompilationClasspathFromContext
 
-private fun isInspectionKtsResolveDisabled(project: Project): Boolean {
-  return application.isHeadlessEnvironment ||
-         !isInspectionKtsEnabled() ||
-         QodanaIntelliJYamlService.getInstance(project).disableInspectionKtsResolve
-}
-
-internal fun inspectionKtsClasspathProvider(project: Project, doInitialize: Boolean): InspectionKtsClasspathProvider {
-  if (isInspectionKtsResolveDisabled(project)) {
-    return InspectionKtsClasspathProvider.empty()
-  }
-  if (doInitialize) {
-    return InspectionKtsClasspathProviderServiceImpl.getInstance(project).provider
-  }
-  return InspectionKtsClasspathProviderServiceImpl.getInstanceIfCreated(project)?.provider ?: InspectionKtsClasspathProvider.empty()
-}
-
-internal interface InspectionKtsClasspathProvider {
+@Service
+internal class InspectionKtsClasspathService(scope: CoroutineScope) {
   companion object {
-    fun empty(): InspectionKtsClasspathProvider {
-      return object : InspectionKtsClasspathProvider {
-        override fun collectClassPath(): List<File> = emptyList()
-        override fun currentDependenciesScope(): InspectionKtsDependenciesScope? = null
+    fun getInstance(): InspectionKtsClasspathService = service()
+
+    fun getInstanceIfCreated(): InspectionKtsClasspathService? = serviceIfCreated()
+  }
+
+  internal class DependenciesScope(
+    private val roots: Set<VirtualFile>,
+    private val jarsDependenciesScope: NonClasspathDirectoriesScope,
+  ) {
+    fun getResolveScopeForFile(project: Project, file: VirtualFile): GlobalSearchScope? {
+      if (!isUnderDependenciesRoot(file)) return null
+
+      return GlobalSearchScope.union(
+        listOfNotNull(
+          ScriptDependencyAware.getInstance(project).getFirstScriptsSdk()?.toKaLibraryModule(project)?.contentScope,
+          KotlinSourceFilterScope.libraryClasses(jarsDependenciesScope, project),
+          GlobalSearchScope.fileScope(project, file),
+        ).toTypedArray()
+      )
+    }
+
+    private fun isUnderDependenciesRoot(file: VirtualFile): Boolean {
+      if (roots.isEmpty()) {
+        return false
       }
-    }
-  }
 
-  fun collectClassPath(): List<File>
-
-  fun currentDependenciesScope(): InspectionKtsDependenciesScope?
-}
-
-@Service(Service.Level.PROJECT)
-private class InspectionKtsClasspathProviderServiceImpl(private val project: Project, scope: CoroutineScope) {
-  companion object {
-    fun getInstance(project: Project): InspectionKtsClasspathProviderServiceImpl = project.service()
-
-    fun getInstanceIfCreated(project: Project): InspectionKtsClasspathProviderServiceImpl? = project.serviceIfCreated()
-  }
-
-  private val appLevelClasspathHolder = InspectionKtsClasspathHolder.getInstance()
-  val provider: InspectionKtsClasspathProvider
-    get() = appLevelClasspathHolder.provider
-
-  init {
-    scope.launch(QodanaDispatchers.Default) {
-      appLevelClasspathHolder.dependenciesScopeWasUpdated.collect {
-        rehighlightProjectsFiles()
+      val isJar = file.fileSystem is JarFileSystem
+      val jarFile = if (isJar) {
+        VfsUtilCore.getVirtualFileForJar(file) ?: file
+      } else {
+        file
       }
+      return VfsUtilCore.isUnder(jarFile, roots)
     }
   }
 
-  private fun rehighlightProjectsFiles() {
-    PsiManagerEx.getInstanceEx(project).dropResolveCaches()
-    DaemonCodeAnalyzer.getInstance(project).restart()
-  }
-}
-
-@Service(Service.Level.APP)
-private class InspectionKtsClasspathHolder(scope: CoroutineScope) {
-  companion object {
-    fun getInstance(): InspectionKtsClasspathHolder = service()
+  fun collectClassPath(): List<File> {
+    return classPath
   }
 
-  private val _dependenciesScope = MutableStateFlow<InspectionKtsDependenciesScope?>(null)
-  val dependenciesScopeWasUpdated = _dependenciesScope.drop(1).map { }
-
-  private val initializeDependenciesTask = scope.launch(context = QodanaDispatchers.Default, start = CoroutineStart.LAZY) {
-    val dependenciesRoots = collectDependenciesRoots()
-    val dependenciesScope = collectDependenciesScope()
-    _dependenciesScope.value = InspectionKtsDependenciesScope(dependenciesRoots, dependenciesScope)
+  fun currentDependenciesScope(): DependenciesScope? {
+    initializeDependenciesTask.start()
+    return dependenciesScope.get()
   }
 
-  val provider = object : InspectionKtsClasspathProvider {
-    override fun collectClassPath(): List<File> = classPath
-
-    override fun currentDependenciesScope(): InspectionKtsDependenciesScope? {
-      initializeDependenciesTask.start()
-      return _dependenciesScope.value
-    }
-  }
+  private val dependenciesScope = AtomicReference<DependenciesScope?>(null)
 
   private val classPath: List<File> by lazy {
+    if (isInspectionKtsResolveDisabled()) {
+      return@lazy emptyList()
+    }
     val useAllDistributionForDependencies = QodanaRegistry.useAllDistributionForInspectionKtsDependencies ||
                                             PluginManagerCore.isRunningFromSources()
     val classPath = mutableSetOf<File>()
@@ -151,7 +128,26 @@ private class InspectionKtsClasspathHolder(scope: CoroutineScope) {
     classPath.toList()
   }
 
+  private val initializeDependenciesTask = scope.launch(context = QodanaDispatchers.Default, start = CoroutineStart.LAZY) {
+    val dependenciesRoots = collectDependenciesRoots()
+    val dependenciesScope = collectDependenciesScope()
+    this@InspectionKtsClasspathService.dependenciesScope.set(DependenciesScope(dependenciesRoots, dependenciesScope))
+
+    rehighlightProjectsFiles()
+  }
+
+  private fun rehighlightProjectsFiles() {
+    ProjectManager.getInstance().openProjects.forEach { project ->
+      PsiManagerEx.getInstanceEx(project).dropResolveCaches()
+      DaemonCodeAnalyzer.getInstance(project).restart()
+    }
+  }
+
   private suspend fun collectDependenciesRoots(): Set<VirtualFile> {
+    if (isInspectionKtsResolveDisabled()) {
+      return emptySet()
+    }
+
     val compiledFromSourcesRoot = if (AppMode.isDevServer() || PluginManagerCore.isRunningFromSources()) {
       commonRoot(classPath)
     } else {
@@ -197,12 +193,15 @@ private fun pluginJars(pluginClassLoader: PluginClassLoader): List<File> {
     val isYamlPlugin = pluginId == "org.jetbrains.plugins.yaml"
     return when {
       isJavaPlugin -> {
-        jarName.startsWith("java-impl-frontend") // part of Java's PSI
+        jarName.startsWith("java-frontback") // part of Java's PSI
       }
       isKotlinPlugin -> {
         jarName.startsWith("kotlinc.kotlin-compiler-common") || // Kotlin PSI
         jarName.startsWith("kotlinc.high-level-api") || // Semantics of Kotlin PSI (old JAR naming)
         jarName.startsWith("kotlinc.analysis-api") // Semantics of Kotlin PSI
+      }
+      isDatabasePlugin -> {
+        jarName.startsWith("database-openapi")
       }
       isYamlPlugin -> {
         jarName.startsWith("intellij.yaml") // YAML PSI
@@ -217,8 +216,8 @@ private fun pluginJars(pluginClassLoader: PluginClassLoader): List<File> {
     Path(URLDecoder.decode(pluginXml.path.substringAfterLast(":"), StandardCharsets.UTF_8)).toAbsolutePath()
   }
 
-  val (pluginMainJar, pluginRestJars) = pluginJars.partition { jar ->
-    pluginXmlPath != null && pluginXmlPath.toString().startsWith(jar.toString())
+  val (pluginMainJar, pluginRestJars) = pluginJars.partition { jar -> 
+    pluginXmlPath != null && pluginXmlPath.toString().startsWith(jar.toString()) 
   }
   val pluginAdditionalJars = pluginRestJars.filter { jar -> isPluginAdditionalJarAccepted(jar.name) }
 
@@ -252,9 +251,9 @@ private suspend fun commonRoot(dependenciesJars: List<File>): VirtualFile? {
     checkCanceled()
     val currentPart = pathLists[0][i]
     if (pathLists.all {
-        checkCanceled()
-        it[i] == currentPart
-      }) {
+      checkCanceled()
+      it[i] == currentPart
+    }) {
       commonRoot.add(currentPart)
     } else {
       break
@@ -267,4 +266,16 @@ private suspend fun commonRoot(dependenciesJars: List<File>): VirtualFile? {
     StandardFileSystems.local().findFileByPath(rootFile.path) ?: return@runInterruptible null
   }
   return root
+}
+
+private fun isInspectionKtsResolveDisabled(): Boolean {
+  return application.isHeadlessEnvironment ||
+         !isInspectionKtsEnabled() ||
+         isInspectionKtsResolveDisabledByProjectSettings()
+}
+
+private fun isInspectionKtsResolveDisabledByProjectSettings(): Boolean {
+  return ProjectManager.getInstance().openProjects.any { project ->
+    QodanaIntelliJYamlService.getInstance(project).disableInspectionKtsResolve
+  }
 }

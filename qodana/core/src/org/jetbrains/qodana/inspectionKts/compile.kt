@@ -1,9 +1,9 @@
 package org.jetbrains.qodana.inspectionKts
 
 import com.intellij.codeInspection.ex.DynamicInspectionDescriptor
+import com.intellij.ide.impl.isTrusted
 import com.intellij.ide.script.IdeScriptEngine
 import com.intellij.ide.script.IdeScriptEngineManager
-import com.intellij.ide.trustedProjects.TrustedProjects
 import com.intellij.ide.trustedProjects.TrustedProjectsListener
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
@@ -96,7 +96,7 @@ internal suspend fun compileInspectionKtsFile(
         ?: error("Got $item on position $idx from inspection script, expected ${InspectionKts::class.java.canonicalName}")
       }
       val dynamicInspectionsDescriptor = inspectionsKts.map {
-        val inspectionTool = it.__asTool__(exceptionReporter = { exception ->
+        val inspectionTool = it.asTool(exceptionReporter = { exception ->
           project.qodanaProjectScope.launch(StaticAnalysisDispatchers.Default) {
             errorLogger.logException(exception)
             exceptionDuringAnalysisFlow.value = exception
@@ -145,7 +145,7 @@ internal suspend fun getDocumentByNioPath(file: Path): Document? {
 }
 
 private suspend fun waitWhenProjectTrusted(project: Project) {
-  if (TrustedProjects.isProjectTrusted(project)) return
+  if (project.isTrusted()) return
 
   suspendCancellableCoroutine { cont ->
     val disposable = Disposer.newDisposable()
@@ -177,6 +177,6 @@ private class KeepAliveKotlinCompileService(scope: CoroutineScope) {
   }
 }
 
-fun getKotlinScriptingEngine(classLoader: ClassLoader?): IdeScriptEngine? {
+private fun getKotlinScriptingEngine(classLoader: ClassLoader?): IdeScriptEngine? {
   return IdeScriptEngineManager.getInstance().getEngineByName("Kotlin - Beta", classLoader)
 }

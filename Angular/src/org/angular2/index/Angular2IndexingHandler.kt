@@ -3,12 +3,7 @@ package org.angular2.index
 
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ecmascript6.psi.ES6ImportedBinding
-import com.intellij.lang.ecmascript6.psi.impl.ES6FieldStatementImpl
-import com.intellij.lang.javascript.JSElementTypes
-import com.intellij.lang.javascript.JSExtendedLanguagesTokenSetProvider
-import com.intellij.lang.javascript.JSStringUtil
-import com.intellij.lang.javascript.JSStubElementTypes
-import com.intellij.lang.javascript.JSTokenTypes
+import com.intellij.lang.javascript.*
 import com.intellij.lang.javascript.index.FrameworkIndexingHandler
 import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.ecma6.*
@@ -39,14 +34,17 @@ import org.angular2.Angular2DecoratorUtil.COMPONENT_DEC
 import org.angular2.Angular2DecoratorUtil.DIRECTIVE_DEC
 import org.angular2.Angular2DecoratorUtil.FORWARD_REF_FUN
 import org.angular2.Angular2DecoratorUtil.HOST_ATTRIBUTE_TOKEN_CLASS
-import org.angular2.Angular2DecoratorUtil.HOST_BINDING_DEC
 import org.angular2.Angular2DecoratorUtil.INJECT_FUN
 import org.angular2.Angular2DecoratorUtil.INPUTS_PROP
 import org.angular2.Angular2DecoratorUtil.INPUT_DEC
+import org.angular2.Angular2DecoratorUtil.INPUT_FUN
+import org.angular2.Angular2DecoratorUtil.MODEL_FUN
 import org.angular2.Angular2DecoratorUtil.MODULE_DEC
 import org.angular2.Angular2DecoratorUtil.NAME_PROP
 import org.angular2.Angular2DecoratorUtil.OUTPUTS_PROP
 import org.angular2.Angular2DecoratorUtil.OUTPUT_DEC
+import org.angular2.Angular2DecoratorUtil.OUTPUT_FROM_OBSERVABLE_FUN
+import org.angular2.Angular2DecoratorUtil.OUTPUT_FUN
 import org.angular2.Angular2DecoratorUtil.PIPE_DEC
 import org.angular2.Angular2DecoratorUtil.SELECTOR_PROP
 import org.angular2.Angular2DecoratorUtil.STYLES_PROP
@@ -57,17 +55,10 @@ import org.angular2.Angular2DecoratorUtil.TEMPLATE_URL_PROP
 import org.angular2.Angular2DecoratorUtil.getClassForDecoratorElement
 import org.angular2.Angular2DecoratorUtil.getProperty
 import org.angular2.Angular2DecoratorUtil.getPropertyStringValue
-import org.angular2.Angular2DecoratorUtil.isHostBinding
 import org.angular2.entities.Angular2EntityUtils
 import org.angular2.entities.ivy.Angular2IvySymbolDef
 import org.angular2.entities.source.Angular2SourceUtil.isStylesheet
-import org.angular2.isCustomCssPropertyBinding
 import org.angular2.lang.Angular2Bundle
-import org.angular2.lang.html.parser.Angular2AttributeNameParser
-import org.angular2.signals.Angular2SignalUtils.INPUT_FUN
-import org.angular2.signals.Angular2SignalUtils.MODEL_FUN
-import org.angular2.signals.Angular2SignalUtils.OUTPUT_FROM_OBSERVABLE_FUN
-import org.angular2.signals.Angular2SignalUtils.OUTPUT_FUN
 import org.angular2.web.scopes.CREATE_COMPONENT_FUN
 import org.angular2.web.scopes.INPUT_BINDING_FUN
 import org.angular2.web.scopes.OUTPUT_BINDING_FUN
@@ -125,13 +116,6 @@ class Angular2IndexingHandler : FrameworkIndexingHandler() {
     return if (identifier != null) JSStringUtil.unquoteWithoutUnescapingStringLiteralValue(identifier.text) else null
   }
 
-  override fun processAnyProperty(property: JSProperty, outData: JSElementIndexingData?): JSElementIndexingData? =
-    if (isHostBinding(property))
-      createJSImplicitElementForCustomCssPropertyIfNeeded(Angular2AttributeNameParser.parse(property.name ?: ""),
-                                                          property, outData as? JSElementIndexingDataImpl)
-    else
-      outData
-
   override fun hasSignificantValue(expression: JSLiteralExpression): Boolean {
     return shouldCreateStubForLiteral(expression.node)
   }
@@ -156,24 +140,6 @@ class Angular2IndexingHandler : FrameworkIndexingHandler() {
   }
 
   override fun processDecorator(decorator: ES6Decorator, data: JSElementIndexingDataImpl?): JSElementIndexingDataImpl? {
-    if (decorator.context.asSafely<JSAttributeList>()?.context is ES6FieldStatementImpl) {
-      return when (decorator.decoratorName) {
-        HOST_BINDING_DEC -> {
-          decorator
-            .expression
-            ?.asSafely<JSCallExpression>()
-            ?.arguments
-            ?.firstOrNull()
-            ?.asSafely<JSLiteralExpression>()
-            ?.stringValue
-            ?.let { Angular2AttributeNameParser.parse("[$it]") }
-            ?.let { createJSImplicitElementForCustomCssPropertyIfNeeded(it, decorator, data) }
-          ?: data
-        }
-        else -> data
-      }
-    }
-
     val enclosingClass = getClassForDecoratorElement(decorator)
                          ?: return data
     val decoratorName = decorator.decoratorName
@@ -382,7 +348,7 @@ class Angular2IndexingHandler : FrameworkIndexingHandler() {
   private fun isDirectiveField(fieldNode: ASTNode?): Boolean {
     if (fieldNode?.elementType !== TypeScriptStubElementTypes.TYPESCRIPT_FIELD) return false
     val classNode = fieldNode?.treeParent?.treeParent
-                      ?.takeIf { TS_CLASS_TOKENS.contains(it.elementType) }
+                      ?.takeIf { it.elementType === JSStubElementTypes.TYPESCRIPT_CLASS }
                     ?: return false
     return hasDecorator(classNode.psi as TypeScriptClass, COMPONENT_DEC, DIRECTIVE_DEC) != null
   }
@@ -401,22 +367,6 @@ class Angular2IndexingHandler : FrameworkIndexingHandler() {
     }
     recordFunctionName(callExpression, outData, referenceName ?: return)
   }
-
-  private fun createJSImplicitElementForCustomCssPropertyIfNeeded(
-    info: Angular2AttributeNameParser.AttributeInfo,
-    provider: PsiElement, outData: JSElementIndexingDataImpl?,
-  ): JSElementIndexingDataImpl? =
-    if (isCustomCssPropertyBinding(info))
-      (outData ?: JSElementIndexingDataImpl())
-        .apply {
-          addImplicitElement(
-            JSImplicitElementImpl.Builder(info.name, provider)
-              .setUserString(this@Angular2IndexingHandler, ANGULAR2_CUSTOM_CSS_PROPERTY_USER_STRING)
-              .toImplicitElement()
-          )
-        }
-    else
-      outData
 
   private fun recordFunctionName(
     callExpression: JSCallExpression,
@@ -510,8 +460,6 @@ private const val ANGULAR2_MODULE_INDEX_USER_STRING = "a2mi"
 
 private const val ANGULAR2_FUNCTION_NAME_USER_STRING = "a2fn"
 
-private const val ANGULAR2_CUSTOM_CSS_PROPERTY_USER_STRING = "a2csp"
-
 private const val PIPE_TYPE = "P;;;"
 
 private const val DIRECTIVE_TYPE = "D;;;"
@@ -527,7 +475,7 @@ private val STUBBED_PROPERTIES = setOf(
   TEMPLATE_URL_PROP, STYLE_URLS_PROP, STYLE_URL_PROP, SELECTOR_PROP, INPUTS_PROP, OUTPUTS_PROP)
 
 private val STUBBED_DECORATORS_STRING_ARGS = setOf(
-  INPUT_DEC, OUTPUT_DEC, ATTRIBUTE_DEC, HOST_BINDING_DEC)
+  INPUT_DEC, OUTPUT_DEC, ATTRIBUTE_DEC)
 
 private val STUBBED_DECORATOR_LIKE_FUNCTIONS = setOf(
   INPUT_FUN, OUTPUT_FUN, OUTPUT_FROM_OBSERVABLE_FUN, MODEL_FUN)
@@ -544,7 +492,6 @@ private val INDEX_MAP = mapOf<String, StubIndexKey<String, JSImplicitElementProv
   ANGULAR2_PIPE_INDEX_USER_STRING to Angular2SourcePipeIndexKey,
   ANGULAR2_MODULE_INDEX_USER_STRING to Angular2SourceModuleIndexKey,
   ANGULAR2_FUNCTION_NAME_USER_STRING to null,
-  ANGULAR2_CUSTOM_CSS_PROPERTY_USER_STRING to Angular2CustomCssPropertyInJsIndexKey,
 )
 
 fun JSImplicitElement.isPipe(): Boolean {

@@ -1,4 +1,4 @@
-// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.runtime
 
 import com.intellij.CommonBundle
@@ -14,15 +14,16 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.execution.ui.ConsoleView
 import com.intellij.execution.util.ProgramParametersUtil
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.InvalidDataException
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.WriteExternalException
 import com.intellij.platform.ide.progress.runWithModalProgressBlocking
+import com.intellij.testFramework.TestModeFlags
 import com.intellij.util.text.findTextRange
 import com.intellij.util.xmlb.XmlSerializer
 import org.intellij.terraform.config.actions.TfActionService
@@ -93,13 +94,11 @@ internal abstract class TfToolsRunConfigurationBase(
       exception.setQuickFix(Runnable { workingDirectory = project.basePath })
       throw exception
     }
-
-    val expandedWorkingDir = ProgramParametersUtil.expandPathAndMacros(workingDirectory, null, project)
     //To avoid compilation error, it cannot detect isNullOrEmpty method and derive nullability
-    val workDirPath = expandedWorkingDir?.let { Path(it) }
+    val workDirPath = workingDirectory?.let { Path(it) }
                       ?: throw RuntimeConfigurationException(HCLBundle.message("run.configuration.no.working.directory.specified"))
     if (!workDirPath.exists() || !workDirPath.isDirectory()) {
-      val exception = RuntimeConfigurationException(HCLBundle.message("run.configuration.working.directory.doesnt.exist", expandedWorkingDir))
+      val exception = RuntimeConfigurationException(HCLBundle.message("run.configuration.working.directory.doesnt.exist", workingDirectory))
       exception.setQuickFix(Runnable { workingDirectory = project.basePath })
       throw exception
     }
@@ -153,6 +152,8 @@ internal abstract class TfToolsRunConfigurationBase(
   }
 }
 
+internal val TF_RUN_MOCK: Key<Boolean> = Key.create("TF_RUN_MOCK")
+
 internal class TfToolCommandLineState(
   private val project: Project,
   private val configParams: TfToolsRunConfigurationBase,
@@ -161,9 +162,6 @@ internal class TfToolCommandLineState(
 ) : CommandLineState(env) {
 
   override fun execute(executor: Executor, runner: ProgramRunner<*>): ExecutionResult {
-    if (ApplicationManager.getApplication().isUnitTestMode)
-      return DefaultExecutionResult()
-
     val isToolDetected = runWithModalProgressBlocking(project, HCLBundle.message("progress.title.detecting.terraform.executable", toolType.displayName)) {
       TfToolPathDetector.getInstance(project).detectAndVerifyTool(toolType, false)
     }
@@ -171,6 +169,8 @@ internal class TfToolCommandLineState(
       showIncorrectPathNotification(project, toolType)
       throw ProcessCanceledException()
     }
+    if (TestModeFlags.get(TF_RUN_MOCK) == true)
+      return DefaultExecutionResult()
     return super.execute(executor, runner)
   }
 

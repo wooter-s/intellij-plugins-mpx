@@ -12,10 +12,7 @@ import com.intellij.lang.javascript.linter.tslint.config.TsLintConfiguration
 import com.intellij.lang.javascript.linter.tslint.config.TsLintState
 import com.intellij.lang.javascript.linter.tslint.execution.TsLintOutputJsonParser
 import com.intellij.lang.javascript.linter.tslint.execution.TsLinterError
-import com.intellij.lang.javascript.service.JSLanguageServiceBase
-import com.intellij.lang.javascript.service.JSLanguageServiceQueue
-import com.intellij.lang.javascript.service.JSLanguageServiceQueueImpl
-import com.intellij.lang.javascript.service.JSLanguageServiceUtil
+import com.intellij.lang.javascript.service.*
 import com.intellij.lang.javascript.service.protocol.*
 import com.intellij.lang.javascript.service.protocol.LocalFilePath.Companion.create
 import com.intellij.openapi.diagnostic.Logger
@@ -29,6 +26,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiFunction
+import java.util.function.Consumer
 
 class TsLintLanguageService(
   project: Project,
@@ -90,12 +88,13 @@ class TsLintLanguageService(
     }.asCompletableFuture()
   }
 
-  override suspend fun createLanguageServiceQueue(): JSLanguageServiceQueue {
+  override fun createLanguageServiceQueueBlocking(): JSLanguageServiceQueue {
     return JSLanguageServiceQueueImpl(
       myProject,
       Protocol(this.nodePackage, myWorkingDirectory, myProject),
       null,
-      myDefaultReporter)
+      myDefaultReporter,
+      JSLanguageServiceDefaultCacheData())
   }
 
   private abstract class BaseCommand protected constructor(
@@ -122,7 +121,7 @@ class TsLintLanguageService(
     private val myNodePackage: NodePackage,
     private val myWorkingDirectory: VirtualFile,
     project: Project
-  ) : JSLanguageServiceNodeStdProtocolBase("tslint", project) {
+  ) : JSLanguageServiceNodeStdProtocolBase("tslint", project, Consumer { o: Any? -> }) {
     override val workingDirectory: String?
       get() = JSLanguageServiceUtil.normalizePathDoNotFollowSymlinks(myWorkingDirectory)
 

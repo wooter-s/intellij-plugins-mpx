@@ -1,20 +1,19 @@
 package org.angular2.web
 
+import com.intellij.javascript.webSymbols.jsKind
 import com.intellij.lang.javascript.psi.JSLiteralExpression
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.model.psi.PsiExternalReferenceHost
 import com.intellij.openapi.editor.XmlHighlighterColors
 import com.intellij.openapi.editor.colors.TextAttributesKey
-import com.intellij.polySymbols.PolySymbol
-import com.intellij.polySymbols.PolySymbolQualifiedKind
-import com.intellij.polySymbols.highlighting.PolySymbolHighlightingCustomizer
-import com.intellij.polySymbols.html.HTML_ATTRIBUTES
-import com.intellij.polySymbols.js.JS_SYMBOLS
-import com.intellij.polySymbols.js.JsSymbolSymbolKind
-import com.intellij.polySymbols.js.jsKind
-import com.intellij.polySymbols.search.PsiSourcedPolySymbol
+import com.intellij.webSymbols.PsiSourcedWebSymbol
+import com.intellij.webSymbols.WebSymbol
+import com.intellij.webSymbols.WebSymbolQualifiedKind
+import com.intellij.webSymbols.highlighting.WebSymbolHighlightingCustomizer
+import com.intellij.webSymbols.js.WebSymbolJsKind
+import com.intellij.webSymbols.utils.qualifiedKind
 import org.angular2.Angular2DecoratorUtil.isHostBinding
-import org.angular2.lang.expr.Angular2ExprDialect
+import org.angular2.lang.expr.Angular2Language
 import org.angular2.lang.expr.highlighting.Angular2HighlighterColors
 import org.angular2.lang.html.highlighting.Angular2HtmlHighlighterColors
 import org.angular2.lang.html.parser.Angular2AttributeNameParser
@@ -23,9 +22,9 @@ import org.angular2.lang.html.psi.Angular2HtmlBananaBoxBinding
 import org.angular2.lang.html.psi.Angular2HtmlEvent
 import org.angular2.lang.html.psi.Angular2HtmlPropertyBinding
 
-class Angular2SymbolHighlightingCustomizer : PolySymbolHighlightingCustomizer {
+class Angular2WebSymbolHighlightingCustomizer : WebSymbolHighlightingCustomizer {
 
-  override fun getSymbolKindTextAttributes(qualifiedKind: PolySymbolQualifiedKind): TextAttributesKey? =
+  override fun getSymbolKindTextAttributes(qualifiedKind: WebSymbolQualifiedKind): TextAttributesKey? =
     when (qualifiedKind) {
       NG_DIRECTIVE_INPUTS -> Angular2HtmlHighlighterColors.NG_PROPERTY_BINDING_ATTR_NAME
       NG_DIRECTIVE_OUTPUTS -> Angular2HtmlHighlighterColors.NG_EVENT_BINDING_ATTR_NAME
@@ -42,15 +41,13 @@ class Angular2SymbolHighlightingCustomizer : PolySymbolHighlightingCustomizer {
       Angular2HtmlEvent::class.java to Angular2HtmlHighlighterColors.NG_EVENT_BINDING_ATTR_NAME,
     )
 
-  override fun getSymbolTextAttributes(host: PsiExternalReferenceHost, symbol: PolySymbol, level: Int): TextAttributesKey? {
+  override fun getSymbolTextAttributes(host: PsiExternalReferenceHost, symbol: WebSymbol, level: Int): TextAttributesKey? {
     when (symbol.qualifiedKind) {
-      JS_SYMBOLS ->
-        if (symbol.jsKind == JsSymbolSymbolKind.Variable
-            && symbol is PsiSourcedPolySymbol
-            && symbol.source?.language is Angular2ExprDialect
-        )
+      WebSymbol.JS_SYMBOLS ->
+        if (symbol.jsKind == WebSymbolJsKind.Variable
+            && symbol is PsiSourcedWebSymbol && symbol.source?.language == Angular2Language)
           return Angular2HighlighterColors.NG_VARIABLE
-      HTML_ATTRIBUTES ->
+      WebSymbol.HTML_ATTRIBUTES ->
         if (host is JSProperty && isHostBinding(host)) {
           val info = Angular2AttributeNameParser.parse(symbol.name)
           return when (info.type) {
@@ -58,8 +55,7 @@ class Angular2SymbolHighlightingCustomizer : PolySymbolHighlightingCustomizer {
             Angular2AttributeType.EVENT -> Angular2HtmlHighlighterColors.NG_EVENT_BINDING_ATTR_NAME
             else -> null
           }
-        }
-        else if (level == 0)
+        } else if (level == 0)
           return when (host) {
             is Angular2HtmlPropertyBinding -> Angular2HtmlHighlighterColors.NG_PROPERTY_BINDING_ATTR_NAME
             is Angular2HtmlEvent -> Angular2HtmlHighlighterColors.NG_EVENT_BINDING_ATTR_NAME

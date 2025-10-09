@@ -46,6 +46,7 @@ import org.angular2.lang.expr.psi.Angular2RecursiveVisitor
 import org.angular2.lang.html.parser.Angular2AttributeNameParser
 import org.angular2.lang.selector.Angular2DirectiveSimpleSelector.Companion.createElementCssSelector
 import org.angular2.lang.selector.Angular2SelectorMatcher
+import org.angular2.web.Angular2SymbolDelegate
 import org.angular2.web.scopes.INPUT_BINDING_FUN
 import org.angular2.web.scopes.OUTPUT_BINDING_FUN
 import org.angular2.web.scopes.TWO_WAY_BINDING_FUN
@@ -326,16 +327,14 @@ private class TcbTemplateBodyOp(private val tcb: Context, private val scope: Sco
     var guard: Expression? = null
 
     // If there are any guards from directives, use them instead.
-    if (directiveGuards.isNotEmpty()) {
+    if (directiveGuards.size > 0) {
       // Pop the first value and use it as the initializer to reduce(). This way, a single guard
       // will be used on its own, but two or more will be combined into binary AND expressions.
       guard = Expression {
         directiveGuards.reversed().forEachIndexed { index, expression ->
           if (index > 0)
             append(" && ")
-          append("(")
           append(expression)
-          append(")")
         }
       }
     }
@@ -395,7 +394,7 @@ private class TcbExpressionOp(
       val expr = tcbExpression(this.expression, this.tcb, this.scope)
       this.scope.addStatement {
         if (isBoundText) {
-          append("\"\" + (").append(expr).append(");")
+          append("\"\" + ").append(expr).append(";")
         }
         else {
           append("(").append(expr).append(");")
@@ -679,7 +678,7 @@ private class TcbDirectiveInputsOp(
       // For bound inputs, the property is assigned the binding expression.
       val expr =
         if (isDynamicDirective)
-        // Custom WebStorm code to support dynamic bindings in createComponent calls
+          // Custom WebStorm code to support dynamic bindings in createComponent calls
           Expression((attr.attribute as TmplAstBoundAttribute).value!!.text)
         else
           widenBinding(translateInput(attr.attribute, this.tcb, this.scope), this.tcb)
@@ -694,7 +693,6 @@ private class TcbDirectiveInputsOp(
       for (input in attr.inputs) {
         val fieldName = input.fieldName
         val isSignal = input.isSignal
-        val transformType = input.transformType
         var target: Expression
 
         // Note: There is no special logic for transforms/coercion with signal inputs.
@@ -703,9 +701,10 @@ private class TcbDirectiveInputsOp(
         // transform write type into their member type, and we extract it below when
         // setting the `WriteT` of such `InputSignalWithTransform<_, WriteT>`.
 
-        if ((fieldName != null || transformType != null) && input.isCoerced && !input.isSignal) {
+        if (fieldName != null && input.isCoerced && !input.isSignal) {
           var type: Expression
 
+          val transformType = input.transformType
           if (transformType != null) {
             type = tcb.env.referenceType(transformType)
           }
@@ -714,8 +713,8 @@ private class TcbDirectiveInputsOp(
             // expression into the input field directly. To achieve this, a variable is declared
             // with a type of `typeof Directive.ngAcceptInputType_fieldName` which is then used as
             // target of the assignment.
-            val dirTypeRef = tcb.env.reference(dir.typeScriptClass!!)
-            type = tsCreateTypeQueryForCoercedInput(dirTypeRef, fieldName!!)
+            val dirTypeRef: JSType = dir.entityJsType!!
+            type = tsCreateTypeQueryForCoercedInput(tcb.env.referenceType(dirTypeRef), fieldName)
           }
 
           val id = this.tcb.allocateId()
@@ -774,8 +773,7 @@ private class TcbDirectiveInputsOp(
         // Two-way bindings accept `T | WritableSignal<T>` so we have to unwrap the value.
         if (input.isTwoWayBinding && this.tcb.env.config.allowSignalsInTwoWayBindings) {
           assignment = unwrapWritableSignal(assignment, this.tcb)
-        }
-        else if (isDynamicDirective) {
+        } else if (isDynamicDirective) {
           // Custom WebStorm code to support dynamic bindings in createComponent calls
           assignment = Expression { append("(").append(assignment).append(")()") }
         }
@@ -1136,7 +1134,7 @@ private class TcbDynamicDirectiveOutputsOp(
         append(outputField).append(".subscribe((\$event) => ")
         codeBlock {
           appendStatement {
-            append("\$event", output.keySpan).append(" = null! as (").append(handler.text).append(")")
+            append("\$event",output.keySpan).append(" = null! as (").append(handler.text).append(")")
           }
         }
         append(")")
@@ -1409,7 +1407,7 @@ private class TcbIfOp(
         comparisonExpression
       else
         Expression {
-          append("(").append(guard!!).append(") && (").append(comparisonExpression).append(")")
+          append(guard!!).append(" && ").append(comparisonExpression)
         }
     }
 
@@ -1615,7 +1613,7 @@ internal class Context(
  *
  * If a `TcbOp` requires the output of another, it can call `resolve()`.
  */
-internal class Scope constructor(private val tcb: Context, private val parent: Scope? = null, private val guard: Expression? = null) {
+internal class Scope(private val tcb: Context, private val parent: Scope? = null, private val guard: Expression? = null) {
   /**
    * A queue of operations which need to be performed to generate the TCB code for this scope.
    *
@@ -1704,7 +1702,7 @@ internal class Scope constructor(private val tcb: Context, private val parent: S
       scopedNode: `TmplAstTemplate|TmplAstIfBlockBranch|TmplAstForLoopBlock`?,
       children: List<TmplAstNode>, guard: Expression?,
     ): Scope {
-      val scope = Scope(tcb, parentScope, guard?.let { Expression { append("(").append(guard).append(")") } })
+      val scope = Scope(tcb, parentScope, guard)
 
       // If given an actual `TmplAstTemplate` instance, then process any additional information it
       // has.
@@ -2514,7 +2512,7 @@ private open class TcbExpressionTranslator(
     }
   }
 
-  private fun emitMethodSafeAccess(node: JSCallExpression, methodExpression: JSExpression) {
+  private fun emitMethodSafeAccess(node: PsiElement, methodExpression: JSExpression) {
     result.withSourceSpan(node.textRange, supportTypes = true) {
       if (tcb.env.config.strictSafeNavigationTypes) {
         // Basically, the return here is either the type of the complete expression with a null-safe
@@ -2528,8 +2526,7 @@ private open class TcbExpressionTranslator(
           removeMappings(methodExpression.textRange)
           append(")!")
         }
-        node.argumentList?.accept(this@TcbExpressionTranslator) ?: run { append("()") }
-        append(" : undefined)")
+        append("() : undefined)")
       }
       else if (VeSafeLhsInferenceBugDetector().veWillInferAnyFor(node)) {
         // Emulate a View Engine bug where 'any' is inferred for the left-hand side of the safe
@@ -2543,7 +2540,7 @@ private open class TcbExpressionTranslator(
           removeMappings(methodExpression.textRange)
           append(") as any)")
         }
-        node.argumentList?.accept(this@TcbExpressionTranslator) ?: run { append("()") }
+        append("()")
       }
       else {
         // The View Engine bug isn't active, so check the entire type of the expression, but the final
@@ -2556,8 +2553,7 @@ private open class TcbExpressionTranslator(
           removeMappings(methodExpression.textRange)
           append(")!")
         }
-        node.argumentList?.accept(this@TcbExpressionTranslator) ?: run { append("()") }
-        append("as any)")
+        append("() as any)")
       }
     }
   }
@@ -2753,10 +2749,11 @@ private fun getBoundAttributes(directive: TmplDirectiveMetadata, node: `TmplAstE
           TcbBoundAttributeInput(
             fieldName = input.fieldName,
             required = input.required,
-            transformType = input.transformParameterType,
-            isSignal = input.isSignalProperty,
+            transformType = (input as? Angular2SourceDirectiveProperty)?.transformParameterType,
+            isSignal = (((input as? Angular2SymbolDelegate<*>)?.delegate
+                         ?: input) as? Angular2SourceDirectiveProperty)?.typeFromSignal != null,
             isTwoWayBinding = attr is TmplAstBoundAttribute && attr.type == BindingType.TwoWay,
-            isCoerced = input.isCoerced,
+            isCoerced = (input as? Angular2ClassBasedDirectiveProperty)?.isCoerced == true,
             isRestricted = (input as? Angular2SourceDirectiveProperty)?.sources?.any {
               it is JSAttributeListOwner && it is JSRecordType.PropertySignature &&
               (it.attributeList?.hasModifier(ModifierType.READONLY) == true || it.accessType != JSAttributeList.AccessType.PUBLIC)

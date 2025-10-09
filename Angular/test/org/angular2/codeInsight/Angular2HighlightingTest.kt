@@ -158,8 +158,6 @@ class Angular2HighlightingTest : Angular2TestCase("highlighting", true) {
 
   fun testBlockIf() = checkHighlighting(ANGULAR_CORE_17_3_0, extension = "ts")
 
-  fun testBlockIfNg20_2() = checkHighlighting(ANGULAR_CORE_20_2_2, extension = "ts")
-
   fun testBlockSwitch() = checkHighlighting(ANGULAR_CORE_17_3_0, extension = "ts")
 
   fun testInterpolationStrictMode() = checkHighlighting(ANGULAR_CORE_16_2_8, strictTemplates = true, extension = "ts")
@@ -370,56 +368,6 @@ class Angular2HighlightingTest : Angular2TestCase("highlighting", true) {
 
   fun testNgContentElementSelector() =
     checkHighlighting(ANGULAR_CORE_19_2_0, extension = "ts")
-
-  fun testNgDeepSemantic() =
-    checkHighlighting(ANGULAR_CORE_19_2_0, extension = "css", checkSymbolNames = true, checkInformation = false, checkWarnings = false, checkWeakWarnings = false)
-
-  fun testCssCustomProperty() =
-    checkHighlighting(ANGULAR_CORE_19_2_0, extension = "ts")
-
-  fun testCssCustomPropertyExternalTemplate() =
-    checkHighlighting(ANGULAR_CORE_19_2_0, dir = true, configureFileName = "test.css")
-
-  fun testNoKeyupEventCodeModifierNg13() =
-    checkHighlighting(ANGULAR_CORE_13_3_5, extension = "html")
-
-  fun testKeyupEventCodeModifierNg15() =
-    checkHighlighting(ANGULAR_CORE_15_1_5, extension = "html")
-
-  fun testKeydownCaseNonsensitive() =
-    checkHighlighting(ANGULAR_CORE_15_1_5, extension = "html")
-
-  fun testVoidOperatorNg20() =
-    checkHighlighting(ANGULAR_CORE_20_0_0_NEXT_3, extension = "html")
-
-  fun testVoidOperatorNg19() =
-    checkHighlighting(ANGULAR_CORE_19_2_0, extension = "html")
-
-  fun testExponentialOperatorNg20() =
-    checkHighlighting(ANGULAR_CORE_20_0_0_NEXT_3, extension = "html")
-
-  fun testExponentialOperatorNg19() =
-    checkHighlighting(ANGULAR_CORE_19_2_0, extension = "html")
-
-  fun testAssignmentOperatorsNg20() =
-    checkHighlighting(ANGULAR_CORE_20_0_0_NEXT_3, extension = "html", dir = true)
-
-  fun testAssignmentOperatorsNg20_1() =
-    checkHighlighting(ANGULAR_CORE_20_1_4, extension = "html", dir = true)
-
-  fun testIonic8() =
-    checkHighlighting(ANGULAR_CORE_19_2_0, IONIC_ANGULAR_8_4_3, IONIC_CORE_8_4_3,
-                      configurators = listOf(Angular2TsConfigFile(strictTemplates = true)),
-                      configureFileName = "app.component.html", dir = true)
-
-  fun testDirectiveWithExportDefault() =
-    checkHighlighting(ANGULAR_CORE_20_1_4, extension = "html", dir = true)
-
-  fun testUnusedSymbolSuppressionInBlock() =
-    checkHighlighting(ANGULAR_CORE_20_1_4, extension = "html")
-
-  fun testListenerInNestedIfBlocks() =
-    checkHighlighting(ANGULAR_CORE_20_1_4, extension = "ts")
 
   override fun setUp() {
     super.setUp()

@@ -23,7 +23,8 @@ private class Angular2VisualizeGeneratedTcbAction : AnAction() {
     ActionUpdateThread.BGT
 
   override fun update(e: AnActionEvent) {
-    e.presentation.isEnabledAndVisible = false
+    e.presentation.isVisible = false
+    e.presentation.isEnabled = false
     if (!ApplicationManager.getApplication().isInternal) return
     val file = e.getData(CommonDataKeys.PSI_FILE)
     if (file != null
@@ -32,7 +33,8 @@ private class Angular2VisualizeGeneratedTcbAction : AnAction() {
         || Angular2LangUtil.isAngular2HtmlFileType(it)
         || Angular2LangUtil.isAngular2SvgFileType(it)
       } && Angular2LangUtil.isAngular2Context(file)) {
-      e.presentation.isEnabledAndVisible = true
+      e.presentation.isVisible = true
+      e.presentation.isEnabled = true
     }
   }
 
@@ -41,12 +43,11 @@ private class Angular2VisualizeGeneratedTcbAction : AnAction() {
 
     // Ensure that we will recreate TCB
     element.manager.dropPsiCaches()
-    @Suppress("HardCodedStringLiteral")
     runWithModalProgressBlocking(element.project, "Building TCBs") {
       val transpiledTemplate =
         readAction {
-          Angular2TranspiledDirectiveFileBuilder.getTranspiledDirectiveAndTopLevelSourceFile(
-            element.containingFile ?: return@readAction null)?.first
+          Angular2TranspiledDirectiveFileBuilder.getTranspiledDirectiveFile(element.containingFile
+                                                                            ?: return@readAction null)
         }
         ?: return@runWithModalProgressBlocking
 

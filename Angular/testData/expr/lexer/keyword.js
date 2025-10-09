@@ -10,4 +10,3 @@ else
 this
 typeof
 in
-void

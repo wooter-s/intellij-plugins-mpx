@@ -1,5 +1,4 @@
 import type * as ts from "./tsserverlibrary.shim";
-import type {Range} from "tsc-ide-plugin/protocol"
 import {Angular2TcbMappingInfo} from "./mappings"
 import {AngularTranspiledTemplate, buildAngularTranspiledTemplate} from "./code"
 
@@ -62,7 +61,10 @@ type TranspiledTemplateArguments = {
 type GetGeneratedElementTypeArguments = {
   file: string;
   projectFileName?: string;
-  range: Range,
+  range: {
+    start: ts.LineAndCharacter;
+    end: ts.LineAndCharacter;
+  },
   forceReturnType: boolean,
 }
 

@@ -17,7 +17,6 @@ import com.intellij.util.application
 import com.jetbrains.qodana.sarif.model.PropertyBag
 import com.jetbrains.qodana.sarif.model.Result
 import com.jetbrains.qodana.sarif.model.Result.BaselineState
-import com.jetbrains.qodana.sarif.model.Run
 import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
 import org.jetbrains.qodana.cloud.api.IjQDCloudClientProvider
@@ -31,7 +30,10 @@ import org.jetbrains.qodana.respond200PublishReport
 import org.jetbrains.qodana.staticAnalysis.QodanaEnvEmpty
 import org.jetbrains.qodana.staticAnalysis.QodanaTestCase.Companion.runTest
 import org.jetbrains.qodana.staticAnalysis.addQodanaEnvMock
-import org.jetbrains.qodana.staticAnalysis.inspections.config.*
+import org.jetbrains.qodana.staticAnalysis.inspections.config.FailureConditions
+import org.jetbrains.qodana.staticAnalysis.inspections.config.InspectScope
+import org.jetbrains.qodana.staticAnalysis.inspections.config.QodanaProfileConfig
+import org.jetbrains.qodana.staticAnalysis.inspections.config.QodanaScriptConfig
 import org.jetbrains.qodana.staticAnalysis.inspections.runner.startup.LoadedProfile
 import org.jetbrains.qodana.staticAnalysis.markGenFolderAsGeneratedSources
 import org.jetbrains.qodana.staticAnalysis.profile.QODANA_PROMO_ANALYZE_EACH_N_FILE_KEY
@@ -41,26 +43,16 @@ import org.jetbrains.qodana.staticAnalysis.sarif.QodanaSeverity
 import org.jetbrains.qodana.staticAnalysis.sarif.configProfile
 import org.jetbrains.qodana.staticAnalysis.script.TEAMCITY_CHANGES_SCRIPT_NAME
 import org.jetbrains.qodana.staticAnalysis.script.scoped.COVERAGE_SKIP_COMPUTATION_PROPERTY
-import org.jetbrains.qodana.staticAnalysis.script.scoped.REDUCED_SCOPE_PATH
-import org.jetbrains.qodana.staticAnalysis.script.scoped.RESULT_PRINTING_SKIPPED
-import org.jetbrains.qodana.staticAnalysis.script.scoped.REVERSE_SCOPED_SCRIPT_NAME
 import org.jetbrains.qodana.staticAnalysis.script.scoped.SCOPED_BASELINE_PROPERTY
 import org.jetbrains.qodana.staticAnalysis.script.scoped.SCOPED_SCRIPT_NAME
-import org.jetbrains.qodana.staticAnalysis.script.scoped.SCOPE_ARG
-import org.jetbrains.qodana.staticAnalysis.script.scoped.STAGE_ARG
-import org.jetbrains.qodana.staticAnalysis.script.scoped.Stage
 import org.jetbrains.qodana.staticAnalysis.stat.InspectionDurationsAggregatorService
-import org.jetbrains.qodana.staticAnalysis.stat.InspectionProblemsFoundAggregatorService
 import org.jetbrains.qodana.staticAnalysis.withSystemProperty
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertLinesMatch
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
-import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
@@ -272,40 +264,12 @@ class QodanaRunnerTest : QodanaRunnerTestCase() {
   /** Ensure that the duration of inspections is aggregated by inspection. */
   @Test
   fun testAggregation(): Unit = runBlocking {
-    val service = project.getService(InspectionProblemsFoundAggregatorService::class.java)
 
     runAnalysis()
 
-    val (canBeFinalFiles, canBeFinalProblems) = service.getSummaryFor("CanBeFinal")
-    assertEquals(1, canBeFinalFiles)
-    assertEquals(3, canBeFinalProblems)
-
-    val (constantValueFiles, constantValueProblems) = service.getSummaryFor("ConstantValue")
-    assertEquals(2, constantValueFiles)
-    assertEquals(3, constantValueProblems)
-
-    val (unusedAssignmentFiles, unusedAssignmentProblems) = service.getSummaryFor("UnusedAssignment")
-    assertEquals(2, unusedAssignmentFiles)
-    assertEquals(1, unusedAssignmentProblems)
-  }
-
-  @Test
-  fun `testAggregation with durations`(): Unit = runBlocking {
-    val service = project.getService(InspectionDurationsAggregatorService::class.java)
-
-    runAnalysis()
-
-    val (canBeFinalFiles, canBeFinalProblems) = service.getSummaryFor("CanBeFinal")
-    assertEquals(1, canBeFinalFiles)
-    assertEquals(3, canBeFinalProblems)
-
-    val (constantValueFiles, constantValueProblems) = service.getSummaryFor("ConstantValue")
-    assertEquals(2, constantValueFiles)
-    assertEquals(3, constantValueProblems)
-
-    val (unusedAssignmentFiles, unusedAssignmentProblems) = service.getSummaryFor("UnusedAssignment")
-    assertEquals(2, unusedAssignmentFiles)
-    assertEquals(1, unusedAssignmentProblems)
+    assertSarifResults()
+    val aggregator = project.getService(InspectionDurationsAggregatorService::class.java)
+    assertEquals("files: 1, problems: 2", aggregator.getSummary("CanBeFinal"))
   }
 
   @Test
@@ -415,462 +379,6 @@ class QodanaRunnerTest : QodanaRunnerTestCase() {
     } finally {
       System.clearProperty(SCOPED_BASELINE_PROPERTY)
       System.clearProperty(COVERAGE_SKIP_COMPUTATION_PROPERTY)
-    }
-  }
-
-  private fun Run.isResultOutputSkipped() = this.invocations?.first()?.properties?.get(RESULT_PRINTING_SKIPPED) == true
-
-  @Test
-  fun `testReverseScoped-script-new-stage`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.NEW.name
-        )),
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.ANY,
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/C.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      val scopePath = qodanaConfig.outPath.resolve("scope")
-      System.setProperty(REDUCED_SCOPE_PATH, scopePath.toString())
-      runAnalysis()
-      assertSarifResults()
-      // resulting report non empty - decision - continue
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), true)
-      val expectedScope = getTestDataPath("scope.json").absolutePathString()
-      assertSameLinesWithFile(expectedScope, scopePath.readText())
-    } finally {
-      System.clearProperty(REDUCED_SCOPE_PATH)
-    }
-  }
-
-  @Test
-  fun `testReverseScoped-script-new-stage-baseline`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.NEW.name
-        )),
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.ANY,
-        baseline = "test-module/baseline.sarif.json",
-        includeAbsent = true
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/C.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      val scopePath = qodanaConfig.outPath.resolve("scope")
-      System.setProperty(REDUCED_SCOPE_PATH, scopePath.toString())
-      runAnalysis()
-      assertSarifResults()
-      // resulting report non empty - decision - continue
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), true)
-      val expectedScope = getTestDataPath("scope.json").absolutePathString()
-      assertSameLinesWithFile(expectedScope, scopePath.readText())
-    } finally {
-      System.clearProperty(REDUCED_SCOPE_PATH)
-    }
-  }
-
-  @Test
-  fun `testReverseScoped-script-new-stage-baseline-matches`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.NEW.name
-        )),
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.ANY,
-        baseline = "test-module/baseline.sarif.json",
-        includeAbsent = true
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/C.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      val scopePath = qodanaConfig.outPath.resolve("scope")
-      System.setProperty(REDUCED_SCOPE_PATH, scopePath.toString())
-      runAnalysis()
-      assertSarifResults()
-      // resulting report empty from new results - decision - report
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), false)
-      // analysis stopped, file doesn't get created
-      assertFalse(scopePath.exists())
-    } finally {
-      System.clearProperty(REDUCED_SCOPE_PATH)
-    }
-  }
-
-  // new stage had issue in A, old - in A and B, decision - stop
-  @Test
-  fun `testReverseScoped-script-old-stage`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.OLD.name
-        )),
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.ANY,
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/B.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      System.setProperty(SCOPED_BASELINE_PROPERTY, "test-module/baseline.sarif.json")
-      runAnalysis()
-      assertEmptySarifResults()
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), false)
-    } finally {
-      System.clearProperty(SCOPED_BASELINE_PROPERTY)
-    }
-  }
-
-
-  // new stage had only sanity issue in A, decision - stop
-  @Test
-  fun `testReverseScoped-script-only-sanity-results-new-stage`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-    val skipResultStrategy = SkipResultStrategy.ANY
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.NEW.name
-        )),
-        skipResultStrategy = skipResultStrategy,
-        disableSanityInspections = false,
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/B.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      val scopePath = qodanaConfig.outPath.resolve("scope")
-      System.setProperty(REDUCED_SCOPE_PATH, scopePath.toString())
-      runAnalysis()
-      assertSarifResults()
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), false)
-      // analysis stopped, file doesn't get created
-      assertFalse(scopePath.exists())
-    } finally {
-      System.clearProperty(REDUCED_SCOPE_PATH)
-    }
-  }
-
-  // new stage had sanity issue in A and B, issue in B, decision - run in B
-  @Test
-  fun `testReverseScoped-script-with-sanity-results-new-stage`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.NEW.name
-        )),
-        skipResultStrategy = SkipResultStrategy.ANY,
-        disableSanityInspections = false,
-      )
-    }
-
-    scope.writeText("""
-      {
-      "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/B.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      val scopePath = qodanaConfig.outPath.resolve("scope")
-      System.setProperty(REDUCED_SCOPE_PATH, scopePath.toString())
-      runAnalysis()
-      assertSarifResults()
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), true)
-      val expectedScope = getTestDataPath("scope.json").absolutePathString()
-      assertSameLinesWithFile(expectedScope, scopePath.readText())
-    } finally {
-      System.clearProperty(REDUCED_SCOPE_PATH)
-    }
-  }
-
-  // old stage has difference in sanity results, it should be ignored
-  @Test
-  fun `testReverseScoped-script-with-sanity-results-old-stage`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.OLD.name
-        )),
-        skipResultStrategy = SkipResultStrategy.ANY,
-        disableSanityInspections = false,
-      )
-    }
-
-    scope.writeText("""
-      {
-      "files" : [ {
-          "path" : "test-module/B.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      System.setProperty(SCOPED_BASELINE_PROPERTY, "test-module/baseline.sarif.json")
-      runAnalysis()
-      assertSarifResults()
-    } finally {
-      System.clearProperty(SCOPED_BASELINE_PROPERTY)
-    }
-  }
-
-  // new stage had issue in A, old - in B, decision - continue
-  @Test
-  fun `testReverseScoped-script-old-stage-less-results`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.OLD.name
-        )),
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.ANY,
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/B.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      System.setProperty(SCOPED_BASELINE_PROPERTY, "test-module/baseline.sarif.json")
-      runAnalysis()
-      assertSarifResults()
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), true)
-    } finally {
-      System.clearProperty(SCOPED_BASELINE_PROPERTY)
-    }
-  }
-
-  // new stage had issue in A, old - in B, but A in baseline - decision - stop
-  @Test
-  fun `testReverseScoped-script-old-stage-less-results-baseline`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.OLD.name
-        )),
-        baseline = "test-module/baseline.sarif.json",
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.ANY,
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/B.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      System.setProperty(SCOPED_BASELINE_PROPERTY, "test-module/baseline.sarif.json")
-      runAnalysis()
-      assertSarifResults()
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), false)
-    } finally {
-      System.clearProperty(SCOPED_BASELINE_PROPERTY)
-    }
-  }
-
-  @Test
-  fun `testReverseScoped-script-fixes-stage`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.FIXES.name
-        )),
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.NEVER,
-        fixesStrategy = FixesStrategy.APPLY
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/C.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      System.setProperty(SCOPED_BASELINE_PROPERTY, "test-module/baseline.sarif.json")
-      runAnalysis()
-      assertSarifResults()
-      assertEquals(manager.sarifRun.isResultOutputSkipped(), false)
-    } finally {
-      System.clearProperty(SCOPED_BASELINE_PROPERTY)
-    }
-  }
-
-  @Test
-  fun `testReverseScoped-script-old-stage-read-properties`(): Unit = runBlocking {
-    val scope = qodanaConfig.projectPath.resolve("scope")
-
-    updateQodanaConfig {
-      it.copy(
-        script = QodanaScriptConfig(REVERSE_SCOPED_SCRIPT_NAME, mapOf(
-          SCOPE_ARG to scope.toString(),
-          STAGE_ARG to Stage.OLD.name
-        )),
-        profile = QodanaProfileConfig.named("qodana.single:ConstantValue"),
-        skipResultStrategy = SkipResultStrategy.NEVER,
-      )
-    }
-
-    scope.writeText("""
-      {
-        "files" : [ {
-          "path" : "test-module/A.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        },
-        {
-          "path" : "test-module/B.java",
-          "added" : [ ],
-          "deleted" : [ ]
-        } ]
-      }
-    """.trimIndent())
-
-    try {
-      System.setProperty(SCOPED_BASELINE_PROPERTY, "test-module/baseline.sarif.json")
-      assertDoesNotThrow { runAnalysis() }
-      assertSarifResults()
-    } finally {
-      System.clearProperty(SCOPED_BASELINE_PROPERTY)
     }
   }
 
@@ -1206,7 +714,7 @@ class QodanaRunnerTest : QodanaRunnerTestCase() {
 
     runAnalysis()
 
-    val run = manager.sarifRun
+    val run = qodanaRunner().sarifRun
     assertEquals(ExitStatus(0, null, true), run.firstExitStatus)
     val notifications = run.invocations.orEmpty()
       .flatMap { it.toolExecutionNotifications.orEmpty() }
@@ -1224,7 +732,7 @@ class QodanaRunnerTest : QodanaRunnerTestCase() {
 
     runAnalysis()
 
-    val notifications = manager.sarifRun.invocations.orEmpty()
+    val notifications = qodanaRunner().sarifRun.invocations.orEmpty()
       .flatMap { it.toolExecutionNotifications.orEmpty() }
     assertEquals(0, notifications.size)
   }

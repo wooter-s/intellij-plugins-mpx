@@ -2,16 +2,19 @@
 package org.intellij.prisma.ide.schema.types
 
 import com.intellij.openapi.util.text.StringUtil
-import org.intellij.prisma.ide.schema.types.PrismaDatasourceProviderType.POSTGRESQL
 
-enum class PrismaPreviewFeature(val datasources: Set<PrismaDatasourceProviderType> = PrismaDatasourceProviderType.ALL) {
+enum class PrismaPreviewFeature(val datasources: Set<PrismaDatasourceType> = PrismaDatasourceType.ALL) {
+  Deno,
+  DriverAdapters,
+  Metrics,
+  MultiSchema,
   NativeDistinct,
   PostgresqlExtensions,
+  QueryCompiler,
   RelationJoins,
   StrictUndefinedChecks,
   Views,
-  ShardKeys,
-  FullTextSearchPostgres(setOf(POSTGRESQL));
+  FullTextSearchPostgres(setOf(PrismaDatasourceType.POSTGRESQL));
 
   val presentation: String = StringUtil.decapitalize(name)
 }

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../community/platform/polySymbols/web-types-gen/resources/web-types.json",
+  "$schema": "../../../../community/platform/webSymbols/web-types-gen/resources/web-types.json",
   "name": "@angular/core",
   "framework": "angular",
   "version": "20.0.0-next.1",
@@ -7,7 +7,7 @@
   "default-icon": "icons/angular2.svg",
   "contexts-config": {
     "angular-template-syntax": {
-      "V_20": {
+      "V_18_1": {
         "enable-when": {
           "node-packages": [
             "@angular/core"
@@ -91,8 +91,7 @@
               "doc-url": "https://angular.dev/guide/defer#triggers",
               "description": "`on` specifies a trigger condition using one of available triggers. An example would be `on interaction` or `on viewport`. Multiple event triggers can be defined at once.",
               "exclusive-contributions": [
-                "/js/symbols",
-                "/js/keywords"
+                "/js/symbols"
               ],
               "js": {
                 "symbols": [
@@ -218,8 +217,7 @@
             }
           ],
           "exclusive-contributions": [
-            "/js/symbols",
-            "/js/keywords"
+            "/js/symbols"
           ],
           "js": {
             "symbols": [
