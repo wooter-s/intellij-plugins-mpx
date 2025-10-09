@@ -6,14 +6,13 @@ apply(from = "../contrib-configuration/common.gradle.kts")
 
 plugins {
   id("java")
-  id("org.jetbrains.kotlin.jvm")
-  id("org.jetbrains.intellij.platform")
+  id("org.jetbrains.kotlin.jvm") version "2.1.0"
+  id("org.jetbrains.intellij.platform") version "2.9.0"
 }
 
 repositories {
   intellijPlatform {
     defaultRepositories()
-    snapshots()
   }
 }
 
@@ -29,7 +28,9 @@ dependencies {
       "org.jetbrains.plugins.sass", "org.jetbrains.plugins.less", "intellij.webpack",
       "org.intellij.plugins.postcss", "intellij.prettierJS", "org.intellij.plugins.markdown")
     jetbrainsRuntime()
-    intellijIdeaUltimate(ext("platform.version"), useInstaller = false)
+    intellijIdeaUltimate(ext("platform.version")) {
+      useInstaller = false
+    }
     testFramework(TestFrameworkType.Platform)
     testFramework(TestFrameworkType.Plugin.JavaScript)
   }
