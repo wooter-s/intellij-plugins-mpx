@@ -28,9 +28,7 @@ dependencies {
       "org.jetbrains.plugins.sass", "org.jetbrains.plugins.less", "intellij.webpack",
       "org.intellij.plugins.postcss", "intellij.prettierJS", "org.intellij.plugins.markdown")
     jetbrainsRuntime()
-    intellijIdeaUltimate(ext("platform.version")) {
-      useInstaller = false
-    }
+    webstorm(ext("platform.version"))
     testFramework(TestFrameworkType.Platform)
     testFramework(TestFrameworkType.Plugin.JavaScript)
   }

@@ -110,9 +110,6 @@
     <stubElementTypeHolder class="org.jetbrains.mpxjs.lang.expr.parser.VueJSStubElementTypes" externalIdPrefix="MPX-JS:"/>
     <stubElementTypeHolder class="org.jetbrains.mpxjs.lang.html.parser.VueStubElementTypes" externalIdPrefix="MPX:"/>
 
-    <stubElementTypeHolder class="org.jetbrains.mpxjs.lang.expr.parser.VueJSStubElementTypes" externalIdPrefix="VUE-JS:"/>
-    <stubElementTypeHolder class="org.jetbrains.mpxjs.lang.html.parser.VueStubElementTypes" externalIdPrefix="VUE:"/>
-
     <languageStubDefinition language="Mpx" implementationClass="org.jetbrains.mpxjs.lang.stubs.VueLanguageStubDefinition"/>
     <stubElementRegistryExtension implementation="org.jetbrains.mpxjs.lang.stubs.VueStubRegistryExtension"/>
 
