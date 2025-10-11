@@ -80,11 +80,26 @@ import com.intellij.psi.xml.XmlTag
 import com.intellij.xml.XmlAttributeDescriptor
 import com.intellij.xml.XmlElementDescriptor
 import com.intellij.xml.impl.schema.AnyXmlAttributeDescriptor
+import com.intellij.polySymbols.PolySymbol
+import com.intellij.polySymbols.PolySymbolQualifiedKind
+import com.intellij.polySymbols.html.NAMESPACE_HTML
+import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolDescriptor
+import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolInfo
+import com.intellij.polySymbols.query.PolySymbolQueryExecutorFactory
+import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_ARGUMENT
+import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_MODIFIERS
+import org.jetbrains.mpxjs.web.VUE_DIRECTIVES
+import org.jetbrains.mpxjs.web.VUE_GLOBAL_DIRECTIVES
+import org.jetbrains.mpxjs.web.VUE_MODEL
+import org.jetbrains.mpxjs.web.VUE_SCRIPT_SETUP_LOCAL_DIRECTIVES
 
 /**
  * [https://developers.weixin.qq.com/miniprogram/dev/reference/api/Component.html]
  */
-class CustomComponentDescriptor(private val element: PsiElement) : BasicElementDescriptor() {
+class CustomComponentDescriptor(
+    private val tag: XmlTag,
+    private val element: PsiElement,
+) : BasicElementDescriptor() {
 
     override fun getDefaultValue(): String? {
         return null
@@ -129,11 +144,98 @@ class CustomComponentDescriptor(private val element: PsiElement) : BasicElementD
     }
 
     override fun getAttributeDescriptor(attributeName: String, context: XmlTag?): XmlAttributeDescriptor? {
-        return super.getAttributeDescriptor(attributeName, context) ?: getCustomComponentAttributeDescriptors(
-                this
-        ).find {
-            it.name == attributeName
-        } ?: AnyXmlAttributeDescriptor(attributeName)
+        getCustomComponentAttributeDescriptors(this).find { it.name == attributeName }?.let { return it }
+
+        val targetTag = context ?: tag
+
+        if (isWeChatDirective(attributeName)) {
+            resolveWebTypesDirectiveDescriptor(attributeName, targetTag)?.let { return it }
+            // fall through to a permissive descriptor to avoid namespace errors when web-types lookup fails
+            return AnyXmlAttributeDescriptor(attributeName)
+        }
+
+        return super.getAttributeDescriptor(attributeName, context) ?: AnyXmlAttributeDescriptor(attributeName)
+    }
+
+    private fun isWeChatDirective(attributeName: String): Boolean {
+        return attributeName.startsWith("wx:")
+            || attributeName.startsWith("bind:")
+            || attributeName.startsWith("catch:")
+            || attributeName.startsWith("capture-bind:")
+            || attributeName.startsWith("capture-catch:")
+            || attributeName.startsWith("mark:")
+            || attributeName.startsWith("model:")
+    }
+
+    private fun resolveWebTypesDirectiveDescriptor(
+        attributeName: String,
+        contextTag: XmlTag,
+    ): XmlAttributeDescriptor? {
+        val executor = PolySymbolQueryExecutorFactory
+            .getInstance(contextTag.project)
+            .create(contextTag, false)
+
+        for (candidateName in candidateDirectiveNames(attributeName)) {
+            val symbol = WEB_TYPES_DIRECTIVE_KINDS
+                .asSequence()
+                .flatMap { kind ->
+                    executor
+                        .nameMatchQuery(kind, candidateName)
+                        .run()
+                        .asSequence()
+                }
+                .filterIsInstance<PolySymbol>()
+                .firstOrNull()
+
+            if (symbol != null) {
+                val info = HtmlAttributeSymbolInfo.create(attributeName, executor, symbol, contextTag)
+                return HtmlAttributeSymbolDescriptor(info, contextTag)
+            }
+        }
+
+        return null
+    }
+
+    private fun candidateDirectiveNames(attributeName: String): Sequence<String> =
+        sequence {
+            yield(attributeName)
+            val afterColon = attributeName.substringAfter(':', missingDelimiterValue = attributeName)
+            if (afterColon.isNotEmpty() && afterColon != attributeName) {
+                yield(afterColon)
+            }
+            when {
+                attributeName.startsWith("wx:") -> {
+                    yield(attributeName.removePrefix("wx:"))
+                }
+                attributeName.startsWith("bind:") -> {
+                    yield(attributeName.removePrefix("bind:"))
+                }
+                attributeName.startsWith("catch:") -> {
+                    yield(attributeName.removePrefix("catch:"))
+                }
+                attributeName.startsWith("capture-bind:") -> {
+                    yield(attributeName.removePrefix("capture-bind:"))
+                }
+                attributeName.startsWith("capture-catch:") -> {
+                    yield(attributeName.removePrefix("capture-catch:"))
+                }
+                attributeName.startsWith("model:") -> {
+                    yield(attributeName.removePrefix("model:"))
+                }
+            }
+        }.distinct()
+
+    companion object {
+        private val WEB_TYPES_DIRECTIVE_KINDS: List<PolySymbolQualifiedKind> = listOf(
+            VUE_DIRECTIVES,
+            VUE_GLOBAL_DIRECTIVES,
+            VUE_SCRIPT_SETUP_LOCAL_DIRECTIVES,
+            VUE_MODEL,
+            VUE_DIRECTIVE_ARGUMENT,
+            VUE_DIRECTIVE_MODIFIERS,
+            PolySymbolQualifiedKind[NAMESPACE_HTML, "wx-directives"],
+            PolySymbolQualifiedKind[NAMESPACE_HTML, "bind-directives"],
+        )
     }
 
     fun getCustomComponentAttributeDescriptors(

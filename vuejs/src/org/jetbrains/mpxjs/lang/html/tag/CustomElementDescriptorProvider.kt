@@ -140,7 +140,7 @@ class CustomElementDescriptorProvider : XmlElementDescriptorProvider {
                         PsiTreeUtil.findChildrenOfType(psiFile, JsonStringLiteral::class.java).find {
                             it?.value == xmlTag.name
                         }.let {
-                            return it?.let { CustomComponentDescriptor(it) }
+                            return it?.let { CustomComponentDescriptor(xmlTag, it) }
                         }
                     }
 
@@ -186,18 +186,18 @@ class CustomElementDescriptorProvider : XmlElementDescriptorProvider {
                                 JSLiteralExpression::class.java,
                             )
                             return property?.let {
-                                CustomComponentDescriptor(property)
+                                CustomComponentDescriptor(xmlTag, property)
                             }
                         } else if (target?.firstChild is JSReferenceExpression) {
                             return target?.firstChild?.lastChild?.let {
-                                CustomComponentDescriptor(it)
+                                CustomComponentDescriptor(xmlTag, it)
                             }
                         }
                         print(target)
                     }
 
                     return property?.let {
-                        CustomComponentDescriptor(property)
+                        CustomComponentDescriptor(xmlTag, property)
                     }
                     //PsiTreeUtil.findFirstContext(
                     //    usingComponents,
