@@ -74,7 +74,10 @@
 package org.jetbrains.mpxjs.lang.html.tag
 
 import com.intellij.lang.javascript.psi.JSLiteralExpression
+import com.intellij.lang.javascript.psi.JSObjectLiteralExpression
 import com.intellij.lang.javascript.psi.JSProperty
+import com.intellij.lang.javascript.psi.stubs.JSImplicitElement
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
 import com.intellij.psi.xml.XmlTag
 import com.intellij.xml.XmlAttributeDescriptor
@@ -86,6 +89,18 @@ import com.intellij.polySymbols.html.NAMESPACE_HTML
 import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolDescriptor
 import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolInfo
 import com.intellij.polySymbols.query.PolySymbolQueryExecutorFactory
+import com.intellij.psi.xml.XmlElement
+import com.intellij.util.asSafely
+import java.util.concurrent.ConcurrentHashMap
+import com.intellij.openapi.util.io.FileUtilRt
+import org.jetbrains.mpxjs.lang.html.VueFile
+import org.jetbrains.mpxjs.model.VueComponent
+import org.jetbrains.mpxjs.model.VueContainer
+import org.jetbrains.mpxjs.model.VueInputProperty
+import org.jetbrains.mpxjs.model.VueModelManager
+import com.intellij.psi.util.PsiTreeUtil
+import org.jetbrains.mpxjs.model.source.PROPS_PROP
+import org.jetbrains.mpxjs.model.source.VueComponents
 import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_ARGUMENT
 import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_MODIFIERS
 import org.jetbrains.mpxjs.web.VUE_DIRECTIVES
@@ -101,41 +116,34 @@ class CustomComponentDescriptor(
     private val element: PsiElement,
 ) : BasicElementDescriptor() {
 
+    private val descriptorName: String = when (element) {
+        is JSProperty -> element.name ?: tag.name
+        is JSLiteralExpression -> element.stringValue ?: tag.name
+        else -> tag.name
+    }
+
     override fun getDefaultValue(): String? {
         return null
     }
 
-    override fun getName(context: PsiElement?): String {
-        return this.name
-    }
+    override fun getName(context: PsiElement?): String = descriptorName
 
-    override fun getName(): String {
-        return this.name
-    }
+    override fun getName(): String = descriptorName
 
-    override fun getElementsDescriptors(context: XmlTag?): Array<XmlElementDescriptor> {
-        return emptyArray()
-    }
+    override fun getElementsDescriptors(context: XmlTag?): Array<XmlElementDescriptor> = emptyArray()
+
+    override fun getAttributesDescriptors(context: XmlTag?): Array<XmlAttributeDescriptor> =
+        getCustomComponentAttributeDescriptors(this)
 
     override fun init(element: PsiElement?) {
 
     }
 
-    override fun getDefaultName(): String {
-        return this.name
-    }
+    override fun getDefaultName(): String = descriptorName
 
 
     override fun getQualifiedName(): String {
-        if (this.element is JSProperty) {
-            return this.element.name ?: this.name
-        }
-
-        if (this.element is JSLiteralExpression) {
-            return this.element.name ?: this.name
-        }
-
-        return this.name
+        return descriptorName
     }
 
 
@@ -226,6 +234,7 @@ class CustomComponentDescriptor(
         }.distinct()
 
     companion object {
+        private val LOG: Logger = Logger.getInstance(CustomComponentDescriptor::class.java)
         private val WEB_TYPES_DIRECTIVE_KINDS: List<PolySymbolQualifiedKind> = listOf(
             VUE_DIRECTIVES,
             VUE_GLOBAL_DIRECTIVES,
@@ -236,18 +245,186 @@ class CustomComponentDescriptor(
             PolySymbolQualifiedKind[NAMESPACE_HTML, "wx-directives"],
             PolySymbolQualifiedKind[NAMESPACE_HTML, "bind-directives"],
         )
+        private val WARNED_KEYS: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+        private fun logWarnOnce(key: String, message: String) {
+            if (WARNED_KEYS.add(key)) {
+                LOG.warn(message)
+            }
+        }
     }
 
     fun getCustomComponentAttributeDescriptors(
         customComponentDescriptor: CustomComponentDescriptor
-    ): Array<CustomComponentAttributeDescriptor> {
-        return ComponentWxmlUtils.findCustomComponentDefinitionJsFile(
-            customComponentDescriptor.declaration
-        )?.let { jsFile ->
-            ComponentJsUtils.findPropertiesItems(jsFile)
-        }?.map {
-            CustomComponentAttributeDescriptor(it)
-        }?.toTypedArray() ?: emptyArray()
+    ): Array<XmlAttributeDescriptor> {
+        val resolutionTargets = linkedSetOf<PsiElement>().apply {
+            add(customComponentDescriptor.declaration)
+            add(customComponentDescriptor.tag)
+        }
+        val trace = StringBuilder()
+
+        resolutionTargets.forEach { target ->
+            ComponentWxmlUtils.findCustomComponentDefinitionJsFile(target)?.let { jsFile ->
+                val props = ComponentJsUtils.findPropertiesItems(jsFile)
+                if (!props.isNullOrEmpty()) {
+                    LOG.info("CustomComponentDescriptor: 组件 ${customComponentDescriptor.name} 属性解析命中 JS 文件 ${jsFile.virtualFile.path}")
+                    return props.map { CustomComponentAttributeDescriptor(it) }.toTypedArray()
+                }
+                logWarnOnce(
+                    key = "js-props-missing:${customComponentDescriptor.name}:${jsFile.virtualFile.path}",
+                    message = "CustomComponentDescriptor: JS 文件 ${jsFile.virtualFile.path} 未包含属性定义，组件 ${customComponentDescriptor.name}",
+                )
+            } ?: trace.append("JS=null(${target.javaClass.simpleName}); ")
+        }
+
+        resolutionTargets.forEach { target ->
+            ComponentWxmlUtils.findCustomComponentDefinitionVueFile(target)?.let { vueFile ->
+                val descriptors = buildDescriptorsFromVueFile(vueFile)
+                if (descriptors.isNotEmpty()) {
+                    LOG.info("CustomComponentDescriptor: 组件 ${customComponentDescriptor.name} 属性解析命中 Vue 文件 ${vueFile.virtualFile.path}")
+                    return descriptors.toTypedArray()
+                }
+                logWarnOnce(
+                    key = "vue-props-missing:${customComponentDescriptor.name}:${vueFile.virtualFile.path}",
+                    message = "CustomComponentDescriptor: Vue 文件 ${vueFile.virtualFile.path} 未包含属性定义，组件 ${customComponentDescriptor.name}",
+                )
+            } ?: trace.append("Vue=null(${target.javaClass.simpleName}); ")
+        }
+
+        logWarnOnce(
+            key = "attribute-resolve-miss:${customComponentDescriptor.name}:${customComponentDescriptor.tag.containingFile.virtualFile?.path}",
+            message = "CustomComponentDescriptor: 未解析到组件 ${customComponentDescriptor.name} 的属性信息 | ${trace.toString().ifEmpty { "" }}",
+        )
+        return emptyArray()
     }
 
+    private fun buildDescriptorsFromVueFile(vueFile: VueFile): List<XmlAttributeDescriptor> {
+        val component: VueComponent = VueModelManager.getComponent(vueFile) ?: run {
+            LOG.warn("CustomComponentDescriptor: VueModelManager 未返回组件 ${vueFile.virtualFile.path}")
+            return emptyList()
+        }
+        val container = component.asSafely<VueContainer>() ?: run {
+            LOG.warn("CustomComponentDescriptor: 组件 ${component.defaultName ?: component::class.java.simpleName} 不是 VueContainer 类型")
+            return emptyList()
+        }
+        val props: List<VueInputProperty> = container.props
+        if (props.isEmpty()) {
+            logWarnOnce(
+                key = "container-props-empty:${vueFile.virtualFile.path}",
+                message = "CustomComponentDescriptor: 组件 ${component.defaultName ?: component::class.java.simpleName} props 为空, " +
+                    "componentClass=${component::class.java.name} vueFile=${vueFile.virtualFile.path}",
+            )
+            buildFallbackProps(vueFile)?.let { fallbackProps ->
+                LOG.info("CustomComponentDescriptor: 使用 fallback props ${fallbackProps.map { it.name }}")
+                return fallbackProps
+            }
+        }
+        val descriptors = linkedMapOf<String, XmlAttributeDescriptor>()
+        props.forEach { prop ->
+            val jsProperty = prop.source
+                ?.asSafely<JSProperty>()
+                ?: prop.source
+                    ?.asSafely<JSImplicitElement>()
+                    ?.context
+                    ?.asSafely<JSProperty>()
+            if (jsProperty == null) {
+                LOG.warn("CustomComponentDescriptor: 属性 ${prop.name} 无 JSProperty 源, source=${prop.source}")
+            }
+            val descriptor = jsProperty?.let { CustomComponentAttributeDescriptor(it) }
+                ?: VueInputPropertyAttributeDescriptor(prop)
+            descriptors[descriptor.name] = descriptor
+        }
+        return descriptors.values.toList()
+    }
+
+    private fun buildFallbackProps(vueFile: VueFile): List<XmlAttributeDescriptor>? {
+        val descriptor = VueComponents.getSourceComponentDescriptor(vueFile)
+        val searchRoots = linkedSetOf<PsiElement>()
+        descriptor?.initializer?.let { searchRoots.add(it) }
+        descriptor?.source?.let { searchRoots.add(it) }
+        if (searchRoots.isEmpty()) {
+            searchRoots.add(vueFile)
+        }
+
+        val propertyHolders = linkedSetOf<JSProperty>()
+        searchRoots.forEach { root ->
+            PsiTreeUtil.findChildrenOfType(root, JSProperty::class.java).forEach { property ->
+                val name = property.name
+                if (name != null && COMPONENT_PROP_OPTION_NAMES.contains(name)) {
+                    propertyHolders.add(property)
+                }
+            }
+        }
+        if (propertyHolders.isEmpty()) {
+            LOG.debug("CustomComponentDescriptor: 未找到 ${COMPONENT_PROP_OPTION_NAMES} 属性，searchRoots=${searchRoots.map { it::class.java.simpleName }} vueFile=${vueFile.virtualFile.path}")
+        } else {
+            LOG.debug(
+                "CustomComponentDescriptor: fallback 捕获属性容器 ${propertyHolders.map { it.name }} vueFile=${vueFile.virtualFile.path}",
+            )
+        }
+        if (propertyHolders.isEmpty()) {
+            logWarnOnce(
+                key = "fallback-no-holders:${vueFile.virtualFile.path}",
+                message = "CustomComponentDescriptor: Vue 文件 ${vueFile.virtualFile.path} 未包含属性定义，组件 ${FileUtilRt.getNameWithoutExtension(vueFile.name)}",
+            )
+            return null
+        }
+
+        val descriptors = linkedMapOf<String, XmlAttributeDescriptor>()
+        var anyHolderResolved = false
+        propertyHolders.forEach { holder ->
+            val literal = resolveComponentPropsLiteral(holder) ?: return@forEach
+            anyHolderResolved = true
+            literal.properties.forEach { prop ->
+                val propName = prop.name ?: return@forEach
+                descriptors.computeIfAbsent(propName) { CustomComponentAttributeDescriptor(prop) }
+            }
+        }
+        if (anyHolderResolved) {
+            LOG.debug(
+                "CustomComponentDescriptor: fallback 解析到属性 ${descriptors.keys} vueFile=${vueFile.virtualFile.path}",
+            )
+        }
+        if (descriptors.isNotEmpty()) {
+            return descriptors.values.toList()
+        }
+        if (anyHolderResolved) {
+            logWarnOnce(
+                key = "fallback-empty:${vueFile.virtualFile.path}",
+                message = "CustomComponentDescriptor: Vue 文件 ${vueFile.virtualFile.path} 未包含属性定义，组件 ${FileUtilRt.getNameWithoutExtension(vueFile.name)}",
+            )
+            return emptyList()
+        }
+        return null
+    }
+
+}
+
+class VueInputPropertyAttributeDescriptor(
+    private val vueInputProperty: VueInputProperty,
+) : XmlAttributeDescriptor {
+
+    override fun getDefaultValue(): String? = vueInputProperty.defaultValue
+
+    override fun validateValue(context: XmlElement?, value: String?): String? = null
+
+    override fun getName(context: PsiElement?): String = vueInputProperty.name
+
+    override fun getName(): String = vueInputProperty.name
+
+    override fun isRequired(): Boolean = vueInputProperty.required
+
+    override fun hasIdRefType(): Boolean = false
+
+    override fun init(element: PsiElement?) {}
+
+    override fun isFixed(): Boolean = false
+
+    override fun getDeclaration(): PsiElement? = vueInputProperty.source
+
+    override fun isEnumerated(): Boolean = false
+
+    override fun getEnumeratedValues(): Array<String>? = null
+
+    override fun hasIdType(): Boolean = false
 }

@@ -73,14 +73,21 @@
 
 package org.jetbrains.mpxjs.lang.html.tag
 
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.javascript.psi.JSFile
+import com.intellij.lang.javascript.psi.JSLiteralExpression
 import com.intellij.lang.javascript.psi.JSObjectLiteralExpression
 import com.intellij.lang.javascript.psi.JSProperty
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.PsiFileReference
 import com.intellij.psi.xml.XmlTag
+import com.intellij.psi.util.PsiTreeUtil
+import org.jetbrains.mpxjs.index.VUE_FILE_EXTENSION
 import org.jetbrains.mpxjs.lang.html.VueFile
+import com.intellij.openapi.diagnostic.Logger
 
 object ComponentWxmlUtils {
 
@@ -119,34 +126,110 @@ object ComponentWxmlUtils {
         return this.findCustomComponentDefinitionFiles(psiElement)?.find { it is JSFile } as? JSFile
     }
 
+    fun findCustomComponentDefinitionVueFile(psiElement: PsiElement): VueFile? {
+        return this.findCustomComponentDefinitionFiles(psiElement)?.find { it is VueFile } as? VueFile
+    }
+
     private fun findCustomComponentDefinitionFiles(xmlTag: XmlTag): List<PsiFile>? {
         // 先找到json文件的定义
         val componentNameJsonProperty = xmlTag.descriptor?.declaration as? JSProperty
+        LOG.debug("ComponentWxmlUtils: xmlTag=${xmlTag.name} descriptorDecl=${componentNameJsonProperty?.javaClass}")
         // 解析其路径可以找到自定义组件的位置
         return componentNameJsonProperty?.let { this.findCustomComponentDefinitionFiles(it) }
     }
 
     private fun findCustomComponentDefinitionFiles(jsProperty: JSProperty): List<PsiFile>? {
         // 解析其路径可以找到自定义组件的位置
-        val lastComponentPathReference = jsProperty.value?.references?.lastOrNull() as? PsiFileReference
-        return lastComponentPathReference?.multiResolve(
-                false
-        )?.mapNotNull { it.element as? PsiFile }
+        val value = jsProperty.value
+        LOG.debug("ComponentWxmlUtils: jsProperty=${jsProperty.name} value=${value?.javaClass}")
+        val lastComponentPathReference = value?.references?.lastOrNull() as? PsiFileReference
+        val resolvedByReference = lastComponentPathReference?.multiResolve(false)
+            ?.mapNotNull { it.element as? PsiFile }
+        if (!resolvedByReference.isNullOrEmpty()) {
+            LOG.info("ComponentWxmlUtils: 通过 PSI 引用解析到 ${resolvedByReference.joinToString { it.virtualFile?.path ?: it.name }}")
+            return resolvedByReference
+        }
+        return resolveFromLiteral(value)
     }
 
     private fun findCustomComponentDefinitionFiles(jsObjectLiteralExpression: JSObjectLiteralExpression): List<PsiFile>? {
         // 解析其路径可以找到自定义组件的位置
         val lastComponentPathReference = jsObjectLiteralExpression?.references?.lastOrNull() as? PsiFileReference
-        return lastComponentPathReference?.multiResolve(
-            false
-        )?.mapNotNull { it.element as? PsiFile }
+        val resolvedByReference = lastComponentPathReference?.multiResolve(false)
+            ?.mapNotNull { it.element as? PsiFile }
+        if (!resolvedByReference.isNullOrEmpty()) {
+            LOG.info("ComponentWxmlUtils: 通过 PSI 引用解析到 ${resolvedByReference.joinToString { it.virtualFile?.path ?: it.name }}")
+            return resolvedByReference
+        }
+        return resolveFromLiteral(jsObjectLiteralExpression)
     }
 
     private fun findCustomComponentDefinitionFiles(psiElement: PsiElement): List<PsiFile>? {
         // 解析其路径可以找到自定义组件的位置
         val lastComponentPathReference = psiElement?.references?.lastOrNull() as? PsiFileReference
-        return lastComponentPathReference?.multiResolve(
-            false
-        )?.mapNotNull { it.element as? PsiFile }
+        val resolvedByReference = lastComponentPathReference?.multiResolve(false)
+            ?.mapNotNull { it.element as? PsiFile }
+        if (!resolvedByReference.isNullOrEmpty()) {
+            LOG.info("ComponentWxmlUtils: 通过 PSI 引用解析到 ${resolvedByReference.joinToString { it.virtualFile?.path ?: it.name }}")
+            return resolvedByReference
+        }
+        return resolveFromLiteral(psiElement)
+    }
+
+    private fun resolveFromLiteral(element: PsiElement?): List<PsiFile>? {
+        if (element == null) {
+            LOG.debug("ComponentWxmlUtils: resolveFromLiteral element=null")
+            return null
+        }
+        val literal = when (element) {
+            is JSLiteralExpression -> element
+            else -> PsiTreeUtil.findChildOfType(element, JSLiteralExpression::class.java)
+        }
+        if (literal == null || !literal.isQuotedLiteral) {
+            LOG.debug("ComponentWxmlUtils: resolveFromLiteral 未找到字符串字面量 elementType=${element.javaClass}")
+            return null
+        }
+        val rawPath = literal.stringValue?.trim()?.takeIf { it.isNotEmpty() }
+            ?: run {
+                LOG.warn("ComponentWxmlUtils: 字面量无内容 literalText=${literal.text}")
+                return null
+            }
+        val normalized = normalizeComponentPath(rawPath)
+        LOG.debug("ComponentWxmlUtils: 尝试解析组件路径 raw=$rawPath normalized=$normalized hostFile=${literal.containingFile.name}")
+        val project = literal.project
+        val injectedManager = InjectedLanguageManager.getInstance(project)
+        val topLevelFile = injectedManager.getTopLevelFile(literal)
+        val hostVirtualFile = topLevelFile.virtualFile ?: literal.containingFile.originalFile.virtualFile
+        if (hostVirtualFile == null) {
+            LOG.warn("ComponentWxmlUtils: 无法获取宿主虚拟文件, componentPath=$rawPath literalFile=${literal.containingFile.name}")
+            return null
+        }
+
+        var current = hostVirtualFile.parent
+        while (current != null) {
+            LOG.debug("ComponentWxmlUtils: 搜索基准目录 ${current.path}")
+            val resolved = VfsUtil.findRelativeFile(normalized, current)
+                ?: if (!normalized.endsWith(VUE_FILE_EXTENSION, true)) {
+                    VfsUtil.findRelativeFile(normalized + VUE_FILE_EXTENSION, current)
+                } else null
+            if (resolved != null) {
+                PsiManager.getInstance(project).findFile(resolved)?.let {
+                    LOG.info("ComponentWxmlUtils: 解析到组件文件 ${resolved.path} (base=${current.path})")
+                    return listOf(it)
+                }
+            }
+            current = current.parent
+        }
+        LOG.warn("ComponentWxmlUtils: 未找到组件文件 componentPath=$rawPath host=${hostVirtualFile.path}")
+        return null
+    }
+
+    private fun normalizeComponentPath(raw: String): String {
+        var result = raw.replace('\\', '/').trim()
+        while (result.startsWith("./")) {
+            result = result.substring(2)
+        }
+        return result
     }
 }
+    private val LOG: Logger = Logger.getInstance(ComponentWxmlUtils::class.java)

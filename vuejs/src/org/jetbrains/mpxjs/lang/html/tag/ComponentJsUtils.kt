@@ -75,6 +75,30 @@ package org.jetbrains.mpxjs.lang.html.tag
 
 import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.impl.JSLiteralExpressionImpl
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.psi.util.PsiTreeUtil
+import org.jetbrains.mpxjs.model.source.PROPS_PROP
+import org.jetbrains.mpxjs.model.source.VueComponents
+
+private val LOG: Logger = Logger.getInstance(ComponentJsUtils::class.java)
+
+private val COMPONENT_FACTORY_NAMES: Set<String> = setOf("Component", "Page", "createComponent", "createPage")
+
+internal val COMPONENT_PROP_OPTION_NAMES: List<String> = listOf(PROPS_PROP, "props").distinct()
+
+internal fun resolveComponentPropsLiteral(property: JSProperty): JSObjectLiteralExpression? {
+    val directObject = property.value as? JSObjectLiteralExpression
+    if (directObject != null) {
+        return directObject
+    }
+    val referenceExpression = property.value as? JSReferenceExpression ?: return null
+    val resolvedElement = referenceExpression.resolve() ?: return null
+    return when (resolvedElement) {
+        is JSProperty -> resolvedElement.value as? JSObjectLiteralExpression
+        is JSVariable -> resolvedElement.initializerOrStub as? JSObjectLiteralExpression
+        else -> null
+    }
+}
 
 object ComponentJsUtils {
 
@@ -83,11 +107,14 @@ object ComponentJsUtils {
      * 如果这个js文件具有ComponentAPI
      */
     fun findPropertiesItems(jsFile: JSFile): Array<out JSProperty>? {
-        return findComponentApiOptionProperties(jsFile)?.find {
-            it.name == "properties"
-        }?.let {
-            (it.value as? JSObjectLiteralExpression)?.properties
-        }
+        val optionProperties = findComponentApiOptionProperties(jsFile) ?: return null
+        val holder = COMPONENT_PROP_OPTION_NAMES
+            .asSequence()
+            .mapNotNull { candidate -> optionProperties.find { it.name == candidate } }
+            .firstOrNull()
+            ?: return null
+        val literal = resolveComponentPropsLiteral(holder)
+        return literal?.properties
     }
 
     /**
@@ -112,16 +139,35 @@ object ComponentJsUtils {
      * 找到js文件中的第一个component API的选项列表
      */
     private fun findComponentApiOptionProperties(jsFile: JSFile): Array<JSProperty>? {
-        //return PsiTreeUtil.findChildOfType(jsFile, JSCallExpression::class.java).let {
-        //    it is JSReferenceExpression && (it.text == "Component" || it.text == "Page")
-        //}
-        //return jsFile.findChildrenOfType<JSCallExpression>()
-        //    .firstOrNull { jsCallExpression -> jsCallExpression.children.any { it is JSReferenceExpression && it.text == "Component" } }
-        //    ?.let { jsCallExpression ->
-        //        jsCallExpression.argumentList?.children?.asSequence()?.filterIsInstance<JSObjectLiteralExpression>()
-        //            ?.firstOrNull()
-        //    }?.properties
-        return null
+        val callExpression = PsiTreeUtil.findChildrenOfType(jsFile, JSCallExpression::class.java)
+            .firstOrNull { isComponentFactoryCall(it) }
+            ?: run {
+                LOG.warn("ComponentJsUtils: 未在 ${jsFile.virtualFile?.path} 中找到组件定义调用")
+                return null
+            }
+
+        val options = findCallExpressionFirstObjectArg(callExpression)
+        if (options == null) {
+            LOG.warn("ComponentJsUtils: 组件定义调用 ${callExpression.text} 缺少对象参数")
+            return null
+        }
+
+        return options.properties
+    }
+
+    private fun isComponentFactoryCall(callExpression: JSCallExpression): Boolean {
+        if (VueComponents.isComponentDefiningCall(callExpression)) {
+            return true
+        }
+
+        val methodExpression = callExpression.methodExpression ?: return false
+        val rawText = methodExpression.text
+        if (rawText != null && COMPONENT_FACTORY_NAMES.contains(rawText)) {
+            return true
+        }
+
+        val referenceName = (methodExpression as? JSReferenceExpression)?.referenceName
+        return referenceName != null && COMPONENT_FACTORY_NAMES.contains(referenceName)
     }
 
     /**
