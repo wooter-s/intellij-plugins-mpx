@@ -73,6 +73,7 @@
 
 package org.jetbrains.mpxjs.lang.html.tag
 
+import com.intellij.json.psi.JsonStringLiteral
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.lang.javascript.psi.JSLiteralExpression
@@ -81,13 +82,18 @@ import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
+import com.intellij.lang.ecmascript6.resolve.JSFileReferencesUtil
+import com.intellij.psi.PsiPolyVariantReference
+import com.intellij.psi.impl.source.resolve.reference.impl.providers.FileReference
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.PsiFileReference
 import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.mpxjs.index.VUE_FILE_EXTENSION
 import org.jetbrains.mpxjs.lang.html.VueFile
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.vfs.VirtualFile
 
 object ComponentWxmlUtils {
 
@@ -142,11 +148,15 @@ object ComponentWxmlUtils {
         // 解析其路径可以找到自定义组件的位置
         val value = jsProperty.value
         LOG.debug("ComponentWxmlUtils: jsProperty=${jsProperty.name} value=${value?.javaClass}")
-        val lastComponentPathReference = value?.references?.lastOrNull() as? PsiFileReference
-        val resolvedByReference = lastComponentPathReference?.multiResolve(false)
-            ?.mapNotNull { it.element as? PsiFile }
+
+        val expectedNormalized = (value as? JSLiteralExpression)
+            ?.stringValue
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(::normalizeComponentPath)
+
+        val resolvedByReference = resolveViaReferences(value, expectedNormalized)
         if (!resolvedByReference.isNullOrEmpty()) {
-            LOG.info("ComponentWxmlUtils: 通过 PSI 引用解析到 ${resolvedByReference.joinToString { it.virtualFile?.path ?: it.name }}")
             return resolvedByReference
         }
         return resolveFromLiteral(value)
@@ -154,26 +164,117 @@ object ComponentWxmlUtils {
 
     private fun findCustomComponentDefinitionFiles(jsObjectLiteralExpression: JSObjectLiteralExpression): List<PsiFile>? {
         // 解析其路径可以找到自定义组件的位置
-        val lastComponentPathReference = jsObjectLiteralExpression?.references?.lastOrNull() as? PsiFileReference
-        val resolvedByReference = lastComponentPathReference?.multiResolve(false)
-            ?.mapNotNull { it.element as? PsiFile }
+        val resolvedByReference = resolveViaReferences(jsObjectLiteralExpression)
         if (!resolvedByReference.isNullOrEmpty()) {
-            LOG.info("ComponentWxmlUtils: 通过 PSI 引用解析到 ${resolvedByReference.joinToString { it.virtualFile?.path ?: it.name }}")
             return resolvedByReference
         }
         return resolveFromLiteral(jsObjectLiteralExpression)
     }
 
     private fun findCustomComponentDefinitionFiles(psiElement: PsiElement): List<PsiFile>? {
+        when (psiElement) {
+            is JSProperty -> return findCustomComponentDefinitionFiles(psiElement)
+            is JSObjectLiteralExpression -> return findCustomComponentDefinitionFiles(psiElement)
+        }
         // 解析其路径可以找到自定义组件的位置
-        val lastComponentPathReference = psiElement?.references?.lastOrNull() as? PsiFileReference
-        val resolvedByReference = lastComponentPathReference?.multiResolve(false)
-            ?.mapNotNull { it.element as? PsiFile }
+        val resolvedByReference = resolveViaReferences(psiElement)
         if (!resolvedByReference.isNullOrEmpty()) {
-            LOG.info("ComponentWxmlUtils: 通过 PSI 引用解析到 ${resolvedByReference.joinToString { it.virtualFile?.path ?: it.name }}")
             return resolvedByReference
         }
         return resolveFromLiteral(psiElement)
+    }
+
+    private fun resolveViaReferences(element: PsiElement?, expectedNormalizedPath: String? = null): List<PsiFile>? {
+        if (element == null) return null
+        val references = element.references
+        if (references.isEmpty()) {
+            LOG.warn("ComponentWxmlUtils: references=0 element=${element::class.java.simpleName} text=${element.text}")
+            return resolveViaModuleReference(element)
+        }
+
+        val resolvedFiles = linkedSetOf<PsiFile>()
+        references.forEach { reference ->
+            val refClass = reference::class.java.name
+            val canonical = try {
+                reference.canonicalText
+            } catch (e: Throwable) {
+                "<error: ${e.javaClass.simpleName}>"
+            }
+            LOG.warn("ComponentWxmlUtils: 尝试引用 $refClass canonical=$canonical element=${element.text}")
+
+            val resolvedElements = when (reference) {
+                is PsiPolyVariantReference -> reference.multiResolve(false).mapNotNull { it.element }
+                is PsiFileReference -> reference.multiResolve(false).mapNotNull { it.element }
+                is FileReference -> reference.multiResolve(false).mapNotNull { it.element }
+                else -> listOfNotNull(reference.resolve())
+            }
+
+            if (resolvedElements.isEmpty()) {
+                LOG.warn("ComponentWxmlUtils: 引用 $refClass 未解析到任何 PSI 元素")
+                return@forEach
+            }
+
+            resolvedElements.forEach { resolvedElement ->
+                val psiFile = extractPsiFile(resolvedElement)
+                if (psiFile != null) {
+                    LOG.warn("ComponentWxmlUtils: 引用 $refClass 解析到文件 ${psiFile.virtualFile?.path ?: psiFile.name}")
+                    resolvedFiles.add(psiFile)
+                }
+                else {
+                    LOG.warn("ComponentWxmlUtils: 引用 $refClass 解析到 ${resolvedElement::class.java.simpleName}，无法转换为文件")
+                }
+            }
+        }
+
+        if (resolvedFiles.isNotEmpty()) {
+            val ordered = reorderResolvedFiles(resolvedFiles.toMutableList(), expectedNormalizedPath)
+            LOG.warn("ComponentWxmlUtils: 通过 PSI 引用解析到 ${ordered.joinToString { it.virtualFile?.path ?: it.name }}")
+            return ordered
+        }
+
+        return resolveViaModuleReference(element)
+    }
+
+    private fun resolveViaModuleReference(element: PsiElement): List<PsiFile>? {
+        val rawPath = when (element) {
+            is JSLiteralExpression -> element.stringValue.takeIf { element.isQuotedLiteral }
+            is JsonStringLiteral -> element.value
+            else -> null
+        }?.takeIf { it.isNotBlank() } ?: return null
+        LOG.warn("ComponentWxmlUtils: 尝试通过 JSFileReferencesUtil 解析模块 path=$rawPath host=${element.containingFile?.virtualFile?.path}")
+        val modules = JSFileReferencesUtil.resolveModuleReference(element, rawPath)
+        if (modules.isEmpty()) {
+            LOG.warn("ComponentWxmlUtils: resolveViaModuleReference 未解析到模块 path=$rawPath")
+            return null
+        }
+        val files = modules
+            .mapNotNull { extractPsiFile(it) }
+            .distinct()
+            .toMutableList()
+        val ordered = reorderResolvedFiles(files, normalizeComponentPath(rawPath))
+        if (files.isNotEmpty()) {
+            LOG.warn("ComponentWxmlUtils: 通过模块解析解析到 ${ordered.joinToString { it.virtualFile?.path ?: it.name }} (path=$rawPath)")
+        }
+        return ordered.takeIf { it.isNotEmpty() }
+    }
+
+    private fun extractPsiFile(element: PsiElement?): PsiFile? {
+        if (element == null) return null
+        return when (element) {
+            is PsiFile -> element
+            is PsiDirectory -> {
+                LOG.warn("ComponentWxmlUtils: extractPsiFile 目录=${element.virtualFile?.path}")
+                val directIndex = element.findFile("index$VUE_FILE_EXTENSION")
+                directIndex?.also {
+                    LOG.warn("ComponentWxmlUtils: extractPsiFile 目录入口 ${it.virtualFile?.path}")
+                }
+                    ?: element.findFile("index.vue")
+                    ?: element.findFile("index.tsx")
+                    ?: element.findFile("index.ts")
+                    ?: element.findFile("index.js")
+            }
+            else -> element.containingFile
+        }
     }
 
     private fun resolveFromLiteral(element: PsiElement?): List<PsiFile>? {
@@ -181,19 +282,23 @@ object ComponentWxmlUtils {
             LOG.debug("ComponentWxmlUtils: resolveFromLiteral element=null")
             return null
         }
-        val literal = when (element) {
-            is JSLiteralExpression -> element
-            else -> PsiTreeUtil.findChildOfType(element, JSLiteralExpression::class.java)
-        }
-        if (literal == null || !literal.isQuotedLiteral) {
-            LOG.debug("ComponentWxmlUtils: resolveFromLiteral 未找到字符串字面量 elementType=${element.javaClass}")
+        val literal: PsiElement = when (element) {
+            is JSLiteralExpression -> element.takeIf { it.isQuotedLiteral }
+            is JsonStringLiteral -> element
+            else -> PsiTreeUtil.findChildOfType(element, JSLiteralExpression::class.java)?.takeIf { it.isQuotedLiteral }
+                ?: PsiTreeUtil.findChildOfType(element, JsonStringLiteral::class.java)
+        } ?: run {
+            LOG.warn("ComponentWxmlUtils: resolveFromLiteral 未找到可用字面量 elementType=${element.javaClass}")
             return null
         }
-        val rawPath = literal.stringValue?.trim()?.takeIf { it.isNotEmpty() }
-            ?: run {
-                LOG.warn("ComponentWxmlUtils: 字面量无内容 literalText=${literal.text}")
-                return null
-            }
+        val rawPath = when (literal) {
+            is JSLiteralExpression -> literal.stringValue
+            is JsonStringLiteral -> literal.value
+            else -> null
+        }?.trim()?.takeIf { it.isNotEmpty() } ?: run {
+            LOG.warn("ComponentWxmlUtils: 字面量无内容 literalType=${literal.javaClass} elementType=${element.javaClass}")
+            return null
+        }
         val normalized = normalizeComponentPath(rawPath)
         LOG.debug("ComponentWxmlUtils: 尝试解析组件路径 raw=$rawPath normalized=$normalized hostFile=${literal.containingFile.name}")
         val project = literal.project
@@ -207,11 +312,11 @@ object ComponentWxmlUtils {
 
         var current = hostVirtualFile.parent
         while (current != null) {
-            LOG.debug("ComponentWxmlUtils: 搜索基准目录 ${current.path}")
-            val resolved = VfsUtil.findRelativeFile(normalized, current)
-                ?: if (!normalized.endsWith(VUE_FILE_EXTENSION, true)) {
-                    VfsUtil.findRelativeFile(normalized + VUE_FILE_EXTENSION, current)
-                } else null
+        LOG.debug("ComponentWxmlUtils: 搜索基准目录 ${current.path}")
+        val resolved = VfsUtil.findRelativeFile(normalized, current)
+            ?: if (!normalized.endsWith(VUE_FILE_EXTENSION, true)) {
+                VfsUtil.findRelativeFile(normalized + VUE_FILE_EXTENSION, current)
+            } else null
             if (resolved != null) {
                 PsiManager.getInstance(project).findFile(resolved)?.let {
                     LOG.info("ComponentWxmlUtils: 解析到组件文件 ${resolved.path} (base=${current.path})")
@@ -230,6 +335,25 @@ object ComponentWxmlUtils {
             result = result.substring(2)
         }
         return result
+    }
+
+    private fun reorderResolvedFiles(files: MutableList<PsiFile>, expectedNormalizedPath: String?): List<PsiFile> {
+        if (expectedNormalizedPath.isNullOrBlank()) return files
+        val expectedName = expectedNormalizedPath.substringAfterLast('/')
+        files.sortWith(compareBy { priorityForFile(it, expectedNormalizedPath, expectedName) })
+        return files
+    }
+
+    private fun priorityForFile(file: PsiFile, expectedNormalizedPath: String, expectedName: String): Int {
+        val virtualFile = file.virtualFile ?: return 50
+        val path = virtualFile.path
+        val name = virtualFile.name
+        return when {
+            name.equals(expectedName, ignoreCase = true) -> 0
+            path.endsWith("/$expectedNormalizedPath", ignoreCase = true) -> 1
+            name.startsWith("index.", ignoreCase = true) -> 3
+            else -> 2
+        }
     }
 }
     private val LOG: Logger = Logger.getInstance(ComponentWxmlUtils::class.java)

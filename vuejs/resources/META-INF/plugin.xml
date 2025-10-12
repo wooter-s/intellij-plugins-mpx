@@ -2,7 +2,7 @@
   <!--suppress PluginXmlCapitalization -->
   <name>Mpx.js</name>
   <id>org.wooter.mpxjs</id>
-  <version>251.26927.1</version>
+  <version>252.26830</version>
   <description><![CDATA[
     Support for <a href="https://mpxjs.cn">Mpx.js</a> projects.
 
@@ -28,12 +28,10 @@
     <module name="intellij.vuejs/copyright"/>
   </content>
   <dependencies>
-    <plugin id="com.intellij.modules.xml"/>
     <plugin id="JavaScript"/>
     <plugin id="com.intellij.css"/>
     <plugin id="intellij.webpack"/>
     <plugin id="org.intellij.plugins.postcss"/>
-    <module name="intellij.spellchecker"/>
   </dependencies>
   <depends optional="true" config-file="js-debugger.xml">JavaScriptDebugger</depends>
   <depends optional="true" config-file="vue-markdown.xml">org.intellij.plugins.markdown</depends>

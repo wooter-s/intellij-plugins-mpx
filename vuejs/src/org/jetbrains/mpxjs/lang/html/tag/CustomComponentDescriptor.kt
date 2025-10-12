@@ -91,7 +91,6 @@ import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolInfo
 import com.intellij.polySymbols.query.PolySymbolQueryExecutorFactory
 import com.intellij.psi.xml.XmlElement
 import com.intellij.util.asSafely
-import java.util.concurrent.ConcurrentHashMap
 import com.intellij.openapi.util.io.FileUtilRt
 import org.jetbrains.mpxjs.lang.html.VueFile
 import org.jetbrains.mpxjs.model.VueComponent
@@ -107,6 +106,8 @@ import org.jetbrains.mpxjs.web.VUE_DIRECTIVES
 import org.jetbrains.mpxjs.web.VUE_GLOBAL_DIRECTIVES
 import org.jetbrains.mpxjs.web.VUE_MODEL
 import org.jetbrains.mpxjs.web.VUE_SCRIPT_SETUP_LOCAL_DIRECTIVES
+import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * [https://developers.weixin.qq.com/miniprogram/dev/reference/api/Component.html]
@@ -166,13 +167,32 @@ class CustomComponentDescriptor(
     }
 
     private fun isWeChatDirective(attributeName: String): Boolean {
-        return attributeName.startsWith("wx:")
-            || attributeName.startsWith("bind:")
-            || attributeName.startsWith("catch:")
-            || attributeName.startsWith("capture-bind:")
-            || attributeName.startsWith("capture-catch:")
-            || attributeName.startsWith("mark:")
-            || attributeName.startsWith("model:")
+        val lowerName = attributeName.lowercase(Locale.US)
+        if (lowerName.startsWith("wx:")) {
+            return true
+        }
+        if (lowerName.startsWith("@")) {
+            return true
+        }
+
+        val prefixes = listOf(
+            "bind",
+            "mut-bind",
+            "catch",
+            "capture-bind",
+            "capture-catch",
+            "mark",
+            "model",
+        )
+
+        return prefixes.any { prefix ->
+            when {
+                lowerName == prefix -> true
+                lowerName.startsWith("$prefix:") -> true
+                lowerName.startsWith(prefix) && lowerName.length > prefix.length -> true
+                else -> false
+            }
+        }
     }
 
     private fun resolveWebTypesDirectiveDescriptor(
