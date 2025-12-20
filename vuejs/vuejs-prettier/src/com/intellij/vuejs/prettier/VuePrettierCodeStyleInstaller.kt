@@ -10,8 +10,8 @@ import com.intellij.prettierjs.codeStyle.PrettierCodeStyleInstaller.commonPretti
 import com.intellij.psi.codeStyle.CodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import org.jetbrains.annotations.NotNull
-import org.jetbrains.vuejs.lang.html.VueLanguage
-import org.jetbrains.vuejs.lang.html.psi.formatter.VueCodeStyleSettings
+import org.jetbrains.mpxjs.lang.html.VueLanguage
+import org.jetbrains.mpxjs.lang.html.psi.formatter.VueCodeStyleSettings
 
 internal class VuePrettierCodeStyleInstaller : PrettierCodeStyleInstaller {
   override fun install(project: Project, config: PrettierConfig, settings: CodeStyleSettings) {

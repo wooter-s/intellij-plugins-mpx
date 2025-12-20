@@ -6,7 +6,7 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.lang.Language
 import com.intellij.psi.PsiElement
 import org.intellij.plugins.markdown.injection.CodeFenceLanguageProvider
-import org.jetbrains.vuejs.lang.html.VueLanguage
+import org.jetbrains.mpxjs.lang.html.VueLanguage
 
 class VueCodeFenceLanguageProvider : CodeFenceLanguageProvider {
   override fun getLanguageByInfoString(infoString: String): Language? {

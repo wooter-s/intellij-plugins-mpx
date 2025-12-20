@@ -1,44 +1,41 @@
 <idea-plugin allow-bundled-update="true">
   <!--suppress PluginXmlCapitalization -->
-  <name>Vue.js</name>
-  <id>org.jetbrains.plugins.vue</id>
+  <name>Mpx.js</name>
+  <id>org.wooter.mpxjs</id>
   <description><![CDATA[
-    <p>Provides <a href="https://vuejs.org/">Vue.js</a> support to all JetBrains IDEs that
+    <p>Provides <a href="https://mpxjs.cn/">Mpx.js</a> mini-program framework support to all JetBrains IDEs that
     <a href="https://www.jetbrains.com/products/#lang=js&type=ide">support JavaScript</a>.</p>
 
     <h2>Features</h2>
     <ul>
       <li>Completion of components, directives, props, and methods in templates</li>
       <li>Navigation from the component, directives, and event handlers to their definition</li>
-      <li>Coding assistance for different languages inside the template, script, and style tags in <code>.vue</code> files</li>
+      <li>Coding assistance for different languages inside the template, script, and style tags in <code>.mpx</code> files</li>
       <li>Extract component and rename component refactorings</li>
-      <li>Collection of code snippets for Vue.js</li>
-      <li>New Vue project option in the <i>Welcome</i> screen</li>
+      <li>Collection of code snippets for Mpx.js</li>
     </ul>
 
     <h2>Getting started</h2>
-    <p>For information on getting started, head over to the <a href="https://www.jetbrains.com/help/">documentation</a> for your IDE.
-    For WebStorm, you can check out this section in the <a href="https://www.jetbrains.com/help/webstorm/vue-js.html">documentation</a>.</p>
+    <p>For information on getting started, head over to the <a href="https://mpxjs.cn/guide/basic/start.html">Mpx.js documentation</a>.</p>
     ]]></description>
-  <vendor>JetBrains</vendor>
+  <vendor>Wooter</vendor>
   <category>JavaScript Frameworks and Tools</category>
 
   <dependencies>
     <plugin id="JavaScript"/>
   </dependencies>
 
-  <content namespace="jetbrains">
-    <module name="intellij.vuejs.prettier"/>
-    <module name="intellij.vuejs.copyright"/>
-    <module name="intellij.vuejs.debugger"/>
-    <module name="intellij.vuejs.markdown"/>
+  <content namespace="wooter">
+    <module name="intellij.mpxjs.prettier"/>
+    <module name="intellij.mpxjs.copyright"/>
+    <module name="intellij.mpxjs.debugger"/>
+    <module name="intellij.mpxjs.markdown"/>
 
-    <module name="intellij.vuejs.common" loading="required"/>
-    <module name="intellij.vuejs.backend"/>
+    <module name="intellij.mpxjs.common" loading="required"/>
+    <module name="intellij.mpxjs.backend"/>
   </content>
 
   <extensions defaultExtensionNs="com.intellij">
-    <dependencySupport kind="javascript" coordinate="npm:vue" displayName="Vue.js"/>
-    <dependencySupport kind="javascript" coordinate="npm:nuxt" displayName="Nuxt"/>
+    <dependencySupport kind="javascript" coordinate="npm:@mpxjs/core" displayName="Mpx.js"/>
   </extensions>
 </idea-plugin>

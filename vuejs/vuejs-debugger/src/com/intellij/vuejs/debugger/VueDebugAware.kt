@@ -2,6 +2,6 @@
 package com.intellij.vuejs.debugger
 
 import com.intellij.javascript.debugger.JavaScriptDebugAwareBase
-import org.jetbrains.vuejs.lang.html.VueFileType
+import org.jetbrains.mpxjs.lang.html.VueFileType
 
 internal class VueDebugAware : JavaScriptDebugAwareBase(VueFileType)

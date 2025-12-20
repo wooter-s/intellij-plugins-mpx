@@ -1,0 +1,34 @@
+// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package org.jetbrains.mpxjs.types
+
+import com.intellij.lang.javascript.psi.*
+import com.intellij.lang.javascript.psi.ecmal4.JSClass
+import com.intellij.lang.javascript.psi.resolve.JSTypeEvaluator
+import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.asSafely
+import org.jetbrains.mpxjs.context.isVueContext
+import org.jetbrains.mpxjs.model.VueModelManager
+import org.jetbrains.mpxjs.model.source.SETUP_METHOD
+
+object VueCompositionPropsTypeProvider {
+  fun addTypeFromResolveResult(evaluator: JSTypeEvaluator, result: PsiElement): Boolean {
+    if (result is JSParameter && PsiTreeUtil.getStubChildOfType(result.context, JSParameter::class.java) == result) {
+      val method = result.context?.let { (it as? JSParameterList)?.context ?: it }?.asSafely<JSFunction>() ?: return false
+      val initializer = method.context
+      if (method.name != SETUP_METHOD
+          || initializer !is JSObjectLiteralExpression
+          || PsiTreeUtil.getContextOfType(initializer, true, JSClass::class.java, JSObjectLiteralExpression::class.java) != null
+          || !isVueContext(method)
+      ) return false
+      VueModelManager.getComponent(initializer)
+        ?.let {
+          evaluator.addType(VuePropsType(it))
+          return true
+        }
+    }
+    return false
+  }
+
+  fun useOnlyCompleteMatch(type: JSType): Boolean = type is VueCompleteType
+}

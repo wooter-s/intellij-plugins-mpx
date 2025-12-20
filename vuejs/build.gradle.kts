@@ -1,34 +1,52 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply(from = "../contrib-configuration/common.gradle.kts")
 
 plugins {
   id("java")
-  id("org.jetbrains.kotlin.jvm")
-  id("org.jetbrains.intellij")
+  id("org.jetbrains.kotlin.jvm") version "2.1.0"
+  id("org.jetbrains.intellij.platform") version "2.9.0"
 }
 
-intellij {
-  version.set("LATEST-EAP-SNAPSHOT")
-  type.set("IU")
-  pluginName.set("Vue.js")
-  downloadSources.set(true)
-  plugins.set(listOf("JavaScript", "JSIntentionPowerPack", "JavaScriptDebugger", "com.intellij.css", "HtmlTools",
-                     "org.jetbrains.plugins.sass", "org.jetbrains.plugins.less", "intellij.webpack",
-                     // Needed for tests-only
-                     //"org.jetbrains.plugins.stylus:233.11799.172",
-                     "org.intellij.plugins.postcss",
-                     // Needed for tests-only
-                     //"com.jetbrains.plugins.Jade:$targetVersion",
-                     "intellij.prettierJS"
-                     ))
+repositories {
+  intellijPlatform {
+    defaultRepositories()
+  }
+}
+
+intellijPlatform {
+  pluginConfiguration {
+    name = "Mpx.js"
+  }
+}
+
+dependencies {
+  intellijPlatform {
+    bundledPlugins("JavaScript", "JSIntentionPowerPack", "JavaScriptDebugger", "com.intellij.css", "HtmlTools",
+      "org.jetbrains.plugins.sass", "org.jetbrains.plugins.less", "intellij.webpack",
+      "org.intellij.plugins.postcss", "intellij.prettierJS", "org.intellij.plugins.markdown")
+    jetbrainsRuntime()
+    intellijIdeaUltimate(ext("platform.version")) {
+      useInstaller = false
+    }
+    testFramework(TestFrameworkType.Platform)
+    testFramework(TestFrameworkType.Plugin.JavaScript)
+  }
+  implementation("org.apache.commons:commons-text:1.10.0")
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget.set(JvmTarget.fromTarget(ext("kotlin.jvmTarget")))
+    @Suppress("UNCHECKED_CAST")
+    freeCompilerArgs.addAll(rootProject.extensions["kotlin.freeCompilerArgs"] as List<String>)
+    freeCompilerArgs.add("-Xwhen-guards")
+  }
 }
 
 tasks {
-  compileKotlin {
-    kotlinOptions.jvmTarget = ext("kotlin.jvmTarget")
-    @Suppress("UNCHECKED_CAST")
-    kotlinOptions.freeCompilerArgs = rootProject.extensions["kotlin.freeCompilerArgs"] as List<String>
-  }
   java {
     sourceCompatibility = JavaVersion.toVersion(ext("java.sourceCompatibility"))
     targetCompatibility = JavaVersion.toVersion(ext("java.targetCompatibility"))
@@ -36,31 +54,44 @@ tasks {
   wrapper {
     gradleVersion = ext("gradle.version")
   }
-  runIde {
-    autoReloadPlugins.set(false)
-  }
 }
 
 sourceSets {
   main {
     java {
-      setSrcDirs(listOf("src", "gen"))
+      setSrcDirs(listOf(
+        "vuejs-backend/src",
+        "vuejs-backend/gen",
+        "vuejs-common/src",
+        "vuejs-common/gen",
+        "vuejs-copyright/src",
+        "vuejs-debugger/src",
+        "vuejs-markdown/src",
+        "vuejs-prettier/src"
+      ))
     }
     resources {
-      setSrcDirs(listOf("resources"))
+      setSrcDirs(listOf(
+        "vuejs-plugin/resources",
+        "vuejs-backend/resources",
+        "vuejs-common/resources",
+        "vuejs-copyright/resources",
+        "vuejs-debugger/resources",
+        "vuejs-markdown/resources",
+        "vuejs-prettier/resources"
+      ))
     }
   }
   test {
     java {
-      //setSrcDirs(listOf("vuejs-tests/src"))
+      setSrcDirs(listOf("vuejs-tests/src"))
+    }
+    resources {
+      setSrcDirs(listOf("vuejs-tests/testData"))
     }
   }
 }
 
-dependencies {
-  //testImplementation("com.jetbrains.intellij.javascript:javascript-test-framework:LATEST-EAP-SNAPSHOT")
-}
-
 fun ext(name: String): String =
   rootProject.extensions[name] as? String
-  ?: error("Property `$name` is not defined")
+    ?: error("Property `$name` is not defined")
