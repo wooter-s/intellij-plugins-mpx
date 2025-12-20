@@ -30,7 +30,7 @@
     <css.inclusionContext implementation="org.jetbrains.mpxjs.css.VueCssInclusionContext"/>
     <html.attributeValueProvider implementation="org.jetbrains.mpxjs.codeInsight.attributes.VueCustomAttributeValueProvider"/>
     <metaLanguage implementation="org.jetbrains.mpxjs.lang.expr.VueExprMetaLanguage"/>
-    <fileType name="Vue.js" extensions="vue" language="Vue" implementationClass="org.jetbrains.mpxjs.lang.html.VueFileType"
+    <fileType name="Mpx.js" extensions="mpx" language="Vue" implementationClass="org.jetbrains.mpxjs.lang.html.VueFileType"
               fieldName="INSTANCE"/>
     <lang.parserDefinition language="Vue" implementationClass="org.jetbrains.mpxjs.lang.html.parser.VueParserDefinition"/>
     <lang.parserDefinition language="VueJS" implementationClass="org.jetbrains.mpxjs.lang.expr.parser.VueJSParserDefinition"/>
@@ -52,7 +52,7 @@
     <implicitUsageProvider implementation="org.jetbrains.mpxjs.codeInsight.refs.VueImplicitUsageProvider"/>
     <platform.lsp.serverSupportProvider implementation="org.jetbrains.mpxjs.lang.typescript.service.lsp.VueLspServerSupportProvider"/>
 
-    <quoteHandler className="com.intellij.codeInsight.editorActions.HtmlQuoteHandler" fileType="Vue.js"/>
+    <quoteHandler className="com.intellij.codeInsight.editorActions.HtmlQuoteHandler" fileType="Mpx.js"/>
     <copyPastePostProcessor implementation="org.jetbrains.mpxjs.codeInsight.imports.VueTemplateExpressionsCopyPasteProcessor"/>
     <copyPastePostProcessor implementation="org.jetbrains.mpxjs.codeInsight.imports.VueComponentCopyPasteProcessor"/>
 
@@ -220,8 +220,8 @@
                                    implementationClass="org.jetbrains.mpxjs.lang.expr.highlighting.VueJSHighlighterFactory"/>
     <lang.syntaxHighlighterFactory language="VueTS"
                                    implementationClass="org.jetbrains.mpxjs.lang.expr.highlighting.VueTSHighlighterFactory"/>
-    <idIndexer filetype="Vue.js" implementationClass="org.jetbrains.mpxjs.lang.html.index.VueIdIndexer"/>
-    <todoIndexer filetype="Vue.js" implementationClass="org.jetbrains.mpxjs.lang.html.index.VueTodoIndexer"/>
+    <idIndexer filetype="Mpx.js" implementationClass="org.jetbrains.mpxjs.lang.html.index.VueIdIndexer"/>
+    <todoIndexer filetype="Mpx.js" implementationClass="org.jetbrains.mpxjs.lang.html.index.VueTodoIndexer"/>
 
     <codeInsight.parameterInfo language="VueExpr" implementationClass="com.intellij.javascript.JSParameterInfoHandler"/>
     <codeInsight.parameterNameHints language="Vue"
