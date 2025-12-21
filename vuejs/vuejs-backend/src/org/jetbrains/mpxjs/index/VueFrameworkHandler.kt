@@ -603,7 +603,7 @@ fun <T : PsiElement> createIndexRecord(key: StubIndexKey<String, T>): Pair<Strin
 
 private const val REQUIRE = "require"
 
-private const val METHOD_NAME_USER_STRING = "vmn"
+private const val METHOD_NAME_USER_STRING = "mpx-vmn"
 
 private val VUE_DESCRIPTOR_OWNERS = arrayOf(VUE_NAMESPACE, MIXIN_FUN, COMPONENT_FUN, EXTEND_FUN, DIRECTIVE_FUN, DELIMITERS_PROP,
                                             FILTER_FUN, DEFINE_COMPONENT_FUN, DEFINE_NUXT_COMPONENT_FUN)
@@ -796,6 +796,15 @@ fun findTopLevelVueTags(xmlFile: XmlFile, tagName: String): List<XmlTag> {
     return result
   }
   return emptyList()
+}
+
+fun findTopJsonScriptVueTap(xmlFile: XmlFile): XmlTag? {
+  val scriptTags = findTopLevelVueTags(xmlFile, "script")
+  return scriptTags.firstOrNull {
+    it.attributes.any { attr ->
+      (attr.name == "name" && attr.value == "json") || (attr.name == "type" && attr.value == "application/json")
+    }
+  }
 }
 
 private enum class VueStaticMethod(val methodName: String) {

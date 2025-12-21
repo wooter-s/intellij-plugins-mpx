@@ -35,7 +35,7 @@ fun configureVueService(project: Project, disposable: Disposable, serviceSetting
 }
 
 @Service(Service.Level.PROJECT)
-@State(name = "VueSettings", storages = [Storage(StoragePathMacros.WORKSPACE_FILE)])
+@State(name = "MpxSettings", storages = [Storage(StoragePathMacros.WORKSPACE_FILE)])
 class VueSettings(val project: Project) : SimplePersistentStateComponent<VueSettingsState>(VueSettingsState()) {
 
   var serviceType: VueServiceSettings

@@ -10,7 +10,7 @@ import org.jetbrains.mpxjs.lang.html.VueLanguage
 
 class VueLangModeMarkerElementType(
   val langMode: LangMode,
-) : IElementType("VUE_LANG_MODE_$langMode", VueLanguage),
+) : IElementType("MPX_LANG_MODE_$langMode", VueLanguage),
     ILeafElementType {
 
   override fun createLeafNode(leafText: CharSequence): ASTNode {

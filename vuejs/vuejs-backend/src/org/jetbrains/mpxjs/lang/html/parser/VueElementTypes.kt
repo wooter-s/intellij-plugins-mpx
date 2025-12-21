@@ -37,9 +37,9 @@ object VueElementTypes {
 
   val SCRIPT_SETUP_JS_EMBEDDED_CONTENT: VueScriptSetupEmbeddedContentElementType = VueScriptSetupEmbeddedContentElementType(JavaScriptSupportLoader.ECMA_SCRIPT_6, "SCRIPT_SETUP_JS_")
 
-  val VUE_EMBEDDED_CONTENT: IElementType = EmbeddedVueContentElementType()
+  val MPX_EMBEDDED_CONTENT: IElementType = EmbeddedVueContentElementType()
 
-  class EmbeddedVueContentElementType : ILazyParseableElementType("VUE_EMBEDDED_CONTENT", VueLanguage),
+  class EmbeddedVueContentElementType : ILazyParseableElementType("MPX_EMBEDDED_CONTENT", VueLanguage),
                                         ILightLazyParseableElementType {
 
     override fun parseContents(chameleon: LighterLazyParseableNode): FlyweightCapableTreeStructure<LighterASTNode> {

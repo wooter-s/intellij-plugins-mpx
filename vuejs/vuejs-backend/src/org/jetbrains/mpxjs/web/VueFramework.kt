@@ -71,6 +71,6 @@ class VueFramework : WebFramework() {
     VueAttributeNameCodeCompletionFilter(tag)
 
   companion object {
-    const val ID = "vue"
+    const val ID = "mpx"
   }
 }

@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 @Service(Service.Level.PROJECT)
-@State(name = "DotNuxtFolderManager", storages = [Storage(StoragePathMacros.CACHE_FILE)])
+@State(name = "MpxDotNuxtFolderManager", storages = [Storage(StoragePathMacros.CACHE_FILE)])
 internal class NuxtFolderManager(
   private val project: Project,
   internal val coroutineScope: CoroutineScope

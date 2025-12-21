@@ -1,5 +1,6 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.Coordinates
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 apply(from = "../contrib-configuration/common.gradle.kts")
@@ -13,6 +14,7 @@ plugins {
 repositories {
   intellijPlatform {
     defaultRepositories()
+    snapshots()
   }
 }
 
@@ -33,8 +35,10 @@ dependencies {
     }
     testFramework(TestFrameworkType.Platform)
     testFramework(TestFrameworkType.Plugin.JavaScript)
+    platformDependency(Coordinates("com.jetbrains.intellij.platform", "poly-symbols-test-framework"))
   }
   implementation("org.apache.commons:commons-text:1.10.0")
+  testImplementation("junit:junit:${ext("junit.version")}")
 }
 
 kotlin {

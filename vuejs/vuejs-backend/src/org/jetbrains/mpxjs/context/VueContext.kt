@@ -28,11 +28,11 @@ import org.jetbrains.mpxjs.libraries.componentDecorator.OPTIONS_DEC
 import org.jetbrains.mpxjs.web.VUE_TOP_LEVEL_ELEMENTS
 import org.jetbrains.mpxjs.web.VueFramework
 
-private val vueFrameworkInstance get() = WebFramework.get("vue")
+private val mpxFrameworkInstance get() = WebFramework.get("mpx")
 
-fun isVueContext(context: PsiElement): Boolean = vueFrameworkInstance.isInContext(context)
+fun isVueContext(context: PsiElement): Boolean = mpxFrameworkInstance.isInContext(context)
 
-fun isVueContext(contextFile: VirtualFile, project: Project): Boolean = vueFrameworkInstance.isInContext(contextFile, project)
+fun isVueContext(contextFile: VirtualFile, project: Project): Boolean = mpxFrameworkInstance.isInContext(contextFile, project)
 
 fun hasVueFiles(project: Project): Boolean =
   hasFilesOfType(project, VueFileType)

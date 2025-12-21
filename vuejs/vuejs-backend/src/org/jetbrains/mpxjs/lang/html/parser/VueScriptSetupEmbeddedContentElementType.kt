@@ -11,7 +11,7 @@ class VueScriptSetupEmbeddedContentElementType(forcedLanguage: JSLanguageDialect
   : JSEmbeddedContentElementType(forcedLanguage, debugName) {
 
   override fun toString(): String =
-    "VUE:$debugName"
+    "MPX:$debugName"
 
   override fun construct(node: ASTNode): PsiElement {
     return VueScriptSetupEmbeddedContentImpl(node)

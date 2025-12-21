@@ -10,7 +10,7 @@ import com.intellij.lang.javascript.JavaScriptSupportLoader
 
 object VueJSLanguage :
   JSLanguageDialect(
-    id = "VueJS",
+    id = "MpxJS",
     optionHolder = DialectOptionHolder.JS_WITH_JSX,
     baseLanguage = JavaScriptSupportLoader.ECMA_SCRIPT_6,
   ),
@@ -18,7 +18,7 @@ object VueJSLanguage :
 
 object VueTSLanguage :
   JSLanguageDialect(
-    id = "VueTS",
+    id = "MpxTS",
     optionHolder = DialectOptionHolder.TS,
     baseLanguage = JavaScriptSupportLoader.TYPESCRIPT,
   ),
@@ -30,7 +30,7 @@ fun isVueExprMetaLanguage(language: Language?): Boolean {
   return language != null && MetaLanguage.findInstance(VueExprMetaLanguage::class.java).matchesLanguage(language)
 }
 
-class VueExprMetaLanguage private constructor() : MetaLanguage("VueExpr") {
+class VueExprMetaLanguage private constructor() : MetaLanguage("MpxExpr") {
 
   override fun matchesLanguage(language: Language): Boolean {
     return vueExprLanguages.contains(language)

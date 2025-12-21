@@ -17,7 +17,7 @@ import com.intellij.xml.util.HtmlUtil.LANG_ATTRIBUTE_NAME
 import org.jetbrains.mpxjs.lang.html.VueFile
 import org.jetbrains.mpxjs.lang.html.VueFileType
 
-val VUE_COMPONENT_STYLES_INDEX_KEY = ID.create<String, Void>("VueComponentStylesIndex")
+val VUE_COMPONENT_STYLES_INDEX_KEY = ID.create<String, Void>("MpxComponentStylesIndex")
 
 /**
  * Indexes style languages used in *.vue files.

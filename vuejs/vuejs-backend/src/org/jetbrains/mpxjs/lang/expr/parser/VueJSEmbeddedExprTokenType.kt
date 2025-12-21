@@ -30,11 +30,11 @@ private constructor(
 
   companion object {
     fun createEmbeddedExpression(attributeInfo: VueAttributeInfo, langMode: LangMode, project: Project?): VueJSEmbeddedExprTokenType {
-      return VueJSEmbeddedExprTokenType(makeDebugName("VUE_JS:EMBEDDED_EXPR", langMode), attributeInfo, langMode, project)
+      return VueJSEmbeddedExprTokenType(makeDebugName("MPX_JS:EMBEDDED_EXPR", langMode), attributeInfo, langMode, project)
     }
 
     fun createInterpolationExpression(langMode: LangMode, project: Project?): VueJSEmbeddedExprTokenType {
-      return VueJSEmbeddedExprTokenType(makeDebugName("VUE_JS:INTERPOLATION_EXPR", langMode), null, langMode, project)
+      return VueJSEmbeddedExprTokenType(makeDebugName("MPX_JS:INTERPOLATION_EXPR", langMode), null, langMode, project)
     }
 
     private fun makeDebugName(prefix: String, langMode: LangMode): String {

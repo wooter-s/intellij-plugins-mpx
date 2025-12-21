@@ -14,7 +14,7 @@ import org.jetbrains.mpxjs.lang.expr.VueTSLanguage
 import org.jetbrains.mpxjs.lang.expr.psi.impl.*
 
 object VueJSElementTypes {
-  const val EXTERNAL_ID_PREFIX: String = "VUE-JS:"
+  const val EXTERNAL_ID_PREFIX: String = "MPX-JS:"
 
   val V_FOR_VARIABLE: JSVariableElementType = VueJSVForVariableElementType() // ready
 

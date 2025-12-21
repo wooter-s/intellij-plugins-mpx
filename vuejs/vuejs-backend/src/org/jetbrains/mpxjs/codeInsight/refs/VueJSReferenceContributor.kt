@@ -6,6 +6,7 @@ import com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor.creat
 import com.intellij.lang.javascript.patterns.JSPatterns
 import com.intellij.lang.javascript.psi.JSElement
 import com.intellij.lang.javascript.psi.JSLiteralExpression
+import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.JSReferenceExpression
 import com.intellij.lang.javascript.psi.JSThisExpression
 import com.intellij.lang.javascript.psi.ecma6.JSStringTemplateExpression
@@ -19,6 +20,7 @@ import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.*
 import com.intellij.psi.filters.ElementFilter
 import com.intellij.psi.filters.position.FilterPattern
+import com.intellij.psi.impl.source.resolve.reference.impl.providers.FileReferenceSet
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.stubs.StubIndex
 import com.intellij.psi.util.PsiTreeUtil.getParentOfType
@@ -42,6 +44,7 @@ class VueJSReferenceContributor : PsiReferenceContributor() {
     registrar.registerReferenceProvider(COMPONENT_NAME, VueComponentNameReferenceProvider())
     registrar.registerReferenceProvider(TEMPLATE_ID_REF, VueTemplateIdReferenceProvider())
     registrar.registerReferenceProvider(PATH_ATTRIBUTE_VALUE, createPathReferenceProvider())
+    registrar.registerReferenceProvider(USING_COMPONENTS_PATH, VueUsingComponentsPathReferenceProvider())
   }
 }
 
@@ -49,6 +52,7 @@ private val THIS_INSIDE_COMPONENT: ElementPattern<out PsiElement> = createThisIn
 private val COMPONENT_NAME: ElementPattern<out PsiElement> = createComponentNamePattern()
 private val TEMPLATE_ID_REF = JSPatterns.jsLiteral().withParent(JSPatterns.jsProperty().withName(TEMPLATE_PROP))
 private val PATH_ATTRIBUTE_VALUE: ElementPattern<out PsiElement> = creatPathAttributeValuePattern()
+private val USING_COMPONENTS_PATH: ElementPattern<out PsiElement> = createUsingComponentsPathPattern()
 
 private fun createThisInsideComponentPattern(): ElementPattern<out PsiElement> {
   return PlatformPatterns.psiElement(JSReferenceExpression::class.java)
@@ -94,6 +98,38 @@ private fun creatPathAttributeValuePattern() = JSPatterns.stringTemplate()
     }
     override fun isClassAcceptable(hintClass: Class<*>?): Boolean = true
   }))
+
+/**
+ * 匹配 usingComponents 中的组件路径字符串
+ * 例如: usingComponents: { "component-name": "./path/to/component.mpx" }
+ */
+private fun createUsingComponentsPathPattern(): ElementPattern<out PsiElement> {
+  return PlatformPatterns.psiElement(JSLiteralExpression::class.java)
+    .withParent(JSPatterns.jsProperty())  // 组件名: "路径"
+    .withSuperParent(3, JSPatterns.jsProperty().withName("usingComponents"))
+}
+
+/**
+ * 为 usingComponents 中的路径字符串提供文件引用
+ */
+private class VueUsingComponentsPathReferenceProvider : PsiReferenceProvider() {
+  override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
+    val literal = element as? JSLiteralExpression ?: return PsiReference.EMPTY_ARRAY
+    val value = literal.stringValue ?: return PsiReference.EMPTY_ARRAY
+    if (value.isBlank()) return PsiReference.EMPTY_ARRAY
+
+    // 使用 FileReferenceSet 创建文件引用，支持相对路径解析
+    val referenceSet = FileReferenceSet(
+      value,
+      element,
+      1,  // startInElement: 跳过开头的引号
+      this,
+      true  // caseSensitive
+    )
+    @Suppress("UNCHECKED_CAST")
+    return referenceSet.allReferences as Array<PsiReference>
+  }
+}
 
 
 private class VueTemplateIdReferenceProvider : PsiReferenceProvider() {
