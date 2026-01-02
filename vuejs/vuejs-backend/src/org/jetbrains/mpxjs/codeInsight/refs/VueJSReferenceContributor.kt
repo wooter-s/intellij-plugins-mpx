@@ -207,14 +207,20 @@ private fun resolveMpxReferenceByPath(element: PsiElement, path: String): PsiRef
     listOf(normalized)
   }
   else {
-    listOf(normalized, "$normalized.mpx", "$normalized/index.mpx")
+    // 优先尝试带扩展名的文件，避免解析到目录
+    listOf("$normalized.mpx", "$normalized/index.mpx", normalized)
   }
 
   for (candidate in candidates) {
     val virtualFile = findVirtualFile(element, candidate) ?: continue
-    return createSelfReference(element, virtualFile)
+    // 只返回文件引用，跳过目录（除非是最后一个候选）
+    if (!virtualFile.isDirectory) {
+      return createSelfReference(element, virtualFile)
+    }
   }
-  return null
+  // 如果都没找到文件，返回目录引用（用于导航）
+  val virtualFile = findVirtualFile(element, normalized)
+  return virtualFile?.let { createSelfReference(element, it) }
 }
 
 private fun findVirtualFile(element: PsiElement, path: String): VirtualFile? {
