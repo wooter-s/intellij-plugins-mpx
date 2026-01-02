@@ -4,11 +4,16 @@ package org.jetbrains.mpxjs.codeInsight.refs
 import com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor
 import com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor.createPathReferenceProvider
 import com.intellij.lang.javascript.patterns.JSPatterns
+import com.intellij.lang.javascript.psi.JSAssignmentExpression
+import com.intellij.lang.javascript.psi.JSDefinitionExpression
 import com.intellij.lang.javascript.psi.JSElement
+import com.intellij.lang.javascript.psi.JSIndexedPropertyAccessExpression
 import com.intellij.lang.javascript.psi.JSLiteralExpression
+import com.intellij.lang.javascript.psi.JSObjectLiteralExpression
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.JSReferenceExpression
 import com.intellij.lang.javascript.psi.JSThisExpression
+import com.intellij.lang.javascript.psi.JSVariable
 import com.intellij.lang.javascript.psi.ecma6.JSStringTemplateExpression
 import com.intellij.lang.javascript.psi.impl.JSPropertyImpl
 import com.intellij.lang.javascript.psi.impl.JSReferenceExpressionImpl
@@ -105,12 +110,43 @@ private fun creatPathAttributeValuePattern() = JSPatterns.stringTemplate()
 
 /**
  * 匹配 usingComponents 中的组件路径字符串
- * 例如: usingComponents: { "component-name": "./path/to/component.mpx" }
+ * 支持三种场景:
+ * 1. 直接对象字面量: usingComponents: { "component-name": "./path/to/component.mpx" }
+ * 2. 变量引用: const usingComponents = { "component-name": "./path" }; module.exports = { usingComponents }
+ * 3. 动态赋值: usingComponents['toggle-env'] = '@qxsrc/components/toggle-env'
  */
 private fun createUsingComponentsPathPattern(): ElementPattern<out PsiElement> {
   return PlatformPatterns.psiElement(JSLiteralExpression::class.java)
-    .withParent(JSPatterns.jsProperty())  // 组件名: "路径"
-    .withSuperParent(3, JSPatterns.jsProperty().withName("usingComponents"))
+    .and(FilterPattern(object : ElementFilter {
+      override fun isAcceptable(element: Any?, context: PsiElement?): Boolean {
+        val literal = element as? JSLiteralExpression ?: return false
+        val parent = literal.parent
+
+        // 场景1和2: 在 JSProperty 内的路径
+        if (parent is JSProperty) {
+          val objectLiteral = parent.parent as? JSObjectLiteralExpression ?: return false
+          val grandParent = objectLiteral.parent
+          // 直接场景: usingComponents: { "comp": "path" }
+          if (grandParent is JSProperty && grandParent.name == "usingComponents") return true
+          // 变量场景: const usingComponents = { "comp": "path" }
+          if (grandParent is JSVariable && grandParent.name == "usingComponents") return true
+        }
+
+        // 场景3: 动态赋值 usingComponents['comp'] = 'path'
+        if (parent is JSAssignmentExpression) {
+          val defExpr = parent.children.firstOrNull { it is JSDefinitionExpression } as? JSDefinitionExpression
+          val indexedAccess = defExpr?.expression as? JSIndexedPropertyAccessExpression
+          if (indexedAccess != null) {
+            val qualifier = indexedAccess.qualifier as? JSReferenceExpression
+            if (qualifier?.referenceName == "usingComponents") return true
+          }
+        }
+
+        return false
+      }
+
+      override fun isClassAcceptable(hintClass: Class<*>?): Boolean = true
+    }))
 }
 
 /**
