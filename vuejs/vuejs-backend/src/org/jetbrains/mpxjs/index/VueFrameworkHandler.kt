@@ -516,6 +516,8 @@ class VueFrameworkHandler : FrameworkIndexingHandler() {
   private fun isComponentDefiningCall(callNode: ASTNode): Boolean =
     checkCallExpression(callNode) { referenceName, hasQualifier ->
       (!hasQualifier && referenceName == DEFINE_COMPONENT_FUN)
+      || (!hasQualifier && referenceName == CREATE_COMPONENT_FUN)
+      || (!hasQualifier && referenceName == CREATE_PAGE_FUN)
       || (!hasQualifier && referenceName == DEFINE_NUXT_COMPONENT_FUN)
       || (hasQualifier && referenceName == EXTEND_FUN)
       || (!hasQualifier && referenceName == DEFINE_OPTIONS_FUN)
@@ -605,8 +607,19 @@ private const val REQUIRE = "require"
 
 private const val METHOD_NAME_USER_STRING = "mpx-vmn"
 
-private val VUE_DESCRIPTOR_OWNERS = arrayOf(VUE_NAMESPACE, MIXIN_FUN, COMPONENT_FUN, EXTEND_FUN, DIRECTIVE_FUN, DELIMITERS_PROP,
-                                            FILTER_FUN, DEFINE_COMPONENT_FUN, DEFINE_NUXT_COMPONENT_FUN)
+private val VUE_DESCRIPTOR_OWNERS = arrayOf(
+  VUE_NAMESPACE,
+  MIXIN_FUN,
+  COMPONENT_FUN,
+  EXTEND_FUN,
+  DIRECTIVE_FUN,
+  DELIMITERS_PROP,
+  FILTER_FUN,
+  DEFINE_COMPONENT_FUN,
+  DEFINE_NUXT_COMPONENT_FUN,
+  CREATE_COMPONENT_FUN,
+  CREATE_PAGE_FUN,
+)
 private val COMPONENT_INDICATOR_PROPS = setOf(TEMPLATE_PROP, DATA_PROP, "render", PROPS_PROP, "propsData", COMPUTED_PROP, METHODS_PROP,
                                               "watch", MIXINS_PROP, COMPONENTS_PROP, DIRECTIVES_PROP, FILTERS_PROP, SETUP_METHOD,
                                               MODEL_PROP, SLOTS_PROP)
@@ -618,9 +631,9 @@ private val SCRIPT_SETUP_MACROS = setOf(
 
 fun getFunctionNameFromVueIndex(call: JSCallExpression): String? {
   // todo consider first using AST if loaded
-  return call.indexingData
-    ?.implicitElements?.find { it.userString == METHOD_NAME_USER_STRING }
-    ?.name
+  val indexingData = call.indexingData
+  val implicitElements = indexingData?.implicitElements
+  return implicitElements?.find { it.userString == METHOD_NAME_USER_STRING }?.name
 }
 
 fun getFunctionImplicitElement(call: JSCallExpression): JSImplicitElement? =

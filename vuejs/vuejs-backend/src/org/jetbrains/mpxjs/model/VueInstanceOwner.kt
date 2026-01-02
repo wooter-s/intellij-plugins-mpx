@@ -23,6 +23,7 @@ import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.util.asSafely
 import org.jetbrains.mpxjs.index.CUSTOM_PROPERTIES
+import org.jetbrains.mpxjs.index.MPX_MODULE
 import org.jetbrains.mpxjs.index.VUE_CORE_MODULES
 import org.jetbrains.mpxjs.index.VUE_MODULE
 import org.jetbrains.mpxjs.model.source.*
@@ -45,7 +46,9 @@ interface VueInstanceOwner : VueScopeElement {
 }
 
 fun getDefaultVueComponentInstanceType(context: PsiElement?): JSType? =
-  resolveSymbolFromNodeModule(context, VUE_MODULE, "ComponentPublicInstance", TypeScriptTypeAlias::class.java)
+  resolveSymbolFromNodeModule(context, MPX_MODULE, "ComponentPublicInstance", TypeScriptTypeAlias::class.java)
+    ?.typeDeclaration?.jsType
+  ?: resolveSymbolFromNodeModule(context, VUE_MODULE, "ComponentPublicInstance", TypeScriptTypeAlias::class.java)
     ?.typeDeclaration?.jsType
   ?: resolveSymbolFromNodeModule(context, VUE_MODULE, VUE_NAMESPACE, TypeScriptInterface::class.java)?.jsType
 
@@ -127,6 +130,8 @@ private fun contributePropertiesFromProviders(
     .flatMap { it.getThisTypeProperties(instance, unmodifiableResult).asSequence() }
     .associateByTo(result) { it.memberName }
 }
+
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance("VueInstanceOwner")
 
 private fun contributeComponentProperties(
   instance: VueInstanceOwner,
@@ -226,7 +231,8 @@ private fun buildSlotsType(
 ): JSType {
   val typeSource = JSTypeSourceFactory.createTypeSource(instance.source!!, false)
   val slots = (instance as? VueContainer)?.slots ?: return originalType ?: JSAnyType.get(typeSource)
-  val slotType = resolveSymbolFromNodeModule(instance.source, VUE_MODULE, "Slot", JSTypedEntity::class.java)?.jsType
+  val slotType = resolveSymbolFromNodeModule(instance.source, MPX_MODULE, "Slot", JSTypedEntity::class.java)?.jsType
+                 ?: resolveSymbolFromNodeModule(instance.source, VUE_MODULE, "Slot", JSTypedEntity::class.java)?.jsType
   val slotsType = slots.asSequence()
     .filter { it.pattern == null }
     .map { PropertySignatureImpl(it.name, slotType, true, true, it.source) }

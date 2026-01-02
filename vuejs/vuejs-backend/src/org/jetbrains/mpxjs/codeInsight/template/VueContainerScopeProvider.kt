@@ -42,9 +42,11 @@ class VueContainerScopeProvider : VueTemplateScopesProvider() {
       }
       else emptySet()
 
-      container.thisType
-        .asRecordType()
-        .properties
+      val thisType = container.thisType
+      val recordType = thisType.asRecordType()
+      val properties = recordType.properties
+
+      properties
         .asSequence()
         .filter { it.memberName !in excludedProperties }
         .mapNotNull { it.memberSource.singleElement }

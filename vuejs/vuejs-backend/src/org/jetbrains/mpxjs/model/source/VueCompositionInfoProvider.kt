@@ -25,10 +25,13 @@ import org.jetbrains.mpxjs.model.source.VueContainerInfoProvider.VueContainerInf
 
 class VueCompositionInfoProvider : VueContainerInfoProvider {
 
-  override fun getInfo(descriptor: VueSourceEntityDescriptor): VueContainerInfo? =
-    descriptor.source
-      .asSafely<JSObjectLiteralExpression>()
-      ?.let { VueCompositionInfo(it) }
+  override fun getInfo(descriptor: VueSourceEntityDescriptor): VueContainerInfo? {
+    // Use initializer instead of source - initializer is guaranteed to be JSObjectLiteralExpression or JSFile
+    // For createComponent({...}) calls, source might be JSCallExpression but initializer contains the object literal
+    val objLiteral = descriptor.initializer?.asSafely<JSObjectLiteralExpression>()
+                     ?: descriptor.source.asSafely<JSObjectLiteralExpression>()
+    return objLiteral?.let { VueCompositionInfo(it) }
+  }
 
   class VueCompositionInfo(val initializer: JSObjectLiteralExpression) : VueContainerInfo {
 
@@ -49,9 +52,9 @@ class VueCompositionInfoProvider : VueContainerInfoProvider {
 
     private val rawBindings: List<VueNamedSymbol>
       get() = CachedValuesManager.getCachedValue(initializer) {
-        CachedValueProvider.Result.create(VueCompositionInfoHelper.createRawBindings(
-          initializer, getSetupFunctionType(initializer)
-        ), PsiModificationTracker.MODIFICATION_COUNT)
+        val setupType = getSetupFunctionType(initializer)
+        val bindings = VueCompositionInfoHelper.createRawBindings(initializer, setupType)
+        CachedValueProvider.Result.create(bindings, PsiModificationTracker.MODIFICATION_COUNT)
       }
 
     private val methodCalls: List<VueNamedSymbol>

@@ -16,6 +16,7 @@ import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.util.asSafely
+import org.jetbrains.mpxjs.index.MPX_MODULE
 import org.jetbrains.mpxjs.index.VUE_MODULE
 import org.jetbrains.mpxjs.model.*
 import org.jetbrains.mpxjs.model.source.INSTANCE_EMIT_METHOD
@@ -173,10 +174,12 @@ abstract class VueTypedContainer(override val source: PsiElement) : VueContainer
       val containingFile = context.containingFile
       return CachedValuesManager.getCachedValue(containingFile) {
         val result = mutableSetOf<String>()
-        resolveSymbolFromNodeModule(containingFile, VUE_MODULE, "VNodeProps", JSClass::class.java)
+        (resolveSymbolFromNodeModule(containingFile, MPX_MODULE, "VNodeProps", JSClass::class.java)
+         ?: resolveSymbolFromNodeModule(containingFile, VUE_MODULE, "VNodeProps", JSClass::class.java))
           ?.jsType?.asRecordType()?.properties?.mapTo(result) { it.memberName }
 
-        resolveSymbolFromNodeModule(containingFile, VUE_MODULE, "AllowedComponentProps", JSClass::class.java)
+        (resolveSymbolFromNodeModule(containingFile, MPX_MODULE, "AllowedComponentProps", JSClass::class.java)
+         ?: resolveSymbolFromNodeModule(containingFile, VUE_MODULE, "AllowedComponentProps", JSClass::class.java))
           ?.jsType?.asRecordType()?.properties?.mapTo(result) { it.memberName }
 
         CachedValueProvider.Result.create(result, PsiModificationTracker.MODIFICATION_COUNT)

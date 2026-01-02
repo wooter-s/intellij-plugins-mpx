@@ -6,7 +6,7 @@ import com.intellij.psi.stubs.StringStubIndexExtension
 import com.intellij.psi.stubs.StubIndexKey
 
 abstract class VueIndexBase<T : PsiElement>(private val key: StubIndexKey<String, T>) : StringStubIndexExtension<T>() {
-  private val VERSION = 25
+  private val VERSION = 26
 
   companion object {
     fun createJSKey(key: StubIndexKey<*, *>): String =

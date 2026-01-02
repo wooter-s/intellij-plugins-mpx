@@ -17,6 +17,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.xml.util.HtmlUtil
 import org.jetbrains.mpxjs.context.isVueContext
+import org.jetbrains.mpxjs.index.MPX_MODULE
 import org.jetbrains.mpxjs.index.VUE_MODULE
 import org.jetbrains.mpxjs.index.hasComponentIndicatorProperties
 import org.jetbrains.mpxjs.lang.expr.isVueExprMetaLanguage
@@ -64,7 +65,8 @@ class VueFrameworkInsideScriptSpecificHandler : JSFrameworkSpecificHandler {
           .toList()
         )
       else null
-    val definitionType = resolveSymbolFromNodeModule(obj, VUE_MODULE, "Component", TypeScriptTypeAlias::class.java)
+    val definitionType = (resolveSymbolFromNodeModule(obj, MPX_MODULE, "Component", TypeScriptTypeAlias::class.java)
+                          ?: resolveSymbolFromNodeModule(obj, VUE_MODULE, "Component", TypeScriptTypeAlias::class.java))
       ?.typeDeclaration
       ?.jsType
     return listOfNotNull(definitionType, thisType, propertiesWithThisType)

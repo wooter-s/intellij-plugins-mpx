@@ -108,15 +108,16 @@ object VueComponents {
     VueTypedEntitiesProvider.getComponentDescriptor(element)
     ?: getSourceComponentDescriptor(element)
 
-  fun getSourceComponentDescriptor(element: PsiElement?): VueSourceEntityDescriptor? =
-    when (val resolved = resolveElementTo(element, JSObjectLiteralExpression::class, JSCallExpression::class,
-                                          JSClass::class, JSEmbeddedContent::class, HtmlFileImpl::class)) {
+  fun getSourceComponentDescriptor(element: PsiElement?): VueSourceEntityDescriptor? {
+    val resolved = resolveElementTo(element, JSObjectLiteralExpression::class, JSCallExpression::class,
+                                          JSClass::class, JSEmbeddedContent::class, HtmlFileImpl::class)
+    return when (resolved) {
       // {...}
       is JSObjectLiteralExpression -> VueSourceEntityDescriptor.tryCreate(resolved)
 
       // Vue.extend({...})
       // defineComponent({...})
-      is JSCallExpression ->
+      is JSCallExpression -> {
         if (isComponentDefiningCall(resolved)) {
           resolved.stubSafeCallArguments
             .getOrNull(0)
@@ -124,6 +125,7 @@ object VueComponents {
             ?.let { VueSourceEntityDescriptor.tryCreate(it) }
         }
         else null
+      }
 
       // @Component({...}) class MyComponent {...}
       is JSClass ->
@@ -142,6 +144,7 @@ object VueComponents {
 
       else -> null
     }
+  }
 
   @StubSafe
   fun getDescriptorFromDecorator(decorator: ES6Decorator): JSObjectLiteralExpression? {
@@ -163,10 +166,15 @@ object VueComponents {
   }
 
   @StubSafe
-  fun isComponentDefiningCall(callExpression: JSCallExpression): Boolean =
-    getFunctionNameFromVueIndex(callExpression).let {
-      it == DEFINE_COMPONENT_FUN || it == DEFINE_NUXT_COMPONENT_FUN || it == EXTEND_FUN || it == DEFINE_OPTIONS_FUN
-    }
+  fun isComponentDefiningCall(callExpression: JSCallExpression): Boolean {
+    val functionName = getFunctionNameFromVueIndex(callExpression)
+    return functionName == DEFINE_COMPONENT_FUN
+      || functionName == DEFINE_NUXT_COMPONENT_FUN
+      || functionName == EXTEND_FUN
+      || functionName == DEFINE_OPTIONS_FUN
+      || functionName == CREATE_COMPONENT_FUN
+      || functionName == CREATE_PAGE_FUN
+  }
 
   @StubSafe
   fun isDefineOptionsCall(callExpression: JSCallExpression): Boolean =
@@ -177,7 +185,9 @@ object VueComponents {
       JSSymbolUtil.isAccurateReferenceExpressionName(it, DEFINE_COMPONENT_FUN) ||
       JSSymbolUtil.isAccurateReferenceExpressionName(it, DEFINE_NUXT_COMPONENT_FUN) ||
       JSSymbolUtil.isAccurateReferenceExpressionName(it, VUE_NAMESPACE, EXTEND_FUN) ||
-      JSSymbolUtil.isAccurateReferenceExpressionName(it, DEFINE_OPTIONS_FUN)
+      JSSymbolUtil.isAccurateReferenceExpressionName(it, DEFINE_OPTIONS_FUN) ||
+      JSSymbolUtil.isAccurateReferenceExpressionName(it, CREATE_COMPONENT_FUN) ||
+      JSSymbolUtil.isAccurateReferenceExpressionName(it, CREATE_PAGE_FUN)
     } ?: false
 }
 

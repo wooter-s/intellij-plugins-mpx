@@ -42,6 +42,7 @@ import com.intellij.psi.*
 import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.parentOfType
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.psi.xml.XmlFile
 import com.intellij.psi.xml.XmlTag
@@ -425,6 +426,9 @@ private fun findDefaultCommonJSExport(element: PsiElement): PsiElement? {
   return JSClassResolver.getInstance().findElementsByQNameIncludingImplicit(JSSymbolUtil.MODULE_EXPORTS, element.containingFile)
     .asSequence()
     .filterIsInstance<JSDefinitionExpression>()
+    // Only include module.exports that are within the scope of the passed element
+    // This is important for Mpx files with multiple script blocks (TypeScript + JSON)
+    .filter { def -> PsiTreeUtil.isAncestor(element, def, false) }
     .mapNotNull { it.initializerOrStub }
     .firstOrNull()
 }

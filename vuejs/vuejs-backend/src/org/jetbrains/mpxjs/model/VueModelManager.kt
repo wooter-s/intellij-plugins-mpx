@@ -58,11 +58,12 @@ class VueModelManager {
       findEntitiesContainerContext(templateElement).second
 
     private fun findEntitiesContainerContext(context: PsiElement): Pair<() -> VueGlobal, VueEntitiesContainer> {
-      fun find() =
-        VueGlobalImpl.get(context).let { global ->
-          val container = findComponent(context) as? VueEntitiesContainer ?: findVueApp(context, global) ?: global
-          Pair({ container.source?.let { VueTypedGlobal(global, it) } ?: global }, container)
-        }
+      fun find(): Pair<() -> VueGlobal, VueEntitiesContainer> {
+        val global = VueGlobalImpl.get(context)
+        val component = findComponent(context)
+        val container = component as? VueEntitiesContainer ?: findVueApp(context, global) ?: global
+        return Pair({ container.source?.let { VueTypedGlobal(global, it) } ?: global }, container)
+      }
 
       return if (ApplicationManager.getApplication().let { it.isDispatchThread && !it.isUnitTestMode })
         WebJSResolveUtil.disableIndexUpToDateCheckIn(context) {
@@ -121,7 +122,7 @@ class VueModelManager {
           templateElement
         }
 
-      return when (baseElement) {
+      val elementForDescriptor = when (baseElement) {
         is XmlElement -> InjectedLanguageManager.getInstance(baseElement.project)
                            .getInjectionHost(baseElement)
                            ?.let { it as? JSLiteralExpression }
@@ -131,8 +132,8 @@ class VueModelManager {
         is JSElement -> InjectedLanguageManager.getInstance(templateElement.project).getInjectionHost(templateElement) as? XmlElement
         else -> null
       }
-        ?.let { getEnclosingComponentDescriptor(CompletionUtil.getOriginalOrSelf(it)) }
-        ?.let { getComponent(it) }
+      val descriptor = elementForDescriptor?.let { getEnclosingComponentDescriptor(CompletionUtil.getOriginalOrSelf(it)) }
+      return descriptor?.let { getComponent(it) }
     }
 
     private fun getEnclosingComponentDescriptor(element: PsiElement): VueSourceEntityDescriptor? {
@@ -278,12 +279,33 @@ class VueModelManager {
                  ?: return null
       val scriptModule = findModule(file, false)
       if (scriptModule != null) {
-        findDefaultExport(scriptModule)
-          ?.let { getComponentDescriptor(it) }
-          ?.asSafely<VueSourceEntityDescriptor>()
+        val defaultExport = findDefaultExport(scriptModule)
+        val descriptor = defaultExport?.let { getComponentDescriptor(it) }
+        descriptor?.asSafely<VueSourceEntityDescriptor>()
           ?.let { return it }
+
+        // For Mpx: if no default export, look for createComponent/createPage call
+        if (defaultExport == null) {
+          val componentCall = findComponentDefiningCall(scriptModule)
+          if (componentCall != null) {
+            val callDescriptor = getSourceComponentDescriptor(componentCall)
+            callDescriptor?.let { return it }
+          }
+        }
       }
       return VueSourceEntityDescriptor.tryCreate(source = file)
+    }
+
+    /**
+     * Find createComponent/createPage call in Mpx script module
+     */
+    private fun findComponentDefiningCall(scriptModule: PsiElement): JSCallExpression? {
+      return JSStubBasedPsiTreeUtil.findDescendants<JSCallExpression>(
+        scriptModule,
+        com.intellij.psi.tree.TokenSet.create(JSElementTypes.CALL_EXPRESSION)
+      ).find { call ->
+        VueComponents.isComponentDefiningCall(call)
+      }
     }
 
     private fun findVueApp(templateElement: PsiElement, global: VueGlobal): VueApp? {

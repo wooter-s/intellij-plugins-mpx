@@ -9,6 +9,7 @@ import com.intellij.lang.javascript.psi.JSFunctionItem
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.ecmal4.JSClass
 import com.intellij.psi.PsiElement
+import org.jetbrains.mpxjs.index.MPX_MODULE
 import org.jetbrains.mpxjs.index.VUE_MODULE
 import org.jetbrains.mpxjs.index.findModule
 import org.jetbrains.mpxjs.model.VueModelManager
@@ -26,8 +27,8 @@ class VueImplicitUsageProvider : ImplicitUsageProvider {
       if (name != null && descriptor != null
           && (descriptor.clazz == element.context
               || descriptor.initializer == element.context)) {
-        return WebJSResolveUtil.resolveSymbolFromNodeModule(
-          element, VUE_MODULE, "ComponentOptions", JSClass::class.java)
+        return (WebJSResolveUtil.resolveSymbolFromNodeModule(element, MPX_MODULE, "ComponentOptions", JSClass::class.java)
+                ?: WebJSResolveUtil.resolveSymbolFromNodeModule(element, VUE_MODULE, "ComponentOptions", JSClass::class.java))
           ?.jsType?.asRecordType()?.findPropertySignature(name) != null
       }
     }

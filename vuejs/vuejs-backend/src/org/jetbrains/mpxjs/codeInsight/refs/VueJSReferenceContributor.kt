@@ -15,6 +15,9 @@ import com.intellij.lang.javascript.psi.impl.JSReferenceExpressionImpl
 import com.intellij.lang.javascript.psi.resolve.CachingPolyReferenceBase
 import com.intellij.lang.javascript.psi.stubs.impl.JSImplicitElementImpl
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.*
@@ -28,6 +31,7 @@ import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.ProcessingContext
 import com.intellij.util.asSafely
+import com.intellij.webpack.WebpackConfigurable
 import org.jetbrains.mpxjs.codeInsight.getTextIfLiteral
 import org.jetbrains.mpxjs.context.isVueContext
 import org.jetbrains.mpxjs.index.VUE_ID_INDEX_KEY
@@ -118,6 +122,8 @@ private class VueUsingComponentsPathReferenceProvider : PsiReferenceProvider() {
     val value = literal.stringValue ?: return PsiReference.EMPTY_ARRAY
     if (value.isBlank()) return PsiReference.EMPTY_ARRAY
 
+    resolveMpxPathReference(element, value)?.let { return arrayOf(it) }
+
     // 使用 FileReferenceSet 创建文件引用，支持相对路径解析
     val referenceSet = FileReferenceSet(
       value,
@@ -129,6 +135,70 @@ private class VueUsingComponentsPathReferenceProvider : PsiReferenceProvider() {
     @Suppress("UNCHECKED_CAST")
     return referenceSet.allReferences as Array<PsiReference>
   }
+}
+
+private fun resolveMpxPathReference(element: PsiElement, path: String): PsiReference? {
+  resolveAliasMpxReference(element, path)?.let { return it }
+  return resolveRelativeMpxReference(element, path)
+}
+
+private fun resolveAliasMpxReference(element: PsiElement, path: String): PsiReference? {
+  if (!path.startsWith("@")) return null
+  val slashIndex = path.indexOf("/")
+  if (slashIndex <= 0) return null
+  val alias = path.substring(0, slashIndex)
+  val filePath = path.substring(slashIndex + 1)
+  if (filePath.isBlank()) return null
+
+  val config = WebpackConfigurable(element.project).configManager.resolveConfig(element)
+  val aliasEntry = config.resolve.alias[alias] ?: return null
+  val basePath = aliasEntry.mappings.firstOrNull() ?: return null
+  val fullPath = FileUtil.toSystemIndependentName("$basePath/$filePath")
+  return resolveMpxReferenceByPath(element, fullPath)
+}
+
+private fun resolveRelativeMpxReference(element: PsiElement, path: String): PsiReference? {
+  if (path.startsWith("@")) return null
+  val normalizedPath = FileUtil.toSystemIndependentName(path)
+  return resolveMpxReferenceByPath(element, normalizedPath)
+}
+
+private fun resolveMpxReferenceByPath(element: PsiElement, path: String): PsiReference? {
+  val normalized = path.trimEnd('/')
+  val name = normalized.substringAfterLast('/')
+  val hasExtension = name.contains('.')
+  val candidates = if (hasExtension) {
+    listOf(normalized)
+  }
+  else {
+    listOf(normalized, "$normalized.mpx", "$normalized/index.mpx")
+  }
+
+  for (candidate in candidates) {
+    val virtualFile = findVirtualFile(element, candidate) ?: continue
+    return createSelfReference(element, virtualFile)
+  }
+  return null
+}
+
+private fun findVirtualFile(element: PsiElement, path: String): VirtualFile? {
+  return if (FileUtil.isAbsolute(path)) {
+    LocalFileSystem.getInstance().findFileByPath(path)
+  }
+  else {
+    element.containingFile?.virtualFile?.parent?.findFileByRelativePath(path)
+  }
+}
+
+private fun createSelfReference(element: PsiElement, virtualFile: VirtualFile): PsiReference? {
+  val psiManager = PsiManager.getInstance(element.project)
+  val target = if (virtualFile.isDirectory) {
+    psiManager.findDirectory(virtualFile)
+  }
+  else {
+    psiManager.findFile(virtualFile)
+  }
+  return target?.let { PsiReferenceBase.createSelfReference(element, it) }
 }
 
 
@@ -210,4 +280,3 @@ private class VueTemplateIdReference(element: JSLiteralExpression, rangeInElemen
     return result.toTypedArray()
   }
 }
-

@@ -6,21 +6,23 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.lang.Language
 import com.intellij.psi.PsiElement
 import org.intellij.plugins.markdown.injection.CodeFenceLanguageProvider
-import org.jetbrains.mpxjs.lang.html.VueLanguage
+
+private const val MPX_LANGUAGE_ID = "Mpx"
+private const val VUE_INFO_STRING = "vue"
 
 class VueCodeFenceLanguageProvider : CodeFenceLanguageProvider {
   override fun getLanguageByInfoString(infoString: String): Language? {
-    if (infoString.equals(VueLanguage.id, true) || infoString.equals(VueLanguage.displayName, true)) {
-      return VueLanguage
-    }
-    return null
+    // Avoid touching VueLanguage directly to prevent duplicate language registration across classloaders.
+    val language = Language.findLanguageByID(MPX_LANGUAGE_ID) ?: return null
+    val matches = infoString.equals(language.id, true) ||
+      infoString.equals(language.displayName, true) ||
+      infoString.equals(VUE_INFO_STRING, true)
+
+    return if (matches) language else null
   }
 
   override fun getInfoStringForLanguage(language: Language, context: PsiElement?): String? {
-    if (language == VueLanguage) {
-      return "vue"
-    }
-    return null
+    return if (language.id.equals(MPX_LANGUAGE_ID, true)) VUE_INFO_STRING else null
   }
 
   override fun getCompletionVariantsForInfoString(parameters: CompletionParameters): List<LookupElement> = emptyList()

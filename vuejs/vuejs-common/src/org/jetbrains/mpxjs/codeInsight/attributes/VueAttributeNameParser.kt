@@ -72,6 +72,26 @@ class VueAttributeNameParser private constructor() {
         kind = directiveKindMap[name] ?: VueDirectiveKind.CUSTOM
         paramsPos = nameEnd
       }
+      // WeChat Mini Program event directives
+      // Supports both colon syntax (bind:tap) and no-colon syntax (bindtap)
+      else if (isWeChatEventDirective(attributeName)) {
+        val colonIndex = attributeName.indexOf(':')
+        val prefix: String
+        val eventName: String
+        if (colonIndex > 0) {
+          // Colon syntax: bind:tap, catch:touchmove
+          prefix = attributeName.substring(0, colonIndex)
+          eventName = attributeName.substring(colonIndex + 1)
+        }
+        else {
+          // No-colon syntax: bindtap, catchtouchmove
+          val result = parseWeChatDirectiveWithoutColon(attributeName)
+          prefix = result.first
+          eventName = result.second
+        }
+        // Treat as ON directive (event handler) - value should be injected as JavaScript
+        return VueDirectiveInfo(prefix, VueDirectiveKind.ON, eventName, isShorthand = false)
+      }
       else {
         var nameEnd = attributeName.indexOf(ATTR_MODIFIER_PREFIX)
         if (nameEnd < 0) {
@@ -149,6 +169,51 @@ class VueAttributeNameParser private constructor() {
         .forEach {
           attributeKindMap.putValue(it.attributeName, it)
         }
+    }
+
+    /**
+     * Check if the attribute name is a WeChat Mini Program event directive.
+     * These directives should have their values injected as JavaScript.
+     * Supports both colon syntax (bind:tap) and no-colon syntax (bindtap).
+     */
+    private fun isWeChatEventDirective(attributeName: CharSequence): Boolean {
+      // Colon syntax: bind:tap, catch:touchmove, etc.
+      if (attributeName.startsWith("bind:")
+          || attributeName.startsWith("catch:")
+          || attributeName.startsWith("mut-bind:")
+          || attributeName.startsWith("capture-bind:")
+          || attributeName.startsWith("capture-catch:")
+          || attributeName.startsWith("mark:")
+          || attributeName.startsWith("model:")) {
+        return true
+      }
+      // No-colon syntax: bindtap, catchtouchmove, etc.
+      // Must have additional characters after the prefix (the event name)
+      val len = attributeName.length
+      return (attributeName.startsWith("capture-catch") && len > 13)
+             || (attributeName.startsWith("capture-bind") && len > 12)
+             || (attributeName.startsWith("mut-bind") && len > 8)
+             || (attributeName.startsWith("catch") && len > 5)
+             || (attributeName.startsWith("bind") && len > 4)
+             || (attributeName.startsWith("model") && len > 5)
+             || (attributeName.startsWith("mark") && len > 4)
+    }
+
+    /**
+     * Parse WeChat directive without colon syntax (e.g., bindtap -> Pair("bind", "tap"))
+     */
+    private fun parseWeChatDirectiveWithoutColon(attributeName: CharSequence): Pair<String, String> {
+      val name = attributeName.toString()
+      return when {
+        name.startsWith("capture-catch") -> Pair("capture-catch", name.substring(13))
+        name.startsWith("capture-bind") -> Pair("capture-bind", name.substring(12))
+        name.startsWith("mut-bind") -> Pair("mut-bind", name.substring(8))
+        name.startsWith("catch") -> Pair("catch", name.substring(5))
+        name.startsWith("bind") -> Pair("bind", name.substring(4))
+        name.startsWith("model") -> Pair("model", name.substring(5))
+        name.startsWith("mark") -> Pair("mark", name.substring(4))
+        else -> Pair(name, "")
+      }
     }
   }
 

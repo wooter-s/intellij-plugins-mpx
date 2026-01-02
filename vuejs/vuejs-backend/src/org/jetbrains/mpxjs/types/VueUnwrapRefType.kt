@@ -20,6 +20,7 @@ import com.intellij.psi.util.CachedValuesManager
 import com.intellij.util.ProcessingContext
 import com.intellij.util.asSafely
 import org.jetbrains.mpxjs.index.COMPOSITION_API_MODULE
+import org.jetbrains.mpxjs.index.MPX_MODULE
 import org.jetbrains.mpxjs.index.VUE_MODULE
 import org.jetbrains.mpxjs.model.source.VueCompositionInfoHelper
 
@@ -126,7 +127,8 @@ class VueUnwrapRefType private constructor(private val typeToUnwrap: JSType, sou
 
   private fun resolveUnrefFunction(): TypeScriptFunction? {
     val file = source.sourceElement?.containingFile ?: return null
-    return resolveSymbolFromNodeModule(file, VUE_MODULE, "unref", TypeScriptFunction::class.java)
+    return resolveSymbolFromNodeModule(file, MPX_MODULE, "unref", TypeScriptFunction::class.java)
+           ?: resolveSymbolFromNodeModule(file, VUE_MODULE, "unref", TypeScriptFunction::class.java)
            ?: resolveSymbolFromNodeModule(file, COMPOSITION_API_MODULE, "unref", TypeScriptFunction::class.java)
   }
 
@@ -143,8 +145,12 @@ class VueUnwrapRefType private constructor(private val typeToUnwrap: JSType, sou
   private fun getUnwrapRefType(): TypeScriptTypeAlias? =
     source.sourceElement?.containingFile?.let { file ->
       CachedValuesManager.getCachedValue(file) {
-        val unwrapRef = resolveSymbolFromNodeModule(file, VUE_MODULE,
+        val unwrapRef = resolveSymbolFromNodeModule(file, MPX_MODULE,
                                                     SHALLOW_UNWRAP_REF_TYPE, TypeScriptTypeAlias::class.java)
+                        ?: resolveSymbolFromNodeModule(file, MPX_MODULE,
+                                                       UNWRAP_REF_TYPE, TypeScriptTypeAlias::class.java)
+                        ?: resolveSymbolFromNodeModule(file, VUE_MODULE,
+                                                       SHALLOW_UNWRAP_REF_TYPE, TypeScriptTypeAlias::class.java)
                         ?: resolveSymbolFromNodeModule(file, COMPOSITION_API_MODULE,
                                                        SHALLOW_UNWRAP_REF_TYPE, TypeScriptTypeAlias::class.java)
                         ?: resolveSymbolFromNodeModule(file, COMPOSITION_API_MODULE,
