@@ -22,6 +22,8 @@ import com.intellij.psi.xml.*
 import com.intellij.util.SmartList
 import com.intellij.util.asSafely
 import com.intellij.xml.util.HtmlUtil.SLOT_TAG_NAME
+import com.intellij.polySymbols.html.HTML_ATTRIBUTES
+import org.jetbrains.mpxjs.codeInsight.WxEventNameUtils
 import org.jetbrains.mpxjs.codeInsight.fromAsset
 import org.jetbrains.mpxjs.codeInsight.isGlobalDirectiveName
 import org.jetbrains.mpxjs.codeInsight.isScriptSetupLocalDirectiveName
@@ -65,9 +67,46 @@ class VueSymbolQueryConfigurator : PolySymbolQueryConfigurator {
       listOf(
         VueGlobalDirectiveNameConversionRulesProvider,
         VueScriptSetupLocalDirectiveNameConversionRulesProvider,
+        VueWxEventAttributeNameConversionRulesProvider,
       )
     else
       super.getNameConversionRulesProviders(project, element, context)
+}
+
+/**
+ * Name conversion rules provider for WeChat Mini Program event attributes.
+ * Supports both merged syntax (bindtap) and colon syntax (bind:tap).
+ */
+private object VueWxEventAttributeNameConversionRulesProvider :
+  PolySymbolNameConversionRulesProvider,
+  PolySymbolNameConversionRules {
+
+  override fun getNameConversionRules(): PolySymbolNameConversionRules = this
+
+  override fun createPointer(): Pointer<out PolySymbolNameConversionRulesProvider> =
+    Pointer.hardPointer(this)
+
+  override fun getModificationCount(): Long = 0
+
+  private val wxEventConverter = PolySymbolNameConverter { name ->
+    if (WxEventNameUtils.isWxEventAttribute(name)) {
+      WxEventNameUtils.getAllVariants(name)
+    } else {
+      listOf(name)
+    }
+  }
+
+  override val canonicalNames: Map<PolySymbolQualifiedKind, PolySymbolNameConverter> =
+    mapOf(HTML_ATTRIBUTES to wxEventConverter)
+
+  override val renames: Map<PolySymbolQualifiedKind, PolySymbolNameConverter>
+    get() = canonicalNames
+
+  override val matchNames: Map<PolySymbolQualifiedKind, PolySymbolNameConverter>
+    get() = canonicalNames
+
+  override val completionVariants: Map<PolySymbolQualifiedKind, PolySymbolNameConverter>
+    get() = canonicalNames
 }
 
 private object VueGlobalDirectiveNameConversionRulesProvider :

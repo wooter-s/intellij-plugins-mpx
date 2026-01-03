@@ -1,0 +1,7 @@
+<idea-plugin visibility="internal" package="org.jetbrains.mpxjs.common">
+  <dependencies>
+    <plugin id="JavaScript"/>
+  </dependencies>
+
+  <resource-bundle>messages.VueBundle</resource-bundle>
+</idea-plugin>

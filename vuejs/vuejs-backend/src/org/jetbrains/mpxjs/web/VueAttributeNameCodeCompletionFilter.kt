@@ -9,6 +9,7 @@ import com.intellij.psi.xml.XmlTag
 import org.jetbrains.mpxjs.codeInsight.ATTR_ARGUMENT_PREFIX
 import org.jetbrains.mpxjs.codeInsight.ATTR_DIRECTIVE_PREFIX
 import org.jetbrains.mpxjs.codeInsight.ATTR_SLOT_SHORTHAND
+import org.jetbrains.mpxjs.codeInsight.WxEventNameUtils
 import org.jetbrains.mpxjs.codeInsight.attributes.VueAttributeNameParser
 import java.util.function.Predicate
 
@@ -26,6 +27,13 @@ class VueAttributeNameCodeCompletionFilter(tag: XmlTag) : Predicate<String> {
   private fun addAliases(attr: XmlAttribute) {
     val info = VueAttributeNameParser.parse(attr.name, attr.parent)
     names.add(attr.name)
+
+    // Handle WeChat event attributes - add all equivalent variants to prevent duplicates
+    if (WxEventNameUtils.isWxEventAttribute(attr.name)) {
+      WxEventNameUtils.getAllVariants(attr.name).forEach { names.add(it) }
+      return
+    }
+
     if (info is VueAttributeNameParser.VueDirectiveInfo) {
       val descriptor = attr.descriptor as? HtmlAttributeSymbolDescriptor
       when (info.directiveKind) {
