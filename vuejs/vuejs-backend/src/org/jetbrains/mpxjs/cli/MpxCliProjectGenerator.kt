@@ -23,26 +23,24 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.PathUtil
 import org.jetbrains.mpxjs.VueBundle
 import org.jetbrains.mpxjs.VuejsIcons
-import org.jetbrains.mpxjs.codeInsight.VITE_PKG
 import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import javax.swing.Icon
 import javax.swing.JPanel
 
-class VueCliProjectGenerator : NpmPackageProjectGenerator() {
-  private val LOG = Logger.getInstance(VueCliProjectGenerator::class.java)
+class MpxCliProjectGenerator : NpmPackageProjectGenerator() {
+  private val LOG = Logger.getInstance(MpxCliProjectGenerator::class.java)
 
   private val DEFAULT_PROJECT_SETUP_INITIALLY_SELECTED = true
-  private val DEFAULT_PROJECT_SETUP_KEY = Key.create<Boolean>("vue.project.generator.default.setup")
+  private val DEFAULT_PROJECT_SETUP_KEY = Key.create<Boolean>("mpx.project.generator.default.setup")
 
-  private val CREATE_VUE_PACKAGE_NAME = "create-vue"
-  private val VUE_CLI_PACKAGE_NAME = "@vue/cli"
-  private val VUE_EXECUTABLE = "vue"
+  private val MPX_CLI_PACKAGE_NAME = "@mpxjs/cli"
+  private val MPX_EXECUTABLE = "mpx"
   private val CREATE_COMMAND = "create"
 
   override fun getId(): String {
-    return "VueJS"
+    return "Mpx"
   }
 
   override fun getName(): String {
@@ -54,7 +52,7 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   }
 
   override fun getIcon(): Icon {
-    return VuejsIcons.Vue
+    return VuejsIcons.Mpx
   }
 
   override fun createPeer(): ProjectGeneratorPeer<Settings> {
@@ -85,11 +83,6 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
     val default = settings.getUserData(DEFAULT_PROJECT_SETUP_KEY) ?: DEFAULT_PROJECT_SETUP_INITIALLY_SELECTED
     val workingDir = if (generateInTemp()) dir.name else "."
 
-    val packageName = settings.myPackage.name
-    if (packageName.contains(CREATE_VUE_PACKAGE_NAME)) {
-      return if (default) arrayOf(workingDir, "--default") else arrayOf(workingDir)
-    }
-
     return if (default) arrayOf(CREATE_COMMAND, "--default", workingDir) else arrayOf(CREATE_COMMAND, workingDir)
   }
 
@@ -102,15 +95,15 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   }
 
   override fun executable(pkg: NodePackage): String {
-    return pkg.systemDependentPath + File.separator + "bin" + File.separator + "vue.js"
+    return pkg.systemDependentPath + File.separator + "bin" + File.separator + "mpx.js"
   }
 
   override fun packageName(): String {
-    return CREATE_VUE_PACKAGE_NAME
+    return MPX_CLI_PACKAGE_NAME
   }
 
   override fun packageNames(): List<String> {
-    return listOf(CREATE_VUE_PACKAGE_NAME, VUE_CLI_PACKAGE_NAME)
+    return listOf(MPX_CLI_PACKAGE_NAME)
   }
 
   override fun presentablePackageName(): String {
@@ -119,8 +112,7 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
 
   override fun getNpxCommands(): List<NpxPackageDescriptor.NpxCommand> {
     return listOf(
-      NpxPackageDescriptor.NpxCommand(CREATE_VUE_PACKAGE_NAME, CREATE_VUE_PACKAGE_NAME),
-      NpxPackageDescriptor.NpxCommand(VUE_CLI_PACKAGE_NAME, VUE_EXECUTABLE),
+      NpxPackageDescriptor.NpxCommand(MPX_CLI_PACKAGE_NAME, MPX_EXECUTABLE),
     )
   }
 
@@ -132,7 +124,7 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
   override fun onProcessHandlerCreated(processHandler: ProcessHandler) {
     processHandler.addProcessListener(object : ProcessAdapter() {
       override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-        // https://github.com/vuejs/vue-cli/blob/dev/packages/%40vue/cli/lib/create.js#L43
+        // Handle prompts from @mpxjs/cli
         if (event.text.contains("Generate project in current directory?")) {
           event.processHandler.removeProcessListener(this)
           val processInput = event.processHandler.processInput
@@ -142,7 +134,7 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
               processInput.flush()
             }
             catch (e: IOException) {
-              LOG.warn("Failed to write 'yes' to the Vue CLI console.", e)
+              LOG.warn("Failed to write 'yes' to the Mpx CLI console.", e)
             }
           }
         }
@@ -152,18 +144,9 @@ class VueCliProjectGenerator : NpmPackageProjectGenerator() {
 
   override fun onGettingSmartAfterProjectGeneration(project: Project, baseDir: VirtualFile) {
     super.onGettingSmartAfterProjectGeneration(project, baseDir)
-    val isVite = PackageJsonUtil.findChildPackageJsonFile(baseDir)
-      ?.let { PackageJsonData.getOrCreate(it) }
-      ?.containsOneOfDependencyOfAnyType(VITE_PKG) == true
-
-    if (isVite) {
-      CreateRunConfigurationUtil.debugConfiguration(project, 5173)
-      CreateRunConfigurationUtil.npmConfiguration(project, "dev")
-    }
-    else {
-      CreateRunConfigurationUtil.debugConfiguration(project, 8080)
-      CreateRunConfigurationUtil.npmConfiguration(project, "serve")
-    }
+    // Default Mpx project uses serve command
+    CreateRunConfigurationUtil.debugConfiguration(project, 8080)
+    CreateRunConfigurationUtil.npmConfiguration(project, "serve")
   }
 
   override fun generateInTemp(): Boolean = true
