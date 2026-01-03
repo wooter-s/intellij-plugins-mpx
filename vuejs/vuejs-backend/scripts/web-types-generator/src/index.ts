@@ -71,8 +71,12 @@ async function generate(options: GenerateOptions): Promise<void> {
   const directiveTransformer = new DirectiveTransformer(mpxDirectives);
   const wxDirectives = directiveTransformer.transformWxDirectives();
   const bindAttributes = directiveTransformer.transformBindDirectives();
+  const wxEvents = directiveTransformer.generateWxEvents();
+  const bindAlias = directiveTransformer.generateBindAlias();
   logger.success(`   转换了 ${wxDirectives.length} 个 wx: 指令`);
   logger.success(`   转换了 ${bindAttributes.length} 个事件绑定属性`);
+  logger.success(`   生成了 ${wxEvents.length} 个 wx-events 事件定义`);
+  logger.success(`   生成了 bind alias 模式`);
 
   // 4. 加载现有 web-types（保留自定义内容）
   logger.info('📄 加载现有 web-types...');
@@ -89,8 +93,9 @@ async function generate(options: GenerateOptions): Promise<void> {
 
   builder
     .addElements(htmlElements)
-    .addAttributes(bindAttributes)
-    .addDirectives(wxDirectives);
+    .addAttributes([...bindAttributes, bindAlias])
+    .addDirectives(wxDirectives)
+    .addWxEvents(wxEvents);
 
   // 合并现有内容（保留自定义的 vue-components 等）
   if (existingWebTypes) {
@@ -104,7 +109,8 @@ async function generate(options: GenerateOptions): Promise<void> {
     elements: webTypes.contributions.html.elements?.length || 0,
     attributes: webTypes.contributions.html.attributes?.length || 0,
     directives: webTypes.contributions.html['vue-directives']?.length || 0,
-    components: webTypes.contributions.html['vue-components']?.length || 0
+    components: webTypes.contributions.html['vue-components']?.length || 0,
+    wxEvents: webTypes.contributions.html['wx-events']?.length || 0
   };
 
   logger.info('📊 生成统计:');
@@ -112,6 +118,7 @@ async function generate(options: GenerateOptions): Promise<void> {
   logger.info(`   - HTML 属性: ${stats.attributes}`);
   logger.info(`   - wx: 指令: ${stats.directives}`);
   logger.info(`   - Vue 组件: ${stats.components}`);
+  logger.info(`   - wx-events: ${stats.wxEvents}`);
 
   // 6. 输出结果
   if (options.dryRun) {

@@ -25,6 +25,12 @@ export interface HtmlContributions {
   'vue-directives'?: VueDirective[];
   'vue-file-top-elements'?: VueFileTopElement[];
   'vue-components'?: VueComponent[];
+  'wx-events'?: WxEvent[];
+}
+
+export interface WxEvent {
+  name: string;
+  description: string;
 }
 
 export interface CssContributions {
@@ -84,9 +90,20 @@ export interface HtmlAttribute {
   name: string;
   description?: string;
   'doc-url'?: string;
+  virtual?: boolean;
   value?: AttributeValue;
+  'exclusive-contributions'?: string[];
+  pattern?: HtmlPattern;
+  argument?: HtmlArgument;
   'vue-argument'?: VueArgument;
   'vue-modifiers'?: VueModifier[];
+}
+
+export interface HtmlArgument {
+  name: string;
+  description?: string;
+  required?: boolean;
+  pattern?: HtmlPattern;
 }
 
 export interface VueArgument {
@@ -104,9 +121,10 @@ export interface VueModifier {
 export interface HtmlPattern {
   items?: string | PatternItem[];
   regex?: string;
-  template?: PatternTemplate[];
+  template?: (string | PatternTemplate)[];
   delegate?: string;
   or?: string[];
+  proximity?: number;
 }
 
 export interface PatternItem {
@@ -123,6 +141,9 @@ export interface PatternTemplate {
   'repeat'?: boolean;
   unique?: boolean;
   'proximity'?: number;
+  delegate?: string;
+  template?: string[];
+  or?: string[];
 }
 
 export interface VueDirective {

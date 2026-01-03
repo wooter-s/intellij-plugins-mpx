@@ -4,7 +4,8 @@ import type {
   HtmlAttribute,
   VueDirective,
   VueComponent,
-  ElementAttribute
+  ElementAttribute,
+  WxEvent
 } from '../types/index.js';
 
 interface BuilderConfig {
@@ -19,6 +20,7 @@ export class WebTypesBuilder {
   private attributes: HtmlAttribute[] = [];
   private directives: VueDirective[] = [];
   private vueComponents: VueComponent[] = [];
+  private wxEvents: WxEvent[] = [];
 
   constructor(config: BuilderConfig) {
     this.config = {
@@ -61,6 +63,14 @@ export class WebTypesBuilder {
   }
 
   /**
+   * 添加微信事件定义（wx-events 命名空间）
+   */
+  addWxEvents(events: WxEvent[]): this {
+    this.wxEvents.push(...events);
+    return this;
+  }
+
+  /**
    * 从现有 web-types 合并内容
    */
   mergeExisting(existing: WebTypes): this {
@@ -91,11 +101,19 @@ export class WebTypesBuilder {
       this.vueComponents.push(...toMerge);
     }
 
+    if (html?.['wx-events']) {
+      const newNames = new Set(this.wxEvents.map(e => e.name));
+      const toMerge = html['wx-events'].filter(e => !newNames.has(e.name));
+      this.wxEvents.push(...toMerge);
+    }
+
     return this;
   }
 
   /**
    * 构建最终的 WebTypes 对象
+   * 注意：键的顺序很重要，需要与原始文件保持一致以减少 diff
+   * 顺序：elements, wx-events, attributes, vue-directives, vue-components
    */
   build(): WebTypes {
     // 合并并去重
@@ -116,9 +134,14 @@ export class WebTypesBuilder {
       }
     };
 
-    // 只添加非空数组
+    // 按照原始文件的顺序添加：elements, wx-events, attributes, vue-directives, vue-components
     if (elements.length > 0) {
       webTypes.contributions.html.elements = elements;
+    }
+
+    // wx-events 放在 elements 之后（与原始文件顺序一致）
+    if (this.wxEvents.length > 0) {
+      webTypes.contributions.html['wx-events'] = this.wxEvents;
     }
 
     if (attributes.length > 0) {
