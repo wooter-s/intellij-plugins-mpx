@@ -1,0 +1,31 @@
+{
+  "name": "web-types-generator",
+  "version": "1.0.0",
+  "description": "Generate web-types.json for Mpx.js IntelliJ plugin",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "generate": "tsx src/index.ts generate",
+    "generate:dry-run": "tsx src/index.ts generate --dry-run --verbose",
+    "generate:no-cache": "tsx src/index.ts generate --no-cache",
+    "clear-cache": "tsx src/index.ts clear-cache",
+    "dev": "tsx watch src/index.ts",
+    "clean": "rm -rf dist .cache"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "cheerio": "^1.0.0",
+    "commander": "^12.1.0",
+    "node-fetch": "^3.3.2",
+    "ts-morph": "^24.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
