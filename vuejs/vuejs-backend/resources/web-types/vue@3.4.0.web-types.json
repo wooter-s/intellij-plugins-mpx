@@ -6312,178 +6312,70 @@
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxs/"
         }
       ],
+      "wx-events": [
+        { "name": "tap", "description": "手指触摸后马上离开" },
+        { "name": "touchstart", "description": "手指触摸动作开始" },
+        { "name": "touchmove", "description": "手指触摸后移动" },
+        { "name": "touchend", "description": "手指触摸动作结束" },
+        { "name": "touchcancel", "description": "手指触摸动作被打断" },
+        { "name": "longpress", "description": "手指触摸后超过350ms再离开，推荐使用" },
+        { "name": "longtap", "description": "手指触摸后超过350ms再离开（推荐使用longpress）" },
+        { "name": "transitionend", "description": "CSS transition 动画结束" },
+        { "name": "animationstart", "description": "CSS animation 动画开始" },
+        { "name": "animationiteration", "description": "CSS animation 动画迭代" },
+        { "name": "animationend", "description": "CSS animation 动画结束" },
+        { "name": "touchforcechange", "description": "3D Touch 压力变化" },
+        { "name": "input", "description": "输入框内容变化" },
+        { "name": "focus", "description": "获得焦点" },
+        { "name": "blur", "description": "失去焦点" },
+        { "name": "confirm", "description": "点击完成按钮或回车键" },
+        { "name": "change", "description": "表单值变化" },
+        { "name": "submit", "description": "表单提交" },
+        { "name": "reset", "description": "表单重置" },
+        { "name": "scroll", "description": "滚动" },
+        { "name": "scrolltoupper", "description": "滚动到顶部/左边" },
+        { "name": "scrolltolower", "description": "滚动到底部/右边" },
+        { "name": "refresherpulling", "description": "下拉刷新控件被下拉" },
+        { "name": "refresherrefresh", "description": "下拉刷新被触发" },
+        { "name": "refresherrestore", "description": "下拉刷新被复位" },
+        { "name": "refresherabort", "description": "下拉刷新被中止" },
+        { "name": "play", "description": "开始/继续播放" },
+        { "name": "pause", "description": "暂停播放" },
+        { "name": "ended", "description": "播放到末尾" },
+        { "name": "timeupdate", "description": "播放进度变化" },
+        { "name": "fullscreenchange", "description": "全屏状态切换" },
+        { "name": "waiting", "description": "等待数据加载" },
+        { "name": "error", "description": "播放错误" },
+        { "name": "progress", "description": "加载进度变化" },
+        { "name": "loadedmetadata", "description": "元数据加载完成" },
+        { "name": "load", "description": "资源加载完成" },
+        { "name": "ready", "description": "组件就绪" },
+        { "name": "show", "description": "显示" },
+        { "name": "hide", "description": "隐藏" },
+        { "name": "resize", "description": "尺寸变化" }
+      ],
       "attributes": [
         {
           "name": "bind",
-          "description": "绑定事件处理函数",
+          "description": "绑定事件处理函数。支持 bind:tap 或 bindtap 两种写法。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html",
-          "vue-argument": {
+          "pattern": {
+            "template": [
+              "#item",
+              {
+                "delegate": "argument",
+                "template": [":", "#item:event name"],
+                "required": false
+              }
+            ]
+          },
+          "argument": {
+            "name": "event name",
             "description": "事件名称",
+            "required": true,
             "pattern": {
-              "items": [
-                {
-                  "name": "tap",
-                  "description": "tap 事件"
-                },
-                {
-                  "name": "touchstart",
-                  "description": "touchstart 事件"
-                },
-                {
-                  "name": "touchmove",
-                  "description": "touchmove 事件"
-                },
-                {
-                  "name": "touchend",
-                  "description": "touchend 事件"
-                },
-                {
-                  "name": "touchcancel",
-                  "description": "touchcancel 事件"
-                },
-                {
-                  "name": "longpress",
-                  "description": "longpress 事件"
-                },
-                {
-                  "name": "longtap",
-                  "description": "longtap 事件"
-                },
-                {
-                  "name": "transitionend",
-                  "description": "transitionend 事件"
-                },
-                {
-                  "name": "animationstart",
-                  "description": "animationstart 事件"
-                },
-                {
-                  "name": "animationiteration",
-                  "description": "animationiteration 事件"
-                },
-                {
-                  "name": "animationend",
-                  "description": "animationend 事件"
-                },
-                {
-                  "name": "touchforcechange",
-                  "description": "touchforcechange 事件"
-                },
-                {
-                  "name": "input",
-                  "description": "input 事件"
-                },
-                {
-                  "name": "focus",
-                  "description": "focus 事件"
-                },
-                {
-                  "name": "blur",
-                  "description": "blur 事件"
-                },
-                {
-                  "name": "confirm",
-                  "description": "confirm 事件"
-                },
-                {
-                  "name": "change",
-                  "description": "change 事件"
-                },
-                {
-                  "name": "submit",
-                  "description": "submit 事件"
-                },
-                {
-                  "name": "reset",
-                  "description": "reset 事件"
-                },
-                {
-                  "name": "scroll",
-                  "description": "scroll 事件"
-                },
-                {
-                  "name": "scrolltoupper",
-                  "description": "scrolltoupper 事件"
-                },
-                {
-                  "name": "scrolltolower",
-                  "description": "scrolltolower 事件"
-                },
-                {
-                  "name": "refresherpulling",
-                  "description": "refresherpulling 事件"
-                },
-                {
-                  "name": "refresherrefresh",
-                  "description": "refresherrefresh 事件"
-                },
-                {
-                  "name": "refresherrestore",
-                  "description": "refresherrestore 事件"
-                },
-                {
-                  "name": "refresherabort",
-                  "description": "refresherabort 事件"
-                },
-                {
-                  "name": "play",
-                  "description": "play 事件"
-                },
-                {
-                  "name": "pause",
-                  "description": "pause 事件"
-                },
-                {
-                  "name": "ended",
-                  "description": "ended 事件"
-                },
-                {
-                  "name": "timeupdate",
-                  "description": "timeupdate 事件"
-                },
-                {
-                  "name": "fullscreenchange",
-                  "description": "fullscreenchange 事件"
-                },
-                {
-                  "name": "waiting",
-                  "description": "waiting 事件"
-                },
-                {
-                  "name": "error",
-                  "description": "error 事件"
-                },
-                {
-                  "name": "progress",
-                  "description": "progress 事件"
-                },
-                {
-                  "name": "loadedmetadata",
-                  "description": "loadedmetadata 事件"
-                },
-                {
-                  "name": "load",
-                  "description": "load 事件"
-                },
-                {
-                  "name": "ready",
-                  "description": "ready 事件"
-                },
-                {
-                  "name": "show",
-                  "description": "show 事件"
-                },
-                {
-                  "name": "hide",
-                  "description": "hide 事件"
-                },
-                {
-                  "name": "resize",
-                  "description": "resize 事件"
-                }
-              ]
-            },
-            "required": true
+              "items": "/html/wx-events"
+            }
           },
           "value": {
             "kind": "expression",
@@ -6523,182 +6415,32 @@
                 ]
               },
               {
-                "items": "/html/bind-directives"
+                "items": "/html/wx-events"
               }
             ]
           }
         },
         {
           "name": "capture-bind",
-          "description": "捕获阶段绑定事件处理函数",
+          "description": "捕获阶段绑定事件处理函数。支持 capture-bind:tap 或 capture-bindtap 两种写法。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html",
-          "vue-argument": {
+          "pattern": {
+            "template": [
+              "#item",
+              {
+                "delegate": "argument",
+                "template": [":", "#item:event name"],
+                "required": false
+              }
+            ]
+          },
+          "argument": {
+            "name": "event name",
             "description": "事件名称",
+            "required": true,
             "pattern": {
-              "items": [
-                {
-                  "name": "tap",
-                  "description": "tap 事件"
-                },
-                {
-                  "name": "touchstart",
-                  "description": "touchstart 事件"
-                },
-                {
-                  "name": "touchmove",
-                  "description": "touchmove 事件"
-                },
-                {
-                  "name": "touchend",
-                  "description": "touchend 事件"
-                },
-                {
-                  "name": "touchcancel",
-                  "description": "touchcancel 事件"
-                },
-                {
-                  "name": "longpress",
-                  "description": "longpress 事件"
-                },
-                {
-                  "name": "longtap",
-                  "description": "longtap 事件"
-                },
-                {
-                  "name": "transitionend",
-                  "description": "transitionend 事件"
-                },
-                {
-                  "name": "animationstart",
-                  "description": "animationstart 事件"
-                },
-                {
-                  "name": "animationiteration",
-                  "description": "animationiteration 事件"
-                },
-                {
-                  "name": "animationend",
-                  "description": "animationend 事件"
-                },
-                {
-                  "name": "touchforcechange",
-                  "description": "touchforcechange 事件"
-                },
-                {
-                  "name": "input",
-                  "description": "input 事件"
-                },
-                {
-                  "name": "focus",
-                  "description": "focus 事件"
-                },
-                {
-                  "name": "blur",
-                  "description": "blur 事件"
-                },
-                {
-                  "name": "confirm",
-                  "description": "confirm 事件"
-                },
-                {
-                  "name": "change",
-                  "description": "change 事件"
-                },
-                {
-                  "name": "submit",
-                  "description": "submit 事件"
-                },
-                {
-                  "name": "reset",
-                  "description": "reset 事件"
-                },
-                {
-                  "name": "scroll",
-                  "description": "scroll 事件"
-                },
-                {
-                  "name": "scrolltoupper",
-                  "description": "scrolltoupper 事件"
-                },
-                {
-                  "name": "scrolltolower",
-                  "description": "scrolltolower 事件"
-                },
-                {
-                  "name": "refresherpulling",
-                  "description": "refresherpulling 事件"
-                },
-                {
-                  "name": "refresherrefresh",
-                  "description": "refresherrefresh 事件"
-                },
-                {
-                  "name": "refresherrestore",
-                  "description": "refresherrestore 事件"
-                },
-                {
-                  "name": "refresherabort",
-                  "description": "refresherabort 事件"
-                },
-                {
-                  "name": "play",
-                  "description": "play 事件"
-                },
-                {
-                  "name": "pause",
-                  "description": "pause 事件"
-                },
-                {
-                  "name": "ended",
-                  "description": "ended 事件"
-                },
-                {
-                  "name": "timeupdate",
-                  "description": "timeupdate 事件"
-                },
-                {
-                  "name": "fullscreenchange",
-                  "description": "fullscreenchange 事件"
-                },
-                {
-                  "name": "waiting",
-                  "description": "waiting 事件"
-                },
-                {
-                  "name": "error",
-                  "description": "error 事件"
-                },
-                {
-                  "name": "progress",
-                  "description": "progress 事件"
-                },
-                {
-                  "name": "loadedmetadata",
-                  "description": "loadedmetadata 事件"
-                },
-                {
-                  "name": "load",
-                  "description": "load 事件"
-                },
-                {
-                  "name": "ready",
-                  "description": "ready 事件"
-                },
-                {
-                  "name": "show",
-                  "description": "show 事件"
-                },
-                {
-                  "name": "hide",
-                  "description": "hide 事件"
-                },
-                {
-                  "name": "resize",
-                  "description": "resize 事件"
-                }
-              ]
-            },
-            "required": true
+              "items": "/html/wx-events"
+            }
           },
           "value": {
             "kind": "expression",
@@ -6708,177 +6450,25 @@
         },
         {
           "name": "capture-catch",
-          "description": "捕获阶段绑定事件并阻止冒泡",
+          "description": "捕获阶段绑定事件并阻止冒泡。支持 capture-catch:tap 或 capture-catchtap 两种写法。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html",
-          "vue-argument": {
+          "pattern": {
+            "template": [
+              "#item",
+              {
+                "delegate": "argument",
+                "template": [":", "#item:event name"],
+                "required": false
+              }
+            ]
+          },
+          "argument": {
+            "name": "event name",
             "description": "事件名称",
+            "required": true,
             "pattern": {
-              "items": [
-                {
-                  "name": "tap",
-                  "description": "tap 事件"
-                },
-                {
-                  "name": "touchstart",
-                  "description": "touchstart 事件"
-                },
-                {
-                  "name": "touchmove",
-                  "description": "touchmove 事件"
-                },
-                {
-                  "name": "touchend",
-                  "description": "touchend 事件"
-                },
-                {
-                  "name": "touchcancel",
-                  "description": "touchcancel 事件"
-                },
-                {
-                  "name": "longpress",
-                  "description": "longpress 事件"
-                },
-                {
-                  "name": "longtap",
-                  "description": "longtap 事件"
-                },
-                {
-                  "name": "transitionend",
-                  "description": "transitionend 事件"
-                },
-                {
-                  "name": "animationstart",
-                  "description": "animationstart 事件"
-                },
-                {
-                  "name": "animationiteration",
-                  "description": "animationiteration 事件"
-                },
-                {
-                  "name": "animationend",
-                  "description": "animationend 事件"
-                },
-                {
-                  "name": "touchforcechange",
-                  "description": "touchforcechange 事件"
-                },
-                {
-                  "name": "input",
-                  "description": "input 事件"
-                },
-                {
-                  "name": "focus",
-                  "description": "focus 事件"
-                },
-                {
-                  "name": "blur",
-                  "description": "blur 事件"
-                },
-                {
-                  "name": "confirm",
-                  "description": "confirm 事件"
-                },
-                {
-                  "name": "change",
-                  "description": "change 事件"
-                },
-                {
-                  "name": "submit",
-                  "description": "submit 事件"
-                },
-                {
-                  "name": "reset",
-                  "description": "reset 事件"
-                },
-                {
-                  "name": "scroll",
-                  "description": "scroll 事件"
-                },
-                {
-                  "name": "scrolltoupper",
-                  "description": "scrolltoupper 事件"
-                },
-                {
-                  "name": "scrolltolower",
-                  "description": "scrolltolower 事件"
-                },
-                {
-                  "name": "refresherpulling",
-                  "description": "refresherpulling 事件"
-                },
-                {
-                  "name": "refresherrefresh",
-                  "description": "refresherrefresh 事件"
-                },
-                {
-                  "name": "refresherrestore",
-                  "description": "refresherrestore 事件"
-                },
-                {
-                  "name": "refresherabort",
-                  "description": "refresherabort 事件"
-                },
-                {
-                  "name": "play",
-                  "description": "play 事件"
-                },
-                {
-                  "name": "pause",
-                  "description": "pause 事件"
-                },
-                {
-                  "name": "ended",
-                  "description": "ended 事件"
-                },
-                {
-                  "name": "timeupdate",
-                  "description": "timeupdate 事件"
-                },
-                {
-                  "name": "fullscreenchange",
-                  "description": "fullscreenchange 事件"
-                },
-                {
-                  "name": "waiting",
-                  "description": "waiting 事件"
-                },
-                {
-                  "name": "error",
-                  "description": "error 事件"
-                },
-                {
-                  "name": "progress",
-                  "description": "progress 事件"
-                },
-                {
-                  "name": "loadedmetadata",
-                  "description": "loadedmetadata 事件"
-                },
-                {
-                  "name": "load",
-                  "description": "load 事件"
-                },
-                {
-                  "name": "ready",
-                  "description": "ready 事件"
-                },
-                {
-                  "name": "show",
-                  "description": "show 事件"
-                },
-                {
-                  "name": "hide",
-                  "description": "hide 事件"
-                },
-                {
-                  "name": "resize",
-                  "description": "resize 事件"
-                }
-              ],
-              "case-sensitive": true,
-              "regex": ""
-            },
-            "required": true
+              "items": "/html/wx-events"
+            }
           },
           "value": {
             "kind": "expression",
@@ -6888,175 +6478,25 @@
         },
         {
           "name": "catch",
-          "description": "绑定事件处理函数，并阻止事件冒泡",
+          "description": "绑定事件处理函数，并阻止事件冒泡。支持 catch:tap 或 catchtap 两种写法。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html",
-          "vue-argument": {
+          "pattern": {
+            "template": [
+              "#item",
+              {
+                "delegate": "argument",
+                "template": [":", "#item:event name"],
+                "required": false
+              }
+            ]
+          },
+          "argument": {
+            "name": "event name",
             "description": "事件名称",
+            "required": true,
             "pattern": {
-              "items": [
-                {
-                  "name": "tap",
-                  "description": "tap 事件"
-                },
-                {
-                  "name": "touchstart",
-                  "description": "touchstart 事件"
-                },
-                {
-                  "name": "touchmove",
-                  "description": "touchmove 事件"
-                },
-                {
-                  "name": "touchend",
-                  "description": "touchend 事件"
-                },
-                {
-                  "name": "touchcancel",
-                  "description": "touchcancel 事件"
-                },
-                {
-                  "name": "longpress",
-                  "description": "longpress 事件"
-                },
-                {
-                  "name": "longtap",
-                  "description": "longtap 事件"
-                },
-                {
-                  "name": "transitionend",
-                  "description": "transitionend 事件"
-                },
-                {
-                  "name": "animationstart",
-                  "description": "animationstart 事件"
-                },
-                {
-                  "name": "animationiteration",
-                  "description": "animationiteration 事件"
-                },
-                {
-                  "name": "animationend",
-                  "description": "animationend 事件"
-                },
-                {
-                  "name": "touchforcechange",
-                  "description": "touchforcechange 事件"
-                },
-                {
-                  "name": "input",
-                  "description": "input 事件"
-                },
-                {
-                  "name": "focus",
-                  "description": "focus 事件"
-                },
-                {
-                  "name": "blur",
-                  "description": "blur 事件"
-                },
-                {
-                  "name": "confirm",
-                  "description": "confirm 事件"
-                },
-                {
-                  "name": "change",
-                  "description": "change 事件"
-                },
-                {
-                  "name": "submit",
-                  "description": "submit 事件"
-                },
-                {
-                  "name": "reset",
-                  "description": "reset 事件"
-                },
-                {
-                  "name": "scroll",
-                  "description": "scroll 事件"
-                },
-                {
-                  "name": "scrolltoupper",
-                  "description": "scrolltoupper 事件"
-                },
-                {
-                  "name": "scrolltolower",
-                  "description": "scrolltolower 事件"
-                },
-                {
-                  "name": "refresherpulling",
-                  "description": "refresherpulling 事件"
-                },
-                {
-                  "name": "refresherrefresh",
-                  "description": "refresherrefresh 事件"
-                },
-                {
-                  "name": "refresherrestore",
-                  "description": "refresherrestore 事件"
-                },
-                {
-                  "name": "refresherabort",
-                  "description": "refresherabort 事件"
-                },
-                {
-                  "name": "play",
-                  "description": "play 事件"
-                },
-                {
-                  "name": "pause",
-                  "description": "pause 事件"
-                },
-                {
-                  "name": "ended",
-                  "description": "ended 事件"
-                },
-                {
-                  "name": "timeupdate",
-                  "description": "timeupdate 事件"
-                },
-                {
-                  "name": "fullscreenchange",
-                  "description": "fullscreenchange 事件"
-                },
-                {
-                  "name": "waiting",
-                  "description": "waiting 事件"
-                },
-                {
-                  "name": "error",
-                  "description": "error 事件"
-                },
-                {
-                  "name": "progress",
-                  "description": "progress 事件"
-                },
-                {
-                  "name": "loadedmetadata",
-                  "description": "loadedmetadata 事件"
-                },
-                {
-                  "name": "load",
-                  "description": "load 事件"
-                },
-                {
-                  "name": "ready",
-                  "description": "ready 事件"
-                },
-                {
-                  "name": "show",
-                  "description": "show 事件"
-                },
-                {
-                  "name": "hide",
-                  "description": "hide 事件"
-                },
-                {
-                  "name": "resize",
-                  "description": "resize 事件"
-                }
-              ]
-            },
-            "required": true
+              "items": "/html/wx-events"
+            }
           },
           "value": {
             "kind": "expression",
@@ -7110,177 +6550,25 @@
         },
         {
           "name": "mut-bind",
-          "description": "互斥事件绑定，用于解决多层嵌套组件的事件冒泡问题",
+          "description": "互斥事件绑定，用于解决多层嵌套组件的事件冒泡问题。支持 mut-bind:tap 或 mut-bindtap 两种写法。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxml/event.html",
-          "vue-argument": {
+          "pattern": {
+            "template": [
+              "#item",
+              {
+                "delegate": "argument",
+                "template": [":", "#item:event name"],
+                "required": false
+              }
+            ]
+          },
+          "argument": {
+            "name": "event name",
             "description": "事件名称",
+            "required": true,
             "pattern": {
-              "items": [
-                {
-                  "name": "tap",
-                  "description": "tap 事件"
-                },
-                {
-                  "name": "touchstart",
-                  "description": "touchstart 事件"
-                },
-                {
-                  "name": "touchmove",
-                  "description": "touchmove 事件"
-                },
-                {
-                  "name": "touchend",
-                  "description": "touchend 事件"
-                },
-                {
-                  "name": "touchcancel",
-                  "description": "touchcancel 事件"
-                },
-                {
-                  "name": "longpress",
-                  "description": "longpress 事件"
-                },
-                {
-                  "name": "longtap",
-                  "description": "longtap 事件"
-                },
-                {
-                  "name": "transitionend",
-                  "description": "transitionend 事件"
-                },
-                {
-                  "name": "animationstart",
-                  "description": "animationstart 事件"
-                },
-                {
-                  "name": "animationiteration",
-                  "description": "animationiteration 事件"
-                },
-                {
-                  "name": "animationend",
-                  "description": "animationend 事件"
-                },
-                {
-                  "name": "touchforcechange",
-                  "description": "touchforcechange 事件"
-                },
-                {
-                  "name": "input",
-                  "description": "input 事件"
-                },
-                {
-                  "name": "focus",
-                  "description": "focus 事件"
-                },
-                {
-                  "name": "blur",
-                  "description": "blur 事件"
-                },
-                {
-                  "name": "confirm",
-                  "description": "confirm 事件"
-                },
-                {
-                  "name": "change",
-                  "description": "change 事件"
-                },
-                {
-                  "name": "submit",
-                  "description": "submit 事件"
-                },
-                {
-                  "name": "reset",
-                  "description": "reset 事件"
-                },
-                {
-                  "name": "scroll",
-                  "description": "scroll 事件"
-                },
-                {
-                  "name": "scrolltoupper",
-                  "description": "scrolltoupper 事件"
-                },
-                {
-                  "name": "scrolltolower",
-                  "description": "scrolltolower 事件"
-                },
-                {
-                  "name": "refresherpulling",
-                  "description": "refresherpulling 事件"
-                },
-                {
-                  "name": "refresherrefresh",
-                  "description": "refresherrefresh 事件"
-                },
-                {
-                  "name": "refresherrestore",
-                  "description": "refresherrestore 事件"
-                },
-                {
-                  "name": "refresherabort",
-                  "description": "refresherabort 事件"
-                },
-                {
-                  "name": "play",
-                  "description": "play 事件"
-                },
-                {
-                  "name": "pause",
-                  "description": "pause 事件"
-                },
-                {
-                  "name": "ended",
-                  "description": "ended 事件"
-                },
-                {
-                  "name": "timeupdate",
-                  "description": "timeupdate 事件"
-                },
-                {
-                  "name": "fullscreenchange",
-                  "description": "fullscreenchange 事件"
-                },
-                {
-                  "name": "waiting",
-                  "description": "waiting 事件"
-                },
-                {
-                  "name": "error",
-                  "description": "error 事件"
-                },
-                {
-                  "name": "progress",
-                  "description": "progress 事件"
-                },
-                {
-                  "name": "loadedmetadata",
-                  "description": "loadedmetadata 事件"
-                },
-                {
-                  "name": "load",
-                  "description": "load 事件"
-                },
-                {
-                  "name": "ready",
-                  "description": "ready 事件"
-                },
-                {
-                  "name": "show",
-                  "description": "show 事件"
-                },
-                {
-                  "name": "hide",
-                  "description": "hide 事件"
-                },
-                {
-                  "name": "resize",
-                  "description": "resize 事件"
-                }
-              ],
-              "case-sensitive": true,
-              "regex": ""
-            },
-            "required": true
+              "items": "/html/wx-events"
+            }
           },
           "value": {
             "kind": "expression",
