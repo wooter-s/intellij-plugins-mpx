@@ -1,0 +1,93 @@
+// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package org.jetbrains.mpxjs.model.source
+
+import com.intellij.lang.javascript.psi.JSLiteralExpression
+import com.intellij.model.Pointer
+import com.intellij.polySymbols.PolySymbolKind
+import com.intellij.polySymbols.refactoring.PolySymbolRenameTarget
+import com.intellij.polySymbols.search.PsiLinkedPolySymbol
+import com.intellij.psi.PsiElement
+import com.intellij.psi.createSmartPointer
+import com.intellij.psi.util.CachedValueProvider
+import com.intellij.psi.util.CachedValuesManager
+import org.jetbrains.mpxjs.codeInsight.fromAsset
+import org.jetbrains.mpxjs.model.VueDirective
+import org.jetbrains.mpxjs.model.VueDirectiveModifier
+import org.jetbrains.mpxjs.model.VueEntitiesContainer
+import org.jetbrains.mpxjs.model.VueMode
+import org.jetbrains.mpxjs.model.typed.VueTypedDirectives.getDirectiveModifiers
+import org.jetbrains.mpxjs.web.VUE_DIRECTIVES
+import org.jetbrains.mpxjs.web.getVueSymbolsCacheDependencies
+
+class VueSourceDirective(
+  name: String,
+  override val source: PsiElement,
+  private val typeSource: PsiElement? = null,
+  private val mode: VueMode = VueMode.CLASSIC,
+) : VueDirective, PsiLinkedPolySymbol {
+
+  override val linkedElement: PsiElement
+    get() = source
+
+  override val kind: PolySymbolKind
+    get() = VUE_DIRECTIVES
+
+  override val name: String = fromAsset(name)
+
+  override val parents: List<VueEntitiesContainer> = emptyList()
+
+  override val directiveModifiers: List<VueDirectiveModifier>
+    get() {
+      typeSource ?: return emptyList()
+
+      return CachedValuesManager.getCachedValue(typeSource) {
+        CachedValueProvider.Result.create(
+          getDirectiveModifiers(typeSource, mode),
+          getVueSymbolsCacheDependencies(typeSource.project),
+        )
+      }
+    }
+
+  override val renameTarget: PolySymbolRenameTarget?
+    get() = if (source is JSLiteralExpression)
+      PolySymbolRenameTarget.create(this)
+    else null
+
+  override fun createPointer(): Pointer<out VueSourceDirective> {
+    val name = name
+    val source = this.source.createSmartPointer()
+    val typeSource = this.typeSource?.createSmartPointer()
+    val mode = this.mode
+    return Pointer {
+      val newSource = source.dereference() ?: return@Pointer null
+      val newTypeSource = if (typeSource != null) {
+        typeSource.dereference() ?: return@Pointer null
+      }
+      else null
+
+      VueSourceDirective(
+        name = name,
+        source = newSource,
+        typeSource = newTypeSource,
+        mode = mode,
+      )
+    }
+  }
+
+  override fun equals(other: Any?): Boolean =
+    other === this ||
+    (other is VueSourceDirective
+     && other.name == name
+     && other.source == source
+    )
+
+  override fun hashCode(): Int {
+    var result = name.hashCode()
+    result = 31 * result + source.hashCode()
+    return result
+  }
+
+  override fun toString(): String {
+    return "VueSourceDirective($name)"
+  }
+}

@@ -1,0 +1,21 @@
+package org.jetbrains.mpxjs;
+
+import com.intellij.ui.IconManager;
+import org.jetbrains.annotations.NotNull;
+
+import javax.swing.*;
+
+/**
+ * NOTE THIS FILE IS AUTO-GENERATED
+ * DO NOT EDIT IT BY HAND, run "Generate icon classes" configuration instead
+ */
+public final class VuejsIcons {
+  private static @NotNull Icon load(@NotNull String path, int cacheKey, int flags) {
+    return IconManager.getInstance().loadRasterizedIcon(path, VuejsIcons.class.getClassLoader(), cacheKey, flags);
+  }
+  /** 16x16 */ public static final @NotNull Icon Mpx = load("icons/mpx.svg", -1912635797, 0);
+  /** 16x16 */ public static final @NotNull Icon Nuxt = load("icons/nuxt.svg", 1295887393, 0);
+  /** 16x16 */ public static final @NotNull Icon TypeScriptVue = load("icons/TypeScriptVue.svg", 1640982108, 2);
+  /** 16x16 */ public static final @NotNull Icon TypeScriptVueStatusBar = load("icons/TypeScriptVueStatusBar.svg", -1075058150, 2);
+  /** 16x16 */ public static final @NotNull Icon Vue = load("icons/vue.svg", 1065828359, 0);
+}

@@ -1,6 +1,6 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `build intellij.vuejs.eslint` start
+### auto-generated section `build intellij.mpxjs.eslint` start
 
 jvm_library(
     name = "eslint",
@@ -12,7 +12,7 @@ jvm_library(
         ],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.eslint",
+    module_name = "intellij.mpxjs.eslint",
     resource_strip_prefix = "resources",
     resources = glob(
         ["resources/**/*"],
@@ -45,7 +45,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.eslint",
+    module_name = "intellij.mpxjs.eslint",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -66,13 +66,13 @@ jvm_library(
         "//contrib/vuejs/vuejs-backend:backend_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.eslint` end
+### auto-generated section `build intellij.mpxjs.eslint` end
 
-### auto-generated section `iml intellij.vuejs.eslint` start
+### auto-generated section `iml intellij.mpxjs.eslint` start
 exports_files(
     [
-        "intellij.vuejs.eslint.iml",
+        "intellij.mpxjs.eslint.iml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.eslint` end
+### auto-generated section `iml intellij.mpxjs.eslint` end

@@ -1,0 +1,13 @@
+<idea-plugin>
+  <dependencies>
+    <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+    <module name="intellij.javascript.debugger.backend"/>
+    <module name="intellij.javascript.debugger.ui"/>
+    <module name="intellij.javascript.web"/>
+    <module name="intellij.mpxjs.backend"/>
+    <!-- endregion -->
+  </dependencies>
+  <extensions defaultExtensionNs="com.jetbrains">
+    <javaScriptDebugAware implementation="com.intellij.mpxjs.debugger.VueDebugAware"/>
+  </extensions>
+</idea-plugin>

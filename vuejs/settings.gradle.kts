@@ -1,5 +1,7 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 
+rootProject.name = "mpxjs"
+
 pluginManagement {
   repositories {
     gradlePluginPortal()
@@ -10,15 +12,16 @@ pluginManagement {
 
     // remove when common settings bumped
     id("org.jetbrains.kotlin.jvm") version "2.3.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21"
     id("org.jetbrains.intellij.platform") version "2.16.0"
     id("org.jetbrains.intellij.platform.settings") version "2.16.0"
   }
 }
 
 include(":vuejs-common")
-include(":vue-free")
 include(":vuejs-backend")
 include(":vuejs-webpack")
+include(":vuejs-eslint")
 include(":vuejs-debugger")
 include(":vuejs-markdown")
 include(":vuejs-prettier")

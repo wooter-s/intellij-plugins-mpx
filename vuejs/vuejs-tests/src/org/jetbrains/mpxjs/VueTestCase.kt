@@ -1,0 +1,113 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs
+
+import com.intellij.javascript.testFramework.web.WebFrameworkTestCase
+import com.intellij.javascript.testFramework.web.WebFrameworkTestModule
+import com.intellij.lang.javascript.waitEmptyServiceQueueForService
+import com.intellij.lang.typescript.compiler.languageService.TypeScriptServerServiceImpl
+import com.intellij.lang.typescript.tsc.TypeScriptServiceTestMixin
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.polySymbols.testFramework.HybridTestMode
+import com.intellij.polySymbols.testFramework.PolySymbolsTestConfigurator
+import com.intellij.polySymbols.testFramework.disableAstLoadingFilter
+import com.intellij.testFramework.runInEdtAndWait
+import org.jetbrains.mpxjs.index.VUE_MODULE
+import org.jetbrains.mpxjs.lang.VueTestModule
+import org.jetbrains.mpxjs.lang.getVueTestDataPath
+import org.jetbrains.mpxjs.lang.typescript.service.VueLanguageToolsVersion
+import org.jetbrains.mpxjs.lang.typescript.service.VueServiceRuntime
+import org.jetbrains.mpxjs.lang.typescript.service.VueServiceTestMixin.setForceLegacyPluginUsage
+import org.jetbrains.mpxjs.lang.typescript.service.plugin.VuePluginTypeScriptService
+
+enum class VueTestMode {
+  DEFAULT,
+  LEGACY_PLUGIN,
+  NO_PLUGIN,
+
+  ;
+}
+
+abstract class VueTestCase(
+  override val testCasePath: String,
+  private val testMode: VueTestMode = VueTestMode.DEFAULT,
+) : WebFrameworkTestCase(
+  mode = if (testMode != VueTestMode.NO_PLUGIN) HybridTestMode.CodeInsightFixture else HybridTestMode.BasePlatform,
+) {
+
+  override fun adjustConfigurators(
+    configurators: List<PolySymbolsTestConfigurator>,
+  ): List<PolySymbolsTestConfigurator> =
+    buildList {
+      addAll(super.adjustConfigurators(configurators))
+
+      add(VueToolsConfigurator(testMode))
+
+      if (none { it is VueTsConfigFile }) {
+        add(VueTsConfigFile())
+      }
+    }
+
+  override fun adjustModules(
+    modules: Array<out WebFrameworkTestModule>,
+  ): Array<out WebFrameworkTestModule> =
+    buildList {
+      addAll(modules)
+
+      if (modules.none { VUE_MODULE in it.packageNames })
+        add(VueTestModule.VUE_3_5_0)
+
+      add(VueTestModule.VUE_TSCONFIG_0_9_1)
+    }.toTypedArray()
+
+  private fun TestConfiguration.getVueLanguageToolsVersion(): VueLanguageToolsVersion? =
+    configurators
+      .filterIsInstance<VueToolsConfigurator>()
+      .single()
+      .getBundledVersion()
+
+  override fun beforeConfiguredTest(configuration: TestConfiguration) {
+    val bundledVersion = configuration.getVueLanguageToolsVersion()
+                         ?: return
+
+    setForceLegacyPluginUsage(bundledVersion == VueLanguageToolsVersion.LEGACY, testRootDisposable)
+
+    val service = TypeScriptServiceTestMixin.setUpTypeScriptService(myFixture) {
+      it is VuePluginTypeScriptService
+      && it.runtime == VueServiceRuntime.Bundled(bundledVersion)
+    } as TypeScriptServerServiceImpl
+
+    service.assertProcessStarted()
+    runInEdtAndWait {
+      waitEmptyServiceQueueForService(service)
+    }
+
+    if (configuration.configurators.any { it is VueTsConfigFile && it.enabled }) {
+      TypeScriptServerServiceImpl.requireTSConfigsForTypeEvaluation(
+        testRootDisposable,
+        myFixture.tempDirFixture.getFile(VueTsConfigFile.FILE_NAME)!!,
+      )
+    }
+
+    configuration.configurators
+      .filterIsInstance<VueLspConfigurator>()
+      .forEach { it.waitForLspServer(myFixture) }
+
+    runInEdtAndWait {
+      FileDocumentManager.getInstance().saveAllDocuments()
+    }
+  }
+
+  override val testDataRoot: String
+    get() = getVueTestDataPath()
+
+  override val defaultExtension: String
+    get() = "vue"
+
+  override val defaultDependencies: Map<String, String>
+    get() = mapOf()
+
+  protected fun disableAstLoadingFilterWhenPluginUsed() {
+    if (testMode != VueTestMode.NO_PLUGIN)
+      disableAstLoadingFilter()
+  }
+}

@@ -1,30 +1,27 @@
-- name: lib/modules/intellij.vuejs.backend.jar
+- name: lib/modules/intellij.mpxjs.backend.jar
   contentModules:
-  - name: intellij.vuejs.backend
-- name: lib/modules/intellij.vuejs.common.jar
+  - name: intellij.mpxjs.backend
+- name: lib/modules/intellij.mpxjs.common.jar
   contentModules:
-  - name: intellij.vuejs.common
-- name: lib/modules/intellij.vuejs.copyright.jar
+  - name: intellij.mpxjs.common
+- name: lib/modules/intellij.mpxjs.copyright.jar
   contentModules:
-  - name: intellij.vuejs.copyright
-- name: lib/modules/intellij.vuejs.debugger.jar
+  - name: intellij.mpxjs.copyright
+- name: lib/modules/intellij.mpxjs.debugger.jar
   contentModules:
-  - name: intellij.vuejs.debugger
-- name: lib/modules/intellij.vuejs.eslint.jar
+  - name: intellij.mpxjs.debugger
+- name: lib/modules/intellij.mpxjs.eslint.jar
   contentModules:
-  - name: intellij.vuejs.eslint
-- name: lib/modules/intellij.vuejs.free.jar
+  - name: intellij.mpxjs.eslint
+- name: lib/modules/intellij.mpxjs.markdown.jar
   contentModules:
-  - name: intellij.vuejs.free
-- name: lib/modules/intellij.vuejs.markdown.jar
+  - name: intellij.mpxjs.markdown
+- name: lib/modules/intellij.mpxjs.prettier.jar
   contentModules:
-  - name: intellij.vuejs.markdown
-- name: lib/modules/intellij.vuejs.prettier.jar
+  - name: intellij.mpxjs.prettier
+- name: lib/modules/intellij.mpxjs.webpack.jar
   contentModules:
-  - name: intellij.vuejs.prettier
-- name: lib/modules/intellij.vuejs.webpack.jar
-  contentModules:
-  - name: intellij.vuejs.webpack
-- name: lib/vuejs-plugin.jar
+  - name: intellij.mpxjs.webpack
+- name: lib/mpxjs-plugin.jar
   modules:
-  - name: intellij.vuejs.plugin
+  - name: intellij.mpxjs.plugin

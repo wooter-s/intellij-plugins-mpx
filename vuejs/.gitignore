@@ -1,8 +1,11 @@
 *~
 .DS_Store
 .gradle
+.gradle-user-home
 .idea
 .intellijPlatform
 .kotlin
 build
 /work
+**/.cache/
+**/node_modules/

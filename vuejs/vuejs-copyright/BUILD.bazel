@@ -1,6 +1,6 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `build intellij.vuejs.copyright` start
+### auto-generated section `build intellij.mpxjs.copyright` start
 
 jvm_library(
     name = "copyright",
@@ -8,7 +8,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.copyright",
+    module_name = "intellij.mpxjs.copyright",
     resource_strip_prefix = "resources",
     resources = glob(
         ["resources/**/*"],
@@ -28,7 +28,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.copyright",
+    module_name = "intellij.mpxjs.copyright",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -36,13 +36,13 @@ jvm_library(
         "@community//plugins/copyright:copyright_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.copyright` end
+### auto-generated section `build intellij.mpxjs.copyright` end
 
-### auto-generated section `iml intellij.vuejs.copyright` start
+### auto-generated section `iml intellij.mpxjs.copyright` start
 exports_files(
     [
-        "intellij.vuejs.copyright.iml",
+        "intellij.mpxjs.copyright.iml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.copyright` end
+### auto-generated section `iml intellij.mpxjs.copyright` end

@@ -1,6 +1,6 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `build intellij.vuejs.debugger` start
+### auto-generated section `build intellij.mpxjs.debugger` start
 
 jvm_library(
     name = "debugger",
@@ -12,7 +12,7 @@ jvm_library(
         ],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.debugger",
+    module_name = "intellij.mpxjs.debugger",
     resource_strip_prefix = "resources",
     resources = glob(
         ["resources/**/*"],
@@ -36,7 +36,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.debugger",
+    module_name = "intellij.mpxjs.debugger",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -48,13 +48,13 @@ jvm_library(
         "//plugins/JavaScriptLanguage/web-platform:javascript-web_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.debugger` end
+### auto-generated section `build intellij.mpxjs.debugger` end
 
-### auto-generated section `iml intellij.vuejs.debugger` start
+### auto-generated section `iml intellij.mpxjs.debugger` start
 exports_files(
     [
-        "intellij.vuejs.debugger.iml",
+        "intellij.mpxjs.debugger.iml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.debugger` end
+### auto-generated section `iml intellij.mpxjs.debugger` end

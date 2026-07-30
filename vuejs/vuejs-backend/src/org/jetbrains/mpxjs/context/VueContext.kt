@@ -1,0 +1,139 @@
+// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package org.jetbrains.mpxjs.context
+
+import com.intellij.javascript.nodejs.PackageJsonData
+import com.intellij.javascript.web.WebFramework
+import com.intellij.javascript.web.hasFilesOfType
+import com.intellij.lang.javascript.buildTools.npm.PackageJsonUtil
+import com.intellij.lang.javascript.modules.NodeModuleUtil
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.polySymbols.PolySymbolModifier
+import com.intellij.polySymbols.context.PolyContext
+import com.intellij.polySymbols.framework.framework
+import com.intellij.polySymbols.html.HTML_ATTRIBUTES
+import com.intellij.polySymbols.query.PolySymbolQueryExecutorFactory
+import com.intellij.psi.PsiDirectory
+import com.intellij.psi.PsiElement
+import com.intellij.util.asSafely
+import com.intellij.util.text.SemVer
+import com.intellij.xml.util.HtmlUtil
+import org.jetbrains.mpxjs.codeInsight.SETUP_ATTRIBUTE_NAME
+import org.jetbrains.mpxjs.codeInsight.VAPOR_ATTRIBUTE_NAME
+import org.jetbrains.mpxjs.codeInsight.withoutPreRelease
+import org.jetbrains.mpxjs.index.VUE_MODULE
+import org.jetbrains.mpxjs.lang.html.VueFileType
+import org.jetbrains.mpxjs.libraries.KIND_VUE_CLASS_COMPONENT_LIBRARY
+import org.jetbrains.mpxjs.libraries.KIND_VUE_SSR_FRAMEWORK
+import org.jetbrains.mpxjs.libraries.KIND_VUE_STORE
+import org.jetbrains.mpxjs.libraries.VUE_CLASS_COMPONENT
+import org.jetbrains.mpxjs.libraries.VUE_FRAMEWORK_NUXT
+import org.jetbrains.mpxjs.libraries.VUE_STORE_PINIA
+import org.jetbrains.mpxjs.libraries.VUE_STORE_VUEX
+import org.jetbrains.mpxjs.libraries.componentDecorator.COMPONENT_DEC
+import org.jetbrains.mpxjs.libraries.componentDecorator.OPTIONS_DEC
+import org.jetbrains.mpxjs.web.VUE_TOP_LEVEL_ELEMENTS
+import org.jetbrains.mpxjs.web.VueFramework
+
+private val mpxFrameworkInstance get() = WebFramework.get("mpx")
+
+fun isVueContext(context: PsiElement): Boolean = mpxFrameworkInstance.isInContext(context)
+
+fun isVueContext(contextFile: VirtualFile, project: Project): Boolean = mpxFrameworkInstance.isInContext(contextFile, project)
+
+fun hasVueFiles(project: Project): Boolean =
+  hasFilesOfType(project, VueFileType)
+
+fun hasPinia(context: PsiElement): Boolean =
+  PolyContext.get(KIND_VUE_STORE, context) == VUE_STORE_PINIA
+
+fun hasVuex(context: PsiElement): Boolean =
+  PolyContext.get(KIND_VUE_STORE, context) == VUE_STORE_VUEX
+
+fun hasNuxt(context: PsiElement): Boolean =
+  PolyContext.get(KIND_VUE_SSR_FRAMEWORK, context) == VUE_FRAMEWORK_NUXT
+
+fun supportsDefineComponent(context: PsiElement): Boolean =
+  detectPkgVersion(context, VUE_MODULE).let {
+    it == null || it >= VERSION_2_7_0
+  }
+
+fun getVueClassComponentLibrary(location: PsiElement): String? =
+  PolyContext.get(KIND_VUE_CLASS_COMPONENT_LIBRARY, location)
+
+fun getVueClassComponentDecoratorName(location: PsiElement): String =
+  if (detectPkgVersion(location, VUE_CLASS_COMPONENT).let {
+      it == null || it < VERSION_8_0_0
+    })
+    COMPONENT_DEC
+  else
+    OPTIONS_DEC
+
+fun isVue3(context: PsiElement): Boolean =
+  isVueContext(context) && detectPkgVersion(context, VUE_MODULE).let {
+    it == null || it >= VERSION_3_0_0
+  }
+
+/**
+ * Determines if the given context corresponds to a Vue 2 project.
+ *
+ * @return `true` if the Vue version was identified and is 2, `false` otherwise.
+ */
+fun isVue2(
+  project: Project,
+  context: VirtualFile,
+): Boolean {
+  val version = detectPkgVersion(context, VUE_MODULE)
+  return isVueContext(context, project)
+         && version != null
+         && version.major == 2
+}
+
+fun supportsScriptSetup(context: PsiElement?): Boolean =
+  supportsScriptAttribute(context, SETUP_ATTRIBUTE_NAME)
+
+fun supportsScriptVapor(context: PsiElement?): Boolean =
+  supportsScriptAttribute(context, VAPOR_ATTRIBUTE_NAME)
+
+private fun supportsScriptAttribute(
+  context: PsiElement?,
+  attributeName: String,
+): Boolean =
+  context
+    ?.let { PolySymbolQueryExecutorFactory.create(it, false) }
+    ?.takeIf { it.context.framework == VueFramework.ID }
+    ?.nameMatchQuery(listOf(
+      VUE_TOP_LEVEL_ELEMENTS.withName(HtmlUtil.SCRIPT_TAG_NAME),
+      HTML_ATTRIBUTES.withName(attributeName),
+    ))
+    ?.exclude(PolySymbolModifier.ABSTRACT)
+    ?.run()
+    ?.firstOrNull() != null
+
+
+private val VERSION_2_0_0 = SemVer("2.0.0", 2, 0, 0)
+private val VERSION_2_7_0 = SemVer("2.7.0", 2, 7, 0)
+private val VERSION_3_0_0 = SemVer("3.0.0", 3, 0, 0)
+private val VERSION_8_0_0 = SemVer("8.0.0", 8, 0, 0)
+
+private fun detectPkgVersion(context: PsiElement, packageName: String): SemVer? {
+  val vf = context.containingFile?.originalFile?.virtualFile
+           ?: context.asSafely<PsiDirectory>()?.virtualFile
+           ?: return null
+  return detectPkgVersion(vf, packageName)
+}
+
+private fun detectPkgVersion(vf: VirtualFile, packageName: String): SemVer? {
+  var fromRange: SemVer? = null
+  var exact: SemVer? = null
+  PackageJsonUtil.processUpPackageJsonFilesInAllScope(vf) { pkgJson ->
+    val data = PackageJsonData.getOrCreate(pkgJson)
+    fromRange = data.allDependencyEntries[packageName]
+      ?.takeIf { it.versionRange.let { range -> !range.contains(" ") && !range.startsWith('<') } }
+      ?.parseVersion()
+    exact = pkgJson.parent.findFileByRelativePath(NodeModuleUtil.NODE_MODULES + "/" + packageName + "/" + PackageJsonUtil.FILE_NAME)
+      ?.let { PackageJsonData.getOrCreate(it).version }
+    fromRange == null && exact == null
+  }
+  return (exact ?: fromRange)?.withoutPreRelease()
+}

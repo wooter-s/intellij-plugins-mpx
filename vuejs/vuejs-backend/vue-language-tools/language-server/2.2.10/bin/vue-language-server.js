@@ -52579,7 +52579,7 @@ var require_ts = __commonJS({
       return {
         target,
         lib,
-        extensions: [".vue"],
+        extensions: [".mpx"],
         vitePressExtensions: [],
         petiteVueExtensions: [],
         jsxSlots: false,

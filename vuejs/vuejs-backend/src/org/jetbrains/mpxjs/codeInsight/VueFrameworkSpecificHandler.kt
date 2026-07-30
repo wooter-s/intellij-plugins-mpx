@@ -1,0 +1,101 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.codeInsight
+
+import com.intellij.javascript.nodejs.NodeModuleSearchUtil
+import com.intellij.lang.javascript.DialectDetector
+import com.intellij.lang.javascript.frameworks.JSFrameworkSpecificHandler
+import com.intellij.lang.javascript.psi.JSCallExpression
+import com.intellij.lang.javascript.psi.JSExpectedTypeKind
+import com.intellij.lang.javascript.psi.JSExpressionStatement
+import com.intellij.lang.javascript.psi.JSFunctionExpression
+import com.intellij.lang.javascript.psi.JSIndexedPropertyAccessExpression
+import com.intellij.lang.javascript.psi.JSReferenceExpression
+import com.intellij.lang.javascript.psi.JSType
+import com.intellij.lang.javascript.psi.ecma6.JSStringTemplateExpression
+import com.intellij.lang.javascript.psi.types.JSNamedTypeFactory
+import com.intellij.lang.javascript.psi.types.JSTypeImpl
+import com.intellij.lang.javascript.psi.types.JSTypeSourceFactory
+import com.intellij.lang.javascript.psi.util.JSStubBasedPsiTreeUtil
+import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolDescriptor
+import com.intellij.polySymbols.js.jsType
+import com.intellij.psi.PsiElement
+import com.intellij.psi.xml.XmlAttribute
+import com.intellij.util.asSafely
+import com.intellij.xml.util.HtmlUtil.SLOT_TAG_NAME
+import org.jetbrains.mpxjs.codeInsight.attributes.VueAttributeNameParser
+import org.jetbrains.mpxjs.context.hasPinia
+import org.jetbrains.mpxjs.index.getFunctionNameFromVueIndex
+import org.jetbrains.mpxjs.lang.expr.isVueExprMetaLanguage
+import org.jetbrains.mpxjs.lang.expr.psi.VueJSEmbeddedExpressionContent
+import org.jetbrains.mpxjs.model.SLOT_NAME_ATTRIBUTE
+import org.jetbrains.mpxjs.model.VueModelManager
+import org.jetbrains.mpxjs.model.evaluateInjectedType
+import org.jetbrains.mpxjs.model.findInjectForCall
+import org.jetbrains.mpxjs.model.provides
+import org.jetbrains.mpxjs.model.source.INJECT_FUN
+
+class VueFrameworkSpecificHandler : JSFrameworkSpecificHandler {
+  override fun useMoreAccurateEvaluation(context: PsiElement): Boolean = hasPinia(context)
+
+  override fun shouldPreserveAlias(type: JSType): Boolean {
+    return type is JSTypeImpl && type.typeText == "DefineProps"
+  }
+
+  override fun findExpectedType(element: PsiElement, parent: PsiElement?, expectedTypeKind: JSExpectedTypeKind): JSType? {
+    if (DialectDetector.isJavaScript(element) &&
+        element is JSCallExpression &&
+        isInjectCall(element)) {
+      return getInjectType(element)
+    }
+
+    if (isTopmostVueExpression(element, parent)) {
+      val attribute = element.parentOfTypeInAttribute<XmlAttribute>() ?: return null
+      val tag = attribute.parent
+      val attributeInfo = VueAttributeNameParser.parse(attribute.name, tag)
+      val tagName = tag.name
+
+      if (attributeInfo is VueAttributeNameParser.VueDirectiveInfo &&
+          attributeInfo.directiveKind == VueAttributeNameParser.VueDirectiveKind.ON) {
+        return if (isMethodHandler(element)) getPolySymbolType(attribute) else null
+      }
+      if (tagName == SLOT_TAG_NAME &&
+          attributeInfo is VueAttributeNameParser.VueDirectiveInfo &&
+          attributeInfo.directiveKind == VueAttributeNameParser.VueDirectiveKind.BIND &&
+          attributeInfo.arguments == SLOT_NAME_ATTRIBUTE) {
+        return JSNamedTypeFactory.createStringPrimitiveType(JSTypeSourceFactory.createTypeSource(element, true))
+      }
+    }
+
+    return null
+  }
+
+  private fun isInjectCall(element: JSCallExpression): Boolean =
+    element
+      .takeIf { getFunctionNameFromVueIndex(it) == INJECT_FUN }
+      ?.methodExpression.asSafely<JSReferenceExpression>()
+      ?.resolve()
+      ?.containingFile?.virtualFile
+      ?.let { NodeModuleSearchUtil.findDependencyRoot(it) }
+      ?.let { it.name == "vue" || it.parent?.name == "@vue" }
+    ?: false
+
+  private fun getInjectType(call: JSCallExpression): JSType? {
+    val component = VueModelManager.findEnclosingComponent(call) ?: return null
+    val inject = findInjectForCall(call, component) ?: return null
+    return evaluateInjectedType(inject, component.global.provides)
+  }
+
+  private fun isTopmostVueExpression(element: PsiElement, parent: PsiElement?) =
+    isVueExprMetaLanguage(element.language) &&
+    ((parent is JSExpressionStatement && JSStubBasedPsiTreeUtil.getParentOrNull(parent) is VueJSEmbeddedExpressionContent) ||
+     (element is JSStringTemplateExpression && parent is VueJSEmbeddedExpressionContent))
+
+  private fun isMethodHandler(element: PsiElement): Boolean {
+    return element is JSReferenceExpression ||
+           element is JSIndexedPropertyAccessExpression ||
+           element is JSFunctionExpression
+  }
+
+  private fun getPolySymbolType(attribute: XmlAttribute) =
+    attribute.descriptor.asSafely<HtmlAttributeSymbolDescriptor>()?.symbol?.jsType
+}

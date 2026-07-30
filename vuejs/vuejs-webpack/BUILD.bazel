@@ -1,6 +1,6 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `build intellij.vuejs.webpack` start
+### auto-generated section `build intellij.mpxjs.webpack` start
 
 jvm_library(
     name = "webpack",
@@ -12,7 +12,7 @@ jvm_library(
         ],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.webpack",
+    module_name = "intellij.mpxjs.webpack",
     resource_strip_prefix = "resources",
     resources = glob(
         ["resources/**/*"],
@@ -37,7 +37,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.webpack",
+    module_name = "intellij.mpxjs.webpack",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -50,13 +50,13 @@ jvm_library(
         "//plugins/JavaScriptLanguage/javascript-backend:javascript-backend_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.webpack` end
+### auto-generated section `build intellij.mpxjs.webpack` end
 
-### auto-generated section `iml intellij.vuejs.webpack` start
+### auto-generated section `iml intellij.mpxjs.webpack` start
 exports_files(
     [
-        "intellij.vuejs.webpack.iml",
+        "intellij.mpxjs.webpack.iml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.webpack` end
+### auto-generated section `iml intellij.mpxjs.webpack` end

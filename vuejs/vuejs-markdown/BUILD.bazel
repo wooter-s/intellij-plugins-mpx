@@ -1,6 +1,6 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `build intellij.vuejs.markdown` start
+### auto-generated section `build intellij.mpxjs.markdown` start
 
 jvm_library(
     name = "markdown",
@@ -12,7 +12,7 @@ jvm_library(
         ],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.markdown",
+    module_name = "intellij.mpxjs.markdown",
     resource_strip_prefix = "resources",
     resources = glob(
         ["resources/**/*"],
@@ -39,7 +39,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.markdown",
+    module_name = "intellij.mpxjs.markdown",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -54,13 +54,13 @@ jvm_library(
         "@community//platform/util:util_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.markdown` end
+### auto-generated section `build intellij.mpxjs.markdown` end
 
-### auto-generated section `iml intellij.vuejs.markdown` start
+### auto-generated section `iml intellij.mpxjs.markdown` start
 exports_files(
     [
-        "intellij.vuejs.markdown.iml",
+        "intellij.mpxjs.markdown.iml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.markdown` end
+### auto-generated section `iml intellij.mpxjs.markdown` end

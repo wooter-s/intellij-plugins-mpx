@@ -1,0 +1,70 @@
+// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package org.jetbrains.mpxjs
+
+import com.intellij.ide.fileTemplates.DefaultCreateFromTemplateHandler
+import com.intellij.ide.fileTemplates.FileTemplate
+import com.intellij.ide.fileTemplates.FileTemplate.ATTRIBUTE_NAME
+import com.intellij.ide.util.PropertiesComponent
+import com.intellij.openapi.fileTypes.ex.FileTypeManagerEx
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.text.StringUtil
+import com.intellij.psi.PsiDirectory
+import com.intellij.psi.PsiElement
+import org.jetbrains.mpxjs.lang.html.VueFileType
+
+class VueCreateFromTemplateHandler : DefaultCreateFromTemplateHandler() {
+
+  companion object {
+    const val MPX_CLASS_API_TEMPLATE_NAME: String = "Mpx Class API Component"
+    const val MPX_COMPOSITION_API_TEMPLATE_NAME: String = "Mpx Composition API Component"
+    const val MPX_OPTIONS_API_TEMPLATE_NAME: String = "Mpx Options API Component"
+    const val MPX_RECENT_TEMPLATES: String = "mpx.recent.templates"
+  }
+
+  override fun handlesTemplate(template: FileTemplate): Boolean {
+    val fileType = FileTypeManagerEx.getInstanceEx().getFileTypeByExtension(template.extension)
+    return VueFileType == fileType && template.name
+      .let { it == MPX_CLASS_API_TEMPLATE_NAME || it == MPX_COMPOSITION_API_TEMPLATE_NAME || it == MPX_OPTIONS_API_TEMPLATE_NAME }
+  }
+
+  override fun isNameRequired(): Boolean = true
+
+  override fun prepareProperties(props: MutableMap<String, Any>, filename: String?, template: FileTemplate, project: Project) {
+    val name = props[ATTRIBUTE_NAME] as? String ?: return
+    when (template.name) {
+      MPX_OPTIONS_API_TEMPLATE_NAME -> {
+        props["COMPONENT_NAME"] = name
+      }
+      MPX_COMPOSITION_API_TEMPLATE_NAME -> {
+      }
+      MPX_CLASS_API_TEMPLATE_NAME -> {
+        props["COMPONENT_NAME"] = String(name.mapIndexed { index, c ->
+          if ((index == 0 && !StringUtil.isJavaIdentifierStart(c))
+              || (index == 1 && !StringUtil.isJavaIdentifierPart(c)))
+            '_'
+          else
+            c
+        }.toCharArray())
+      }
+    }
+  }
+
+  override fun createFromTemplate(
+    project: Project,
+    directory: PsiDirectory,
+    fileName: String?,
+    template: FileTemplate,
+    templateText: String,
+    props: MutableMap<String, Any>,
+  ): PsiElement {
+    val propertiesComponent = PropertiesComponent.getInstance(project)
+    (propertiesComponent.getList(MPX_RECENT_TEMPLATES) ?: emptyList())
+      .toMutableList()
+      .let {
+        it.remove(template.name)
+        it.add(template.name)
+        propertiesComponent.setList(MPX_RECENT_TEMPLATES, it.toList())
+      }
+    return super.createFromTemplate(project, directory, fileName, template, templateText, props)
+  }
+}

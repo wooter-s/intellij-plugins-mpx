@@ -6,5 +6,5 @@ export function isVueFile(
     .slice(-4)
     .toLowerCase()
 
-  return extension === ".vue"
+  return extension === ".mpx"
 }
