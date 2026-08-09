@@ -252,6 +252,12 @@
           }
         },
         {
+          "name": "block",
+          "description": "仅作为逻辑渲染容器，不会在页面中渲染额外节点。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/reference/wxml/list.html",
+          "attributes": []
+        },
+        {
           "name": "button",
           "description": "基础库 1.0.0 开始支持，低版本需做兼容处理。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/component/button.html",
@@ -1587,6 +1593,38 @@
               }
             ]
           }
+        },
+        {
+          "name": "import",
+          "description": "导入目标 WXML 文件中定义的 template。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/reference/wxml/import.html",
+          "attributes": [
+            {
+              "name": "src",
+              "description": "导入的 WXML 文件路径。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              },
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "include",
+          "description": "引入目标 WXML 文件中除 template 与 WXS 外的内容。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/reference/wxml/import.html",
+          "attributes": [
+            {
+              "name": "src",
+              "description": "要引入的 WXML 文件路径。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              },
+              "required": true
+            }
+          ]
         },
         {
           "name": "input",
@@ -3427,6 +3465,86 @@
           ]
         },
         {
+          "name": "navigation-bar",
+          "description": "配置页面导航栏；需要作为 page-meta 的第一个子节点。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/component/navigation-bar.html",
+          "attributes": [
+            {
+              "name": "background-color",
+              "description": "导航栏背景颜色。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "color-animation-duration",
+              "description": "导航栏颜色动画时长，单位为毫秒。",
+              "value": {
+                "kind": "plain",
+                "type": "number"
+              },
+              "default": "0"
+            },
+            {
+              "name": "color-animation-timing-func",
+              "description": "导航栏颜色动画方式。",
+              "value": {
+                "kind": "plain",
+                "type": "enum"
+              },
+              "default": "linear",
+              "values": [
+                {
+                  "name": "linear"
+                },
+                {
+                  "name": "easeIn"
+                },
+                {
+                  "name": "easeOut"
+                },
+                {
+                  "name": "easeInOut"
+                }
+              ]
+            },
+            {
+              "name": "front-color",
+              "description": "导航栏前景颜色。",
+              "value": {
+                "kind": "plain",
+                "type": "enum"
+              },
+              "values": [
+                {
+                  "name": "#ffffff"
+                },
+                {
+                  "name": "#000000"
+                }
+              ]
+            },
+            {
+              "name": "loading",
+              "description": "是否显示 loading 加载提示。",
+              "value": {
+                "kind": "plain",
+                "type": "boolean"
+              },
+              "default": "false"
+            },
+            {
+              "name": "title",
+              "description": "导航栏标题。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            }
+          ]
+        },
+        {
           "name": "navigator",
           "description": "基础库 1.0.0 开始支持，低版本需做兼容处理。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/component/navigator.html",
@@ -3942,6 +4060,86 @@
           }
         },
         {
+          "name": "page-meta",
+          "description": "配置页面属性；只能作为页面模板内的第一个节点。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/component/page-meta.html",
+          "attributes": [
+            {
+              "name": "background-color",
+              "description": "窗口背景颜色。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "background-color-bottom",
+              "description": "底部窗口背景颜色，仅 iOS 支持。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "background-color-top",
+              "description": "顶部窗口背景颜色，仅 iOS 支持。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "background-text-style",
+              "description": "下拉背景字体和 loading 图的样式。",
+              "value": {
+                "kind": "plain",
+                "type": "enum"
+              },
+              "values": [
+                {
+                  "name": "dark"
+                },
+                {
+                  "name": "light"
+                }
+              ]
+            },
+            {
+              "name": "page-style",
+              "description": "页面根节点样式。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "root-font-size",
+              "description": "页面根字体大小，用作 rem 单位的基准。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "scroll-duration",
+              "description": "滚动动画时长，单位为毫秒。",
+              "value": {
+                "kind": "plain",
+                "type": "number"
+              },
+              "default": "300"
+            },
+            {
+              "name": "scroll-top",
+              "description": "页面滚动位置，支持 px 或 rpx。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            }
+          ]
+        },
+        {
           "name": "picker",
           "description": "基础库 1.0.0 开始支持，低版本需做兼容处理。",
           "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/component/picker.html",
@@ -4312,6 +4510,29 @@
               }
             ]
           }
+        },
+        {
+          "name": "qs",
+          "description": "在模板中声明或引入 QS 脚本模块。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxs/",
+          "attributes": [
+            {
+              "name": "module",
+              "description": "QS 模块名称。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "src",
+              "description": "引入的 QS 文件路径。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            }
+          ]
         },
         {
           "name": "radio",
@@ -5899,13 +6120,39 @@
           "extension": true,
           "attributes": [
             {
+              "name": "data",
+              "description": "传入模板的数据。",
+              "value": {
+                "kind": "plain",
+                "type": "any"
+              }
+            },
+            {
+              "name": "is",
+              "description": "要使用的模板名称。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "name",
+              "description": "定义模板时使用的名称。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
               "name": "scope",
               "deprecated": true,
               "value": {
                 "kind": "expression"
               }
             }
-          ]
+          ],
+          "description": "定义或使用可复用的 WXML 模板。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/reference/wxml/template.html"
         },
         {
           "name": "text",
@@ -7043,6 +7290,29 @@
               }
             ]
           }
+        },
+        {
+          "name": "wxs",
+          "description": "在 WXML 中声明或引入 WXS 脚本模块。",
+          "doc-url": "https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxs/",
+          "attributes": [
+            {
+              "name": "module",
+              "description": "WXS 模块名称。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            },
+            {
+              "name": "src",
+              "description": "引入的 WXS 文件路径。",
+              "value": {
+                "kind": "plain",
+                "type": "string"
+              }
+            }
+          ]
         }
       ],
       "attributes": [

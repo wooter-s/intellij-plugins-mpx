@@ -2,12 +2,57 @@
 package org.jetbrains.mpxjs.lang
 
 import com.intellij.codeInspection.htmlInspections.HtmlUnknownAttributeInspection
+import com.intellij.codeInspection.htmlInspections.HtmlUnknownTagInspection
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.templateLanguages.MultipleLangCommentProvider
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.jetbrains.mpxjs.inspections.DuplicateTagInspection
+import org.jetbrains.mpxjs.inspections.MpxUnrecognizedAttributeInspection
 
 class MpxNativeTemplateHighlightingTest : BasePlatformTestCase() {
+
+  fun testBlockAndWxsMetadataAreRecognized() {
+    myFixture.addFileToProject("format.wxs", "module.exports = {}")
+    enableNativeMetadataInspections()
+    // The test fixture reserves the exact `</block>` token as an editor block-selection marker.
+    myFixture.configureByText(
+      "native-block-wxs.mpx",
+      """
+        <template>
+          <wxs src="./format.wxs" module="format" />
+          <block wx:if="{{visible}}"><view /></block >
+          <block wx:else><text>{{format.value}}</text></block >
+        </template>
+        <script>export default { data: { visible: true } }</script>
+      """.trimIndent(),
+    )
+
+    assertNoNativeMetadataProblems()
+  }
+
+  fun testSpecialWxmlElementsAndTemplateAttributesAreRecognized() {
+    myFixture.addFileToProject("partial.wxml", "<view />")
+    myFixture.addFileToProject("format.qs", "module.exports = {}")
+    enableNativeMetadataInspections()
+    myFixture.configureByText(
+      "native-special-elements.mpx",
+      """
+        <template>
+          <import src="./partial.wxml" />
+          <include src="./partial.wxml" />
+          <qs src="./format.qs" module="format" />
+          <page-meta background-text-style="dark" scroll-duration="300">
+            <navigation-bar title="Title" loading front-color="#ffffff" />
+          </page-meta>
+          <template name="card"><view /></template>
+          <template is="card" data="{{item}}" />
+        </template>
+        <script>export default { data: { item: {} } }</script>
+      """.trimIndent(),
+    )
+
+    assertNoNativeMetadataProblems()
+  }
 
   fun testNativeMapMustacheAttributesDoNotProduceSyntaxErrors() {
     myFixture.configureByText(
@@ -145,5 +190,27 @@ class MpxNativeTemplateHighlightingTest : BasePlatformTestCase() {
       it.description?.contains("Duplicated top-level tag") == true
     }
     assertFalse("Two component scripts must still be reported as duplicates", duplicates.isEmpty())
+  }
+
+  private fun enableNativeMetadataInspections() {
+    myFixture.enableInspections(
+      HtmlUnknownTagInspection::class.java,
+      HtmlUnknownAttributeInspection::class.java,
+      MpxUnrecognizedAttributeInspection::class.java,
+    )
+  }
+
+  private fun assertNoNativeMetadataProblems() {
+    val problems = myFixture.doHighlighting().filter {
+      val description = it.description.orEmpty().lowercase()
+      description.contains("unknown html tag") ||
+      description.contains("is not allowed here") ||
+      description.contains("is not a valid value") ||
+      description.contains("unrecognized attribute")
+    }
+    assertTrue(
+      "Expected MPX native tags and attributes to be recognized: ${problems.map { it.description }}",
+      problems.isEmpty(),
+    )
   }
 }

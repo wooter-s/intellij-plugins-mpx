@@ -10,6 +10,7 @@ import { ComponentTransformer, DirectiveTransformer } from './transformers/index
 import { WebTypesBuilder } from './builders/index.js';
 import {
   getMpxDirectivesConfig,
+  getMpxNativeElements,
   getMpxTopLevelElements,
   getWechatContextualElements
 } from './data/index.js';
@@ -105,6 +106,10 @@ async function generate(options: GenerateOptions): Promise<void> {
   if (existingWebTypes) {
     builder.mergeExisting(existingWebTypes);
   }
+
+  // Add MPX/WXML extensions after the upstream definitions so duplicate names,
+  // especially `template`, retain their Vue attributes and gain native ones.
+  builder.addElements(getMpxNativeElements());
 
   const webTypes = builder.build();
 

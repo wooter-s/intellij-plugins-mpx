@@ -200,6 +200,9 @@ export class WebTypesBuilder {
         if (!existing.description && element.description) {
           existing.description = element.description;
         }
+        if (!existing['doc-url'] && element['doc-url']) {
+          existing['doc-url'] = element['doc-url'];
+        }
       } else {
         map.set(element.name, { ...element });
       }

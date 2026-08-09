@@ -70,7 +70,7 @@ class MpxPluginIdentityTest : TestCase() {
 
     val properties = read("gradle.properties")
     assertTextContains(properties, "mpx.platformVersion=2026.2.1")
-    assertTextContains(properties, "mpx.pluginVersion=262.9437.145.01")
+    assertTextContains(properties, "mpx.pluginVersion=262.9437.145.02")
   }
 
   fun testGeneratedWebTypesUseMpxFramework() {
@@ -81,6 +81,9 @@ class MpxPluginIdentityTest : TestCase() {
     assertTextContains(webTypes, "\"wx-directives\"")
     assertTextContains(webTypes, "\"items\": \"/js/events\"")
     assertTextContains(webTypes, "\"vue-file-top-elements\"")
+    listOf("block", "import", "include", "wxs", "qs", "page-meta", "navigation-bar").forEach {
+      assertTextContains(webTypes, "\"name\": \"$it\"")
+    }
     assertFalse(webTypes.contains("\"name\": \"bind alias\""))
   }
 
