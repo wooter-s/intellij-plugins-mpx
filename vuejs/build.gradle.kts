@@ -6,13 +6,13 @@ import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import java.util.zip.ZipFile
 
-apply(from = "../contrib-configuration/common.gradle.kts")
-
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm")
   id("org.jetbrains.intellij.platform")
 }
+
+apply(from = "../contrib-configuration/common.gradle.kts")
 
 val localIdePath = providers.gradleProperty("mpx.localIdePath").orNull
 
@@ -28,7 +28,7 @@ intellijPlatform {
     name = "Mpx.js"
     version = providers.gradleProperty("mpx.pluginVersion")
     ideaVersion {
-      sinceBuild = "262.8665"
+      sinceBuild = "262.9437"
       untilBuild = "262.*"
     }
   }

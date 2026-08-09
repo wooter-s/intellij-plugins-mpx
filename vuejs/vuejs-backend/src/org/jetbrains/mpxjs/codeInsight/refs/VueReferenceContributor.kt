@@ -3,8 +3,6 @@ package org.jetbrains.mpxjs.codeInsight.refs
 
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.html.refs.PATH_ATTRIBUTES
-import com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor
-import com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor.createPathReferenceProvider
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.paths.StaticPathReferenceProvider
 import com.intellij.patterns.XmlAttributeValuePattern
@@ -101,7 +99,7 @@ private val REF_ATTRIBUTE_REF_PROVIDER = object : PsiReferenceProvider() {
 
 private val PATH_VALUE_PATTERN = creatPathAttributeValuePattern()
 
-private val PATH_REFERENCE_PROVIDER = createPathReferenceProvider()
+private val PATH_REFERENCE_PROVIDER = createVuePathReferenceProvider()
 
 private class VueRefReference(
   element: PsiElement,
@@ -130,4 +128,4 @@ private class VuePathAttributeFilter : ElementFilter {
 
 private fun creatPathAttributeValuePattern(): XmlAttributeValuePattern = XmlPatterns.xmlAttributeValue()
   .and(FilterPattern(VuePathAttributeFilter()))
-  .withSuperParent(2, XmlPatterns.xmlTag().and(FilterPattern(JSXReferenceContributor.createPathContainedTagFilter(false))))
+  .withSuperParent(2, XmlPatterns.xmlTag().and(FilterPattern(createVuePathContainedTagFilter(false))))

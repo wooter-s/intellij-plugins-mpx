@@ -3,6 +3,7 @@ package org.jetbrains.mpxjs.lang
 
 import com.intellij.codeInspection.htmlInspections.HtmlUnknownAttributeInspection
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.psi.templateLanguages.MultipleLangCommentProvider
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.jetbrains.mpxjs.inspections.DuplicateTagInspection
 
@@ -98,6 +99,34 @@ class MpxNativeTemplateHighlightingTest : BasePlatformTestCase() {
     assertTrue(
       "The map callout attributes must be recognized: ${parsingProblems.map { it.description }}",
       parsingProblems.isEmpty(),
+    )
+  }
+
+  fun testPostCssStyleAndCommenterLoadWithoutPrivateModuleLinkage() {
+    myFixture.configureByText(
+      "postcss-style.mpx",
+      """
+        <template><view class="root" /></template>
+        <style lang="postcss">
+        .ro<caret>ot {
+          color: red;
+        }
+        </style>
+      """.trimIndent(),
+    )
+
+    val errors = myFixture.doHighlighting().filter { it.severity == HighlightSeverity.ERROR }
+    assertTrue(
+      "Expected embedded PostCSS to load without errors, but got: ${errors.map { it.description }}",
+      errors.isEmpty(),
+    )
+
+    val commenterProvider = MultipleLangCommentProvider.EP_NAME.extensionList
+      .firstOrNull { it.javaClass.name == "org.jetbrains.mpxjs.editor.VueCommenterProvider" }
+    assertNotNull("Expected the MPX multi-language commenter to load", commenterProvider)
+    assertTrue(
+      "Expected the MPX commenter to accept .mpx files",
+      commenterProvider!!.canProcess(myFixture.file, myFixture.file.viewProvider),
     )
   }
 

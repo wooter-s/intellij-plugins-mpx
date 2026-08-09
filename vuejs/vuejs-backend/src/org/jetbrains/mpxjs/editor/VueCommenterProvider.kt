@@ -18,9 +18,10 @@ import com.intellij.psi.util.PsiUtilCore
 import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.psi.xml.XmlElement
 import com.intellij.psi.xml.XmlTag
-import org.intellij.plugins.postcss.PostCssCommentProvider
-import org.intellij.plugins.postcss.PostCssLanguage
 import org.jetbrains.mpxjs.lang.html.VueLanguage
+
+private const val POST_CSS_LANGUAGE_ID = "PostCSS"
+private const val POST_CSS_COMMENT_PROVIDER_CLASS = "org.intellij.plugins.postcss.PostCssCommentProvider"
 
 private class VueCommenterProvider : MultipleLangCommentProvider {
   override fun getLineCommenter(file: PsiFile, editor: Editor, lineStartLanguage: Language, lineEndLanguage: Language): Commenter? {
@@ -43,8 +44,8 @@ private class VueCommenterProvider : MultipleLangCommentProvider {
                  elementLanguage
              }
              ?.let {
-               if (it == PostCssLanguage.INSTANCE)
-                 PostCssCommentProvider().getLineCommenter(file, editor, lineStartLanguage, lineEndLanguage)
+               if (it.id == POST_CSS_LANGUAGE_ID)
+                 getPostCssLineCommenter(file, editor, lineStartLanguage, lineEndLanguage, it)
                else
                  LanguageCommenters.INSTANCE.forLanguage(it)
              }
@@ -60,6 +61,18 @@ private class VueCommenterProvider : MultipleLangCommentProvider {
   }
 
   override fun canProcess(file: PsiFile, viewProvider: FileViewProvider): Boolean = file.language == VueLanguage
+
+  private fun getPostCssLineCommenter(
+    file: PsiFile,
+    editor: Editor,
+    lineStartLanguage: Language,
+    lineEndLanguage: Language,
+    postCssLanguage: Language,
+  ): Commenter? =
+    MultipleLangCommentProvider.EP_NAME.extensionList
+      .firstOrNull { it.javaClass.name == POST_CSS_COMMENT_PROVIDER_CLASS }
+      ?.getLineCommenter(file, editor, lineStartLanguage, lineEndLanguage)
+    ?: LanguageCommenters.INSTANCE.forLanguage(postCssLanguage)
 
   private fun findMinimalElementContainingRange(file: PsiFile, startOffset: Int, endOffset: Int): PsiElement? {
     val element1 = file.viewProvider.findElementAt(startOffset, VueLanguage)

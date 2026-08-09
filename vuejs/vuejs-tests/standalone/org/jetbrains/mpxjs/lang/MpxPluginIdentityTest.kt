@@ -33,15 +33,44 @@ class MpxPluginIdentityTest : TestCase() {
     assertTextContains(commonDescriptor, "<module name=\"intellij.css.common.psi\"/>")
   }
 
+  fun testBackendDoesNotLinkPrivatePlatformModules() {
+    val forbiddenImports = listOf(
+      "com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor",
+      "org.intellij.plugins.postcss.PostCssCommentProvider",
+      "org.intellij.plugins.postcss.PostCssLanguage",
+      "org.intellij.plugins.postcss.styleLanguageOrPostCss",
+    )
+    val sourceRoot = pluginRoot().resolve("vuejs-backend/src")
+    Files.walk(sourceRoot).use { paths ->
+      paths
+        .filter { Files.isRegularFile(it) && (it.toString().endsWith(".kt") || it.toString().endsWith(".java")) }
+        .forEach { file ->
+          val source = Files.readString(file)
+          forbiddenImports.forEach { forbiddenImport ->
+            assertFalse(
+              "Production source must not import private platform type $forbiddenImport: $file",
+              source.lineSequence().any { it.trim() == "import $forbiddenImport" },
+            )
+          }
+        }
+    }
+
+    val lspService = read(
+      "vuejs-backend/src/org/jetbrains/mpxjs/lang/typescript/service/lsp/VueLspTakeoverModeTypeScriptService.kt"
+    )
+    assertFalse(lspService.contains("override val diagnosticsConfiguration"))
+    assertFalse(lspService.contains("PublishDiagnostics"))
+  }
+
   fun testPluginTargetsTheWebStorm262Runtime() {
     val build = read("build.gradle.kts")
-    assertTextContains(build, "sinceBuild = \"262.8665\"")
+    assertTextContains(build, "sinceBuild = \"262.9437\"")
     assertTextContains(build, "untilBuild = \"262.*\"")
     assertTextContains(build, "jvmTarget.set(JvmTarget.JVM_25)")
 
     val properties = read("gradle.properties")
-    assertTextContains(properties, "mpx.platformVersion=2026.2.0.1")
-    assertTextContains(properties, "mpx.pluginVersion=262.8665.341.02")
+    assertTextContains(properties, "mpx.platformVersion=2026.2.1")
+    assertTextContains(properties, "mpx.pluginVersion=262.9437.145.01")
   }
 
   fun testGeneratedWebTypesUseMpxFramework() {
