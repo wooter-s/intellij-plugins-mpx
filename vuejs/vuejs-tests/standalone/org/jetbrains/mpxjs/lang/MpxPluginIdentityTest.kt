@@ -12,6 +12,8 @@ class MpxPluginIdentityTest : TestCase() {
     assertTextContains(descriptor, "<id>org.wooter.mpxjs</id>")
     assertTextContains(descriptor, "<name>Mpx.js</name>")
     assertTextContains(descriptor, "coordinate=\"npm:@mpxjs/core\"")
+    assertTextContains(descriptor, "<content>")
+    assertFalse(descriptor.contains("<content namespace="))
     assertFalse(descriptor.contains("intellij.vuejs."))
   }
 
@@ -21,6 +23,10 @@ class MpxPluginIdentityTest : TestCase() {
     assertTextContains(descriptor, "language=\"MpxJS\"")
     assertTextContains(descriptor, "language=\"MpxTS\"")
     assertTextContains(descriptor, "key=\"mpx.language.server.bundled.enabled\"")
+    assertTextContains(descriptor, "<plugin id=\"JavaScript\"/>")
+    assertTextContains(descriptor, "<plugin id=\"org.intellij.plugins.postcss\"/>")
+    assertFalse(descriptor.contains("<module name=\"intellij.javascript.ultimate\"/>"))
+    assertFalse(descriptor.contains("<module name=\"intellij.postcss.paid\"/>"))
     assertFalse(descriptor.contains("org.jetbrains.vuejs"))
 
     val commonDescriptor = read("vuejs-common/resources/intellij.mpxjs.common.xml")
@@ -35,7 +41,7 @@ class MpxPluginIdentityTest : TestCase() {
 
     val properties = read("gradle.properties")
     assertTextContains(properties, "mpx.platformVersion=2026.2.0.1")
-    assertTextContains(properties, "mpx.pluginVersion=262.8665.341.01")
+    assertTextContains(properties, "mpx.pluginVersion=262.8665.341.02")
   }
 
   fun testGeneratedWebTypesUseMpxFramework() {

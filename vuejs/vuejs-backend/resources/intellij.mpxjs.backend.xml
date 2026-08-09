@@ -14,11 +14,9 @@
     <module name="intellij.javascript.common"/>
     <module name="intellij.javascript.parser"/>
     <module name="intellij.javascript.psi.impl"/>
-    <module name="intellij.javascript.ultimate"/>
     <module name="intellij.javascript.web"/>
     <module name="intellij.json"/>
     <module name="intellij.platform.backend"/>
-    <module name="intellij.postcss.paid"/>
     <module name="intellij.spellchecker"/>
     <module name="intellij.mpxjs.common"/>
     <!-- endregion -->
