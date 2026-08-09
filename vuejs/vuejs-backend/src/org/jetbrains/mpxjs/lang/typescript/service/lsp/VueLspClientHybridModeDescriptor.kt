@@ -13,8 +13,7 @@ import com.intellij.platform.lsp.api.Lsp4jServer
 import com.intellij.platform.lsp.api.LspServerNotificationsHandler
 import com.intellij.platform.lsp.api.customization.LspCompletionCustomizer
 import com.intellij.platform.lsp.api.customization.LspCustomization
-import com.intellij.platform.lsp.api.customization.LspDiagnosticsCustomizer
-import com.intellij.platform.lsp.api.customization.LspDiagnosticsSupport
+import com.intellij.platform.lsp.api.customization.LspDiagnosticsDisabled
 import com.intellij.platform.lsp.api.customization.LspDocumentColorDisabled
 import com.intellij.platform.lsp.api.customization.LspDocumentLinkDisabled
 import com.intellij.platform.lsp.api.customization.LspFindReferencesDisabled
@@ -28,8 +27,6 @@ import com.intellij.platform.lsp.api.customization.LspInlayHintDisabled
 import com.intellij.platform.lsp.api.customization.LspSemanticTokensDisabled
 import com.intellij.platform.lsp.api.customization.LspWorkspaceSymbolCustomizer
 import com.intellij.platform.lsp.api.customization.LspWorkspaceSymbolDisabled
-import org.eclipse.lsp4j.Diagnostic
-import org.jetbrains.mpxjs.VueBundle
 import org.jetbrains.mpxjs.lang.typescript.service.VueServiceRuntime
 
 class VueLspClientHybridModeDescriptor(
@@ -78,12 +75,8 @@ class VueLspClientHybridModeDescriptor(
       override val workspaceSymbolCustomizer: LspWorkspaceSymbolCustomizer =
         LspWorkspaceSymbolDisabled
 
-      override val diagnosticsCustomizer: LspDiagnosticsCustomizer =
-        object : LspDiagnosticsSupport() {
-          override fun getMessage(diagnostic: Diagnostic): String {
-            return VueBundle.message("vue.configurable.title") + ": " + super.getTooltip(diagnostic)
-          }
-        }
+      override val diagnosticsCustomizer: LspDiagnosticsDisabled =
+        LspDiagnosticsDisabled
 
       override val completionCustomizer: LspCompletionCustomizer =
         BaseLspTypeScriptServiceCompletionSupport()

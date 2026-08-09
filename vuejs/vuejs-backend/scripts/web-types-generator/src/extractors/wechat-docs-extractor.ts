@@ -15,6 +15,18 @@ interface ExtractorOptions {
   components?: string[];
 }
 
+interface ExtractedProperties {
+  attributes: WechatAttribute[];
+  events: WechatEvent[];
+}
+
+const STANDARD_PROPERTY_SECTIONS = new Set([
+  '属性说明',
+  '通用属性',
+  'Skyline 特有属性',
+  'WebView 特有属性'
+]);
+
 export class WechatDocsExtractor {
   private options: ExtractorOptions;
 
@@ -55,23 +67,23 @@ export class WechatDocsExtractor {
 
     try {
       const html = await fetchHtml(url, { useCache: this.options.useCache });
-      const $ = load(html);
-
-      const description = this.extractDescription($);
-      const attributes = this.extractAttributes($);
-      const events = this.extractEvents($);
-
-      return {
-        name,
-        description,
-        docUrl: url,
-        attributes,
-        events
-      };
+      return this.extractFromHtml(name, html, url);
     } catch (error) {
       logger.debug(`Component not found or error: ${name}`, error);
       return null;
     }
+  }
+
+  extractFromHtml(name: string, html: string, docUrl = `${BASE_URL}/${name}.html`): WechatComponent {
+    const $ = load(html);
+    const { attributes, events } = this.extractProperties($, name);
+    return {
+      name,
+      description: this.extractDescription($),
+      docUrl,
+      attributes,
+      events
+    };
   }
 
   private extractDescription($: CheerioAPI): string {
@@ -86,53 +98,14 @@ export class WechatDocsExtractor {
     return desc || '';
   }
 
-  private extractAttributes($: CheerioAPI): WechatAttribute[] {
+  private extractProperties($: CheerioAPI, componentName: string): ExtractedProperties {
     const attributes: WechatAttribute[] = [];
+    const events: WechatEvent[] = [];
+    const propertyTables = this.findPropertyTables($, componentName);
 
-    // 查找属性表格（只处理顶层表格，跳过嵌套表格）
-    $('table').each((_, table) => {
-      const $table = $(table);
+    for (const $table of propertyTables) {
+      const headers = this.extractHeaders($table, $);
 
-      // 跳过嵌套在 td 中的表格（如"合法值"枚举表格）
-      if ($table.parents('td').length > 0) {
-        return;
-      }
-
-      // 使用直接子选择器获取表头，避免获取嵌套表格的表头
-      let headers: string[] = [];
-      const $thead = $table.children('thead');
-      if ($thead.length > 0) {
-        headers = $thead.find('> tr > th, > tr > td')
-          .map((_, th) => $(th).text().trim().toLowerCase())
-          .get();
-      } else {
-        // 如果没有 thead，使用第一行作为表头
-        const $firstRow = $table.children('tbody').children('tr').first();
-        if ($firstRow.length === 0) {
-          const $directFirstRow = $table.children('tr').first();
-          headers = $directFirstRow.children('th, td')
-            .map((_, th) => $(th).text().trim().toLowerCase())
-            .get();
-        } else {
-          headers = $firstRow.children('th, td')
-            .map((_, th) => $(th).text().trim().toLowerCase())
-            .get();
-        }
-      }
-
-      // 检查是否是属性表格
-      const hasAttrColumn = headers.some(h =>
-        h.includes('属性') || h.includes('property') || h.includes('name')
-      );
-      const hasTypeColumn = headers.some(h =>
-        h.includes('类型') || h.includes('type')
-      );
-
-      if (!hasAttrColumn || !hasTypeColumn) {
-        return;
-      }
-
-      // 确定列索引
       const nameIdx = headers.findIndex(h =>
         h.includes('属性') || h.includes('property') || h === 'name'
       );
@@ -153,23 +126,19 @@ export class WechatDocsExtractor {
       const $tbody = $table.children('tbody');
       const $rows = $tbody.length > 0
         ? $tbody.children('tr')
-        : $table.children('tr').slice(1); // 跳过第一行（表头）
+        : $table.children('tr').slice(1);
 
       $rows.each((_, tr) => {
         const $tr = $(tr);
 
-        // 跳过表头行
         if ($tr.children('th').length > 0) {
           return;
         }
 
-        // 只获取直接子 td，避免获取嵌套表格的 td
         const cells = $tr.children('td').map((_, td) => {
-          // 获取 td 的直接文本，忽略嵌套表格的内容
           const $td = $(td);
           const $nestedTable = $td.find('table');
           if ($nestedTable.length > 0) {
-            // 如果有嵌套表格，只获取嵌套表格之前的文本
             const $clone = $td.clone();
             $clone.find('table').remove();
             return $clone.text().trim();
@@ -180,20 +149,32 @@ export class WechatDocsExtractor {
         if (cells.length === 0) return;
 
         const name = nameIdx >= 0 ? cells[nameIdx] : cells[0];
-        if (!name || name === '属性' || name === '合法值') return; // Skip header row or enum value rows
+        if (!name || name === '属性' || name === '合法值') return;
 
         const typeStr = typeIdx >= 0 ? cells[typeIdx] : '';
         const defaultVal = defaultIdx >= 0 ? cells[defaultIdx] : undefined;
         const requiredStr = requiredIdx >= 0 ? cells[requiredIdx] : '';
         const description = descIdx >= 0 ? cells[descIdx] : cells[cells.length - 1] || '';
+        const type = this.parseType(typeStr);
+        const normalizedName = this.normalizeAttributeName(name);
 
-        // 解析枚举值（从嵌套表格中提取）
         const $descTd = $tr.children('td').eq(descIdx >= 0 ? descIdx : cells.length - 1);
         const enumValues = this.parseEnumValuesFromCell($descTd, $, typeStr, description);
 
+        if (type === 'function') {
+          const eventName = this.extractEventName(normalizedName);
+          if (eventName) {
+            events.push({
+              name: eventName,
+              description: this.cleanDescription(description)
+            });
+          }
+          return;
+        }
+
         attributes.push({
-          name: this.normalizeAttributeName(name),
-          type: this.parseType(typeStr),
+          name: normalizedName,
+          type,
           defaultValue: defaultVal && defaultVal !== '-' ? defaultVal : undefined,
           required: requiredStr.includes('是') || requiredStr.toLowerCase() === 'true',
           description: this.cleanDescription(description),
@@ -201,9 +182,95 @@ export class WechatDocsExtractor {
           deprecated: description.includes('已废弃') || description.includes('deprecated')
         });
       });
+    }
+
+    return {
+      attributes: this.dedupeByName(attributes),
+      events: this.dedupeByName(events)
+    };
+  }
+
+  private findPropertyTables(
+    $: CheerioAPI,
+    componentName: string
+  ): ReturnType<CheerioAPI>[] {
+    const candidates: Array<{
+      table: ReturnType<CheerioAPI>;
+      heading: string;
+    }> = [];
+
+    $('table').each((_, table) => {
+      const $table = $(table);
+      if ($table.parents('td').length > 0) {
+        return;
+      }
+      const headers = this.extractHeaders($table, $);
+      if (!this.isPropertyTable(headers)) {
+        return;
+      }
+      candidates.push({
+        table: $table,
+        heading: this.findTableHeading($table)
+      });
     });
 
-    return attributes;
+    const selected = candidates.filter(({ heading }) =>
+      STANDARD_PROPERTY_SECTIONS.has(heading)
+      || (componentName === 'picker' && /\bmode\s*=/i.test(heading))
+    );
+
+    if (selected.length > 0) {
+      return selected.map(({ table }) => table);
+    }
+
+    if (candidates.length > 0) {
+      logger.warn(
+        `No recognized property section for ${componentName}; falling back to the first property table.`
+      );
+      return [candidates[0].table];
+    }
+
+    return [];
+  }
+
+  private extractHeaders(
+    $table: ReturnType<CheerioAPI>,
+    $: CheerioAPI
+  ): string[] {
+    const $thead = $table.children('thead');
+    if ($thead.length > 0) {
+      return $thead.find('> tr > th, > tr > td')
+        .map((_, th) => $(th).text().trim().toLowerCase())
+        .get();
+    }
+
+    const $firstRow = $table.children('tbody').children('tr').first();
+    const $headers = $firstRow.length > 0
+      ? $firstRow.children('th, td')
+      : $table.children('tr').first().children('th, td');
+    return $headers
+      .map((_, th) => $(th).text().trim().toLowerCase())
+      .get();
+  }
+
+  private isPropertyTable(headers: string[]): boolean {
+    return headers.some(h =>
+      h.includes('属性') || h.includes('property') || h === 'name'
+    ) && headers.some(h =>
+      h.includes('类型') || h.includes('type')
+    );
+  }
+
+  private findTableHeading($table: ReturnType<CheerioAPI>): string {
+    let current = $table;
+    for (let depth = 0; depth < 5; depth++) {
+      const $heading = current.prevAll('h1, h2, h3, h4, h5, h6').first();
+      if ($heading.length > 0) {
+        return $heading.text().replace(/^#+\s*/, '').trim();
+      }
+      current = current.parent();
+    }
+    return '';
   }
 
   private parseEnumValuesFromCell($cell: ReturnType<CheerioAPI>, $: CheerioAPI, typeStr: string, description: string): string[] {
@@ -226,90 +293,6 @@ export class WechatDocsExtractor {
     }
 
     return [...new Set(values)]; // Remove duplicates
-  }
-
-  private extractEvents($: CheerioAPI): WechatEvent[] {
-    const events: WechatEvent[] = [];
-
-    // 查找事件表格（只处理顶层表格，跳过嵌套表格）
-    $('table').each((_, table) => {
-      const $table = $(table);
-
-      // 跳过嵌套在 td 中的表格
-      if ($table.parents('td').length > 0) {
-        return;
-      }
-
-      // 使用直接子选择器获取表头
-      let headers: string[] = [];
-      const $thead = $table.children('thead');
-      if ($thead.length > 0) {
-        headers = $thead.find('> tr > th, > tr > td')
-          .map((_, th) => $(th).text().trim().toLowerCase())
-          .get();
-      } else {
-        const $firstRow = $table.children('tbody').children('tr').first();
-        if ($firstRow.length === 0) {
-          const $directFirstRow = $table.children('tr').first();
-          headers = $directFirstRow.children('th, td')
-            .map((_, th) => $(th).text().trim().toLowerCase())
-            .get();
-        } else {
-          headers = $firstRow.children('th, td')
-            .map((_, th) => $(th).text().trim().toLowerCase())
-            .get();
-        }
-      }
-
-      // 检查是否是事件表格
-      const hasEventColumn = headers.some(h =>
-        h.includes('事件') || h.includes('event')
-      );
-
-      if (!hasEventColumn) {
-        return;
-      }
-
-      const nameIdx = headers.findIndex(h =>
-        h.includes('事件') || h.includes('event') || h === 'name'
-      );
-      const descIdx = headers.findIndex(h =>
-        h.includes('说明') || h.includes('description')
-      );
-
-      // 解析表格行（只处理直接子行）
-      const $tbody = $table.children('tbody');
-      const $rows = $tbody.length > 0
-        ? $tbody.children('tr')
-        : $table.children('tr').slice(1);
-
-      $rows.each((_, tr) => {
-        const $tr = $(tr);
-
-        // 跳过表头行
-        if ($tr.children('th').length > 0) {
-          return;
-        }
-
-        const cells = $tr.children('td').map((_, td) => $(td).text().trim()).get();
-
-        if (cells.length === 0) return;
-
-        const rawName = nameIdx >= 0 ? cells[nameIdx] : cells[0];
-        const description = descIdx >= 0 ? cells[descIdx] : cells[cells.length - 1] || '';
-
-        // 提取事件名（去掉 bind 前缀）
-        const name = this.extractEventName(rawName);
-        if (!name) return;
-
-        events.push({
-          name,
-          description: this.cleanDescription(description)
-        });
-      });
-    });
-
-    return events;
   }
 
   private normalizeAttributeName(name: string): string {
@@ -386,5 +369,15 @@ export class WechatDocsExtractor {
       .replace(/\s+/g, ' ')
       .replace(/。+$/, '。')
       .trim();
+  }
+
+  private dedupeByName<T extends { name: string }>(items: T[]): T[] {
+    const byName = new Map<string, T>();
+    for (const item of items) {
+      if (!byName.has(item.name)) {
+        byName.set(item.name, item);
+      }
+    }
+    return [...byName.values()];
   }
 }

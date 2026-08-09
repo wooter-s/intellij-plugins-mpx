@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "test": "tsx --test test/**/*.test.ts",
     "generate": "tsx src/index.ts generate",
     "generate:dry-run": "tsx src/index.ts generate --dry-run --verbose",
     "generate:no-cache": "tsx src/index.ts generate --no-cache",

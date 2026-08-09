@@ -27,9 +27,9 @@ class DuplicateTagInspection : LocalInspectionTool() {
         val scriptTag = HtmlUtil.isScriptTag(tag)
         if (!templateTag && !scriptTag) return
         val parent = tag.parent as? XmlDocument ?: return
-        val isScriptSetup = tag.isScriptSetupTag()
+        val scriptRole = tag.scriptRole()
         if (parent.childrenOfType<XmlTag>().any {
-            it != tag && ((scriptTag && HtmlUtil.isScriptTag(it) && isScriptSetup == it.isScriptSetupTag())
+            it != tag && ((scriptTag && HtmlUtil.isScriptTag(it) && scriptRole == it.scriptRole())
                           || (templateTag && it.name == TEMPLATE_TAG_NAME))
           }) {
           val tagName = XmlTagUtil.getStartTagNameElement(tag)
@@ -39,5 +39,18 @@ class DuplicateTagInspection : LocalInspectionTool() {
         }
       }
     }
+  }
+
+  private fun XmlTag.scriptRole(): ScriptRole =
+    when {
+      isScriptSetupTag() -> ScriptRole.SETUP
+      getAttributeValue("name").equals("json", ignoreCase = true) -> ScriptRole.JSON_CONFIG
+      else -> ScriptRole.NORMAL
+    }
+
+  private enum class ScriptRole {
+    NORMAL,
+    SETUP,
+    JSON_CONFIG,
   }
 }

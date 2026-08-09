@@ -5,7 +5,7 @@ import type {
   VueDirective,
   VueComponent,
   ElementAttribute,
-  WxEvent
+  VueFileTopElement
 } from '../types/index.js';
 
 interface BuilderConfig {
@@ -18,9 +18,10 @@ export class WebTypesBuilder {
   private config: BuilderConfig;
   private elements: HtmlElement[] = [];
   private attributes: HtmlAttribute[] = [];
-  private directives: VueDirective[] = [];
+  private vueDirectives: VueDirective[] = [];
+  private wxDirectives: VueDirective[] = [];
+  private topLevelElements: VueFileTopElement[] = [];
   private vueComponents: VueComponent[] = [];
-  private wxEvents: WxEvent[] = [];
 
   constructor(config: BuilderConfig) {
     this.config = {
@@ -49,8 +50,13 @@ export class WebTypesBuilder {
   /**
    * 添加 Vue/Mpx 指令
    */
-  addDirectives(directives: VueDirective[]): this {
-    this.directives.push(...directives);
+  addWxDirectives(directives: VueDirective[]): this {
+    this.wxDirectives.push(...directives);
+    return this;
+  }
+
+  addTopLevelElements(elements: VueFileTopElement[]): this {
+    this.topLevelElements.push(...elements);
     return this;
   }
 
@@ -59,14 +65,6 @@ export class WebTypesBuilder {
    */
   addVueComponents(components: VueComponent[]): this {
     this.vueComponents.push(...components);
-    return this;
-  }
-
-  /**
-   * 添加微信事件定义（wx-events 命名空间）
-   */
-  addWxEvents(events: WxEvent[]): this {
-    this.wxEvents.push(...events);
     return this;
   }
 
@@ -85,14 +83,28 @@ export class WebTypesBuilder {
 
     if (html?.attributes) {
       const newNames = new Set(this.attributes.map(a => a.name));
-      const toMerge = html.attributes.filter(a => !newNames.has(a.name));
+      const toMerge = html.attributes.filter(a =>
+        a.name !== 'bind alias' && !newNames.has(a.name)
+      );
       this.attributes.push(...toMerge);
     }
 
     if (html?.['vue-directives']) {
-      const newNames = new Set(this.directives.map(d => d.name));
+      const newNames = new Set(this.vueDirectives.map(d => d.name));
       const toMerge = html['vue-directives'].filter(d => !newNames.has(d.name));
-      this.directives.push(...toMerge);
+      this.vueDirectives.push(...toMerge);
+    }
+
+    if (html?.['wx-directives']) {
+      const newNames = new Set(this.wxDirectives.map(d => d.name));
+      const toMerge = html['wx-directives'].filter(d => !newNames.has(d.name));
+      this.wxDirectives.push(...toMerge);
+    }
+
+    if (html?.['vue-file-top-elements']) {
+      const newNames = new Set(this.topLevelElements.map(e => e.name));
+      const toMerge = html['vue-file-top-elements'].filter(e => !newNames.has(e.name));
+      this.topLevelElements.push(...toMerge);
     }
 
     if (html?.['vue-components']) {
@@ -101,25 +113,21 @@ export class WebTypesBuilder {
       this.vueComponents.push(...toMerge);
     }
 
-    if (html?.['wx-events']) {
-      const newNames = new Set(this.wxEvents.map(e => e.name));
-      const toMerge = html['wx-events'].filter(e => !newNames.has(e.name));
-      this.wxEvents.push(...toMerge);
-    }
-
     return this;
   }
 
   /**
    * 构建最终的 WebTypes 对象
    * 注意：键的顺序很重要，需要与原始文件保持一致以减少 diff
-   * 顺序：elements, wx-events, attributes, vue-directives, vue-components
+   * 顺序：elements, attributes, vue-directives, wx-directives, vue-file-top-elements, vue-components
    */
   build(): WebTypes {
     // 合并并去重
     const elements = this.dedupeElements(this.elements);
     const attributes = this.dedupeAttributes(this.attributes);
-    const directives = this.dedupeDirectives(this.directives);
+    const vueDirectives = this.dedupeDirectives(this.vueDirectives);
+    const wxDirectives = this.dedupeDirectives(this.wxDirectives);
+    const topLevelElements = this.dedupeTopLevelElements(this.topLevelElements);
 
     const webTypes: WebTypes = {
       $schema: '../../../../community/platform/polySymbols/web-types-gen/resources/web-types.json',
@@ -134,22 +142,25 @@ export class WebTypesBuilder {
       }
     };
 
-    // 按照原始文件的顺序添加：elements, wx-events, attributes, vue-directives, vue-components
+    // 按照原始文件的顺序添加各命名空间
     if (elements.length > 0) {
       webTypes.contributions.html.elements = elements;
-    }
-
-    // wx-events 放在 elements 之后（与原始文件顺序一致）
-    if (this.wxEvents.length > 0) {
-      webTypes.contributions.html['wx-events'] = this.wxEvents;
     }
 
     if (attributes.length > 0) {
       webTypes.contributions.html.attributes = attributes;
     }
 
-    if (directives.length > 0) {
-      webTypes.contributions.html['vue-directives'] = directives;
+    if (vueDirectives.length > 0) {
+      webTypes.contributions.html['vue-directives'] = vueDirectives;
+    }
+
+    if (wxDirectives.length > 0) {
+      webTypes.contributions.html['wx-directives'] = wxDirectives;
+    }
+
+    if (topLevelElements.length > 0) {
+      webTypes.contributions.html['vue-file-top-elements'] = topLevelElements;
     }
 
     if (this.vueComponents.length > 0) {
@@ -172,14 +183,17 @@ export class WebTypesBuilder {
           element.attributes || []
         );
 
-        // 合并事件
-        if (element.events) {
-          existing.events = [
-            ...(existing.events || []),
-            ...element.events.filter(
-              e => !existing.events?.some(ex => ex.name === e.name)
-            )
-          ];
+        if (element.js?.events) {
+          const existingEvents = existing.js?.events || [];
+          existing.js = {
+            ...existing.js,
+            events: [
+              ...existingEvents,
+              ...element.js.events.filter(
+                event => !existingEvents.some(existingEvent => existingEvent.name === event.name)
+              )
+            ]
+          };
         }
 
         // 如果新元素有描述而旧的没有，使用新描述
@@ -231,6 +245,16 @@ export class WebTypesBuilder {
       }
     }
 
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private dedupeTopLevelElements(elements: VueFileTopElement[]): VueFileTopElement[] {
+    const map = new Map<string, VueFileTopElement>();
+    for (const element of elements) {
+      if (!map.has(element.name)) {
+        map.set(element.name, element);
+      }
+    }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 }

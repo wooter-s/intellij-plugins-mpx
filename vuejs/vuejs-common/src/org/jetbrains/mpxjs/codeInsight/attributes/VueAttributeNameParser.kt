@@ -185,9 +185,7 @@ class VueAttributeNameParser private constructor() {
           || attributeName.startsWith("catch:")
           || attributeName.startsWith("mut-bind:")
           || attributeName.startsWith("capture-bind:")
-          || attributeName.startsWith("capture-catch:")
-          || attributeName.startsWith("mark:")
-          || attributeName.startsWith("model:")) {
+          || attributeName.startsWith("capture-catch:")) {
         return true
       }
       // No-colon syntax: bindtap, catchtouchmove, etc.
@@ -198,8 +196,6 @@ class VueAttributeNameParser private constructor() {
              || (attributeName.startsWith("mut-bind") && len > 8)
              || (attributeName.startsWith("catch") && len > 5)
              || (attributeName.startsWith("bind") && len > 4)
-             || (attributeName.startsWith("model") && len > 5)
-             || (attributeName.startsWith("mark") && len > 4)
     }
 
     /**
@@ -213,8 +209,6 @@ class VueAttributeNameParser private constructor() {
         name.startsWith("mut-bind") -> Pair("mut-bind", name.substring(8))
         name.startsWith("catch") -> Pair("catch", name.substring(5))
         name.startsWith("bind") -> Pair("bind", name.substring(4))
-        name.startsWith("model") -> Pair("model", name.substring(5))
-        name.startsWith("mark") -> Pair("mark", name.substring(4))
         else -> Pair(name, "")
       }
     }

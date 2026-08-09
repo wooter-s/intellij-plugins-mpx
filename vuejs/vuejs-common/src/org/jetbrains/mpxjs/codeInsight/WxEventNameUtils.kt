@@ -21,9 +21,7 @@ object WxEventNameUtils {
     "capture-bind" to "capture-bind:",
     "mut-bind" to "mut-bind:",
     "catch" to "catch:",
-    "bind" to "bind:",
-    "model" to "model:",
-    "mark" to "mark:"
+    "bind" to "bind:"
   )
 
   /**

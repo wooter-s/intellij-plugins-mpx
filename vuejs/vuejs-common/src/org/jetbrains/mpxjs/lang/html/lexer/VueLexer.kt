@@ -10,6 +10,7 @@ import com.intellij.lexer.Lexer
 import com.intellij.lexer.MergeFunction
 import com.intellij.lexer.MergingLexerAdapterBase
 import com.intellij.openapi.project.Project
+import com.intellij.psi.css.CssHtmlEmbeddedContentSupport
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.xml.XmlTokenType
@@ -32,6 +33,7 @@ class VueLexer(
 
   override fun acceptEmbeddedContentProvider(provider: HtmlEmbeddedContentProvider): Boolean {
     return provider !is HtmlScriptStyleEmbeddedContentProvider
+           && provider !is CssHtmlEmbeddedContentSupport.CssInlineEmbeddedContentProvider
   }
 
   override fun createAttributeEmbedmentTokenSet(): TokenSet {

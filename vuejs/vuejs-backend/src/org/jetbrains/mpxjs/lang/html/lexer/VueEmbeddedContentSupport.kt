@@ -6,9 +6,11 @@ import com.intellij.html.embedding.HtmlEmbeddedContentProvider
 import com.intellij.html.embedding.HtmlEmbeddedContentSupport
 import com.intellij.html.embedding.HtmlEmbeddedContentSupport.Companion.getStyleTagEmbedmentInfo
 import com.intellij.html.embedding.HtmlEmbedmentInfo
+import com.intellij.html.embedding.HtmlLanguageEmbedmentInfo
 import com.intellij.html.embedding.HtmlTagEmbeddedContentProvider
 import com.intellij.html.embedding.HtmlTokenEmbeddedContentProvider
 import com.intellij.lang.Language
+import com.intellij.lang.css.CSSLanguage
 import com.intellij.lang.html.HTMLLanguage
 import com.intellij.lang.javascript.JSModuleContentType
 import com.intellij.lang.javascript.JavaScriptSupportLoader
@@ -18,6 +20,7 @@ import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.psi.css.impl.CssAdvancedElementTypes
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.xml.XmlElementType.HTML_EMBEDDED_CONTENT
 import com.intellij.psi.xml.XmlTokenType
@@ -36,6 +39,7 @@ class VueEmbeddedContentSupport : HtmlEmbeddedContentSupport {
 
   override fun createEmbeddedContentProviders(lexer: BaseHtmlLexer): List<HtmlEmbeddedContentProvider> =
     listOf(
+      VueStyleAttributeEmbeddedContentProvider(lexer),
       VueAttributeEmbeddedContentProvider(lexer),
       VueTagEmbeddedContentProvider(lexer),
       HtmlTokenEmbeddedContentProvider(
@@ -45,6 +49,35 @@ class VueEmbeddedContentSupport : HtmlEmbeddedContentSupport {
         { VueJSEmbeddedExprTokenType.createInterpolationExpression((lexer as VueLexer).langMode, lexer.project) }
       )
     )
+}
+
+private class VueStyleAttributeEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlAttributeEmbeddedContentProvider(lexer) {
+  override fun isInterestedInTag(tagName: CharSequence): Boolean = true
+
+  override fun isInterestedInAttribute(attributeName: CharSequence): Boolean =
+    namesEqual(attributeName, "style")
+
+  override fun createEmbedmentInfo(): HtmlEmbedmentInfo? =
+    if (isPureInterpolation()) {
+      null
+    }
+    else {
+      HtmlLanguageEmbedmentInfo(CssAdvancedElementTypes.CSS_DECLARATION_BLOCK, CSSLanguage.INSTANCE)
+    }
+
+  private fun isPureInterpolation(): Boolean {
+    val delegate = lexer.delegate
+    val endOffset = findTheEndOfEmbedment().first
+    val value = delegate.bufferSequence
+      .subSequence(delegate.tokenStart, endOffset)
+      .trim()
+    val (startDelimiter, endDelimiter) =
+      (lexer as VueLexer).interpolationConfig ?: ("{{" to "}}")
+
+    return value.length > startDelimiter.length + endDelimiter.length
+           && value.startsWith(startDelimiter)
+           && value.endsWith(endDelimiter)
+  }
 }
 
 private class VueAttributeEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlAttributeEmbeddedContentProvider(lexer) {

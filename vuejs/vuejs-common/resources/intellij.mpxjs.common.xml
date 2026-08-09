@@ -3,6 +3,7 @@
   <dependencies>
     <plugin id="JavaScript"/>
     <module name="intellij.css"/>
+    <module name="intellij.css.common.psi"/>
     <module name="intellij.javascript.parser"/>
     <module name="intellij.javascript.psi.impl"/>
     <module name="intellij.javascript.web"/>

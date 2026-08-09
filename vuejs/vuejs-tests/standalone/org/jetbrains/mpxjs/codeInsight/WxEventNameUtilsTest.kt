@@ -66,24 +66,13 @@ class WxEventNameUtilsTest : TestCase() {
     assertTrue(WxEventNameUtils.isWxEventAttribute("capture-catch:touchstart"))
   }
 
-  fun testIsWxEventAttribute_modelMerged() {
-    assertTrue(WxEventNameUtils.isWxEventAttribute("modelvalue"))
-    assertTrue(WxEventNameUtils.isWxEventAttribute("modelchecked"))
-  }
-
-  fun testIsWxEventAttribute_modelColon() {
-    assertTrue(WxEventNameUtils.isWxEventAttribute("model:value"))
-    assertTrue(WxEventNameUtils.isWxEventAttribute("model:checked"))
-  }
-
-  fun testIsWxEventAttribute_markMerged() {
-    assertTrue(WxEventNameUtils.isWxEventAttribute("marktap"))
-    assertTrue(WxEventNameUtils.isWxEventAttribute("marktouchstart"))
-  }
-
-  fun testIsWxEventAttribute_markColon() {
-    assertTrue(WxEventNameUtils.isWxEventAttribute("mark:tap"))
-    assertTrue(WxEventNameUtils.isWxEventAttribute("mark:touchstart"))
+  fun testIsWxEventAttribute_markAndModelAreNotEvents() {
+    assertFalse(WxEventNameUtils.isWxEventAttribute("modelvalue"))
+    assertFalse(WxEventNameUtils.isWxEventAttribute("model:value"))
+    assertFalse(WxEventNameUtils.isWxEventAttribute("marktap"))
+    assertFalse(WxEventNameUtils.isWxEventAttribute("mark:tap"))
+    assertFalse(WxEventNameUtils.isWxEventAttribute("markers"))
+    assertFalse(WxEventNameUtils.isWxEventAttribute("marker-id"))
   }
 
   fun testIsWxEventAttribute_notEvent() {
@@ -121,8 +110,8 @@ class WxEventNameUtilsTest : TestCase() {
     assertTrue(WxEventNameUtils.isWxEventAttribute("mut-bind:"))
     assertTrue(WxEventNameUtils.isWxEventAttribute("capture-bind:"))
     assertTrue(WxEventNameUtils.isWxEventAttribute("capture-catch:"))
-    assertTrue(WxEventNameUtils.isWxEventAttribute("model:"))
-    assertTrue(WxEventNameUtils.isWxEventAttribute("mark:"))
+    assertFalse(WxEventNameUtils.isWxEventAttribute("model:"))
+    assertFalse(WxEventNameUtils.isWxEventAttribute("mark:"))
   }
 
   // ============ toColonSyntax tests ============
@@ -154,13 +143,13 @@ class WxEventNameUtilsTest : TestCase() {
   }
 
   fun testToColonSyntax_model() {
-    assertEquals("model:value", WxEventNameUtils.toColonSyntax("modelvalue"))
-    assertEquals("model:checked", WxEventNameUtils.toColonSyntax("modelchecked"))
+    assertNull(WxEventNameUtils.toColonSyntax("modelvalue"))
+    assertNull(WxEventNameUtils.toColonSyntax("modelchecked"))
   }
 
   fun testToColonSyntax_mark() {
-    assertEquals("mark:tap", WxEventNameUtils.toColonSyntax("marktap"))
-    assertEquals("mark:touchstart", WxEventNameUtils.toColonSyntax("marktouchstart"))
+    assertNull(WxEventNameUtils.toColonSyntax("marktap"))
+    assertNull(WxEventNameUtils.toColonSyntax("markers"))
   }
 
   fun testToColonSyntax_alreadyColon() {
@@ -205,13 +194,13 @@ class WxEventNameUtilsTest : TestCase() {
   }
 
   fun testToMergedSyntax_model() {
-    assertEquals("modelvalue", WxEventNameUtils.toMergedSyntax("model:value"))
-    assertEquals("modelchecked", WxEventNameUtils.toMergedSyntax("model:checked"))
+    assertNull(WxEventNameUtils.toMergedSyntax("model:value"))
+    assertNull(WxEventNameUtils.toMergedSyntax("model:checked"))
   }
 
   fun testToMergedSyntax_mark() {
-    assertEquals("marktap", WxEventNameUtils.toMergedSyntax("mark:tap"))
-    assertEquals("marktouchstart", WxEventNameUtils.toMergedSyntax("mark:touchstart"))
+    assertNull(WxEventNameUtils.toMergedSyntax("mark:tap"))
+    assertNull(WxEventNameUtils.toMergedSyntax("mark:touchstart"))
   }
 
   fun testToMergedSyntax_alreadyMerged() {
@@ -243,8 +232,8 @@ class WxEventNameUtilsTest : TestCase() {
     assertEquals(listOf("mut-bindtap", "mut-bind:tap"), WxEventNameUtils.getAllVariants("mut-bindtap"))
     assertEquals(listOf("capture-bindtap", "capture-bind:tap"), WxEventNameUtils.getAllVariants("capture-bindtap"))
     assertEquals(listOf("capture-catchtap", "capture-catch:tap"), WxEventNameUtils.getAllVariants("capture-catchtap"))
-    assertEquals(listOf("modelvalue", "model:value"), WxEventNameUtils.getAllVariants("modelvalue"))
-    assertEquals(listOf("marktap", "mark:tap"), WxEventNameUtils.getAllVariants("marktap"))
+    assertEquals(listOf("modelvalue"), WxEventNameUtils.getAllVariants("modelvalue"))
+    assertEquals(listOf("marktap"), WxEventNameUtils.getAllVariants("marktap"))
   }
 
   fun testGetAllVariants_fromColonSyntax() {
@@ -253,8 +242,8 @@ class WxEventNameUtilsTest : TestCase() {
     assertEquals(listOf("mut-bindtap", "mut-bind:tap"), WxEventNameUtils.getAllVariants("mut-bind:tap"))
     assertEquals(listOf("capture-bindtap", "capture-bind:tap"), WxEventNameUtils.getAllVariants("capture-bind:tap"))
     assertEquals(listOf("capture-catchtap", "capture-catch:tap"), WxEventNameUtils.getAllVariants("capture-catch:tap"))
-    assertEquals(listOf("modelvalue", "model:value"), WxEventNameUtils.getAllVariants("model:value"))
-    assertEquals(listOf("marktap", "mark:tap"), WxEventNameUtils.getAllVariants("mark:tap"))
+    assertEquals(listOf("model:value"), WxEventNameUtils.getAllVariants("model:value"))
+    assertEquals(listOf("mark:tap"), WxEventNameUtils.getAllVariants("mark:tap"))
   }
 
   fun testGetAllVariants_notEvent() {
@@ -302,8 +291,8 @@ class WxEventNameUtilsTest : TestCase() {
     assertTrue(WxEventNameUtils.areEquivalent("mut-bindtap", "mut-bind:tap"))
     assertTrue(WxEventNameUtils.areEquivalent("capture-bindtap", "capture-bind:tap"))
     assertTrue(WxEventNameUtils.areEquivalent("capture-catchtap", "capture-catch:tap"))
-    assertTrue(WxEventNameUtils.areEquivalent("modelvalue", "model:value"))
-    assertTrue(WxEventNameUtils.areEquivalent("marktap", "mark:tap"))
+    assertFalse(WxEventNameUtils.areEquivalent("modelvalue", "model:value"))
+    assertFalse(WxEventNameUtils.areEquivalent("marktap", "mark:tap"))
   }
 
   fun testAreEquivalent_nonEvents() {

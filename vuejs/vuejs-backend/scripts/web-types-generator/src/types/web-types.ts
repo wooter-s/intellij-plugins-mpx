@@ -23,8 +23,10 @@ export interface HtmlContributions {
   elements?: HtmlElement[];
   attributes?: HtmlAttribute[];
   'vue-directives'?: VueDirective[];
+  'wx-directives'?: VueDirective[];
   'vue-file-top-elements'?: VueFileTopElement[];
   'vue-components'?: VueComponent[];
+  /** Legacy generator output. Kept only so existing files can be read during migration. */
   'wx-events'?: WxEvent[];
 }
 
@@ -44,6 +46,8 @@ export interface HtmlElement {
   attributes?: ElementAttribute[];
   events?: ElementEvent[];
   slots?: ElementSlot[];
+  'exclusive-contributions'?: string[];
+  js?: JsContributions;
   exclusive?: boolean;
   extension?: boolean;
   'pattern'?: HtmlPattern;
@@ -57,6 +61,7 @@ export interface ElementAttribute {
   description?: string;
   'doc-url'?: string;
   value?: AttributeValue;
+  values?: AttributeValueOption[];
   'exclusive-contributions'?: string[];
 }
 
@@ -73,7 +78,21 @@ export interface AttributeValueType {
 export interface ElementEvent {
   name: string;
   description?: string;
+  value?: AttributeValue;
+  pattern?: string | HtmlPattern;
+  priority?: string;
+  'doc-hide-pattern'?: boolean;
+  'hide-from-completion'?: boolean;
   arguments?: EventArgument[];
+}
+
+export interface AttributeValueOption {
+  name: string;
+  description?: string;
+}
+
+export interface JsContributions {
+  events?: ElementEvent[];
 }
 
 export interface EventArgument {
@@ -92,7 +111,12 @@ export interface HtmlAttribute {
   'doc-url'?: string;
   virtual?: boolean;
   value?: AttributeValue;
+  values?: AttributeValueOption[];
   'exclusive-contributions'?: string[];
+  'hide-from-completion'?: boolean;
+  'doc-hide-pattern'?: boolean;
+  priority?: string | number;
+  js?: JsContributions;
   pattern?: HtmlPattern;
   argument?: HtmlArgument;
   'vue-argument'?: VueArgument;
@@ -136,6 +160,7 @@ export interface PatternItem {
 
 export interface PatternTemplate {
   items?: PatternItem | PatternItem[] | string;
+  regex?: string;
   priority?: string;
   required?: boolean;
   'repeat'?: boolean;

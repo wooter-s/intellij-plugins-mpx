@@ -22,6 +22,9 @@ class MpxPluginIdentityTest : TestCase() {
     assertTextContains(descriptor, "language=\"MpxTS\"")
     assertTextContains(descriptor, "key=\"mpx.language.server.bundled.enabled\"")
     assertFalse(descriptor.contains("org.jetbrains.vuejs"))
+
+    val commonDescriptor = read("vuejs-common/resources/intellij.mpxjs.common.xml")
+    assertTextContains(commonDescriptor, "<module name=\"intellij.css.common.psi\"/>")
   }
 
   fun testPluginTargetsTheWebStorm262Runtime() {
@@ -40,7 +43,10 @@ class MpxPluginIdentityTest : TestCase() {
     assertTextContains(webTypes, "\"framework\": \"mpx\"")
     assertTextContains(webTypes, "\"name\": \"mpx\"")
     assertTextContains(webTypes, "\"default-icon\": \"icons/mpx.svg\"")
-    assertTextContains(webTypes, "\"wx-events\"")
+    assertTextContains(webTypes, "\"wx-directives\"")
+    assertTextContains(webTypes, "\"items\": \"/js/events\"")
+    assertTextContains(webTypes, "\"vue-file-top-elements\"")
+    assertFalse(webTypes.contains("\"name\": \"bind alias\""))
   }
 
   fun testCreateActionUsesMpxTemplatesAndIsolatedPersistentIds() {

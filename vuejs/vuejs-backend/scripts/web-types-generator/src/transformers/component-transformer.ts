@@ -14,8 +14,9 @@ export class ComponentTransformer {
       description: component.description || undefined,
       'doc-url': component.docUrl,
       attributes: component.attributes.map(attr => this.transformAttribute(attr)),
-      events: component.events.length > 0
-        ? component.events.map(evt => this.transformEvent(evt))
+      'exclusive-contributions': ['/js/events'],
+      js: component.events.length > 0
+        ? { events: component.events.map(evt => this.transformEvent(evt)) }
         : undefined
     };
   }
@@ -30,6 +31,10 @@ export class ComponentTransformer {
       description: attr.description || undefined,
       value: this.transformValue(attr)
     };
+
+    if (attr.enumValues && attr.enumValues.length > 0) {
+      result.values = attr.enumValues.map(name => ({ name }));
+    }
 
     if (attr.deprecated) {
       result.deprecated = true;
@@ -47,49 +52,44 @@ export class ComponentTransformer {
   }
 
   private transformValue(attr: WechatAttribute): AttributeValue {
-    // 布尔类型使用表达式
-    if (attr.type === 'boolean') {
-      return {
-        kind: 'expression',
-        type: [{ name: true }, { name: false }]
-      };
-    }
-
-    // 有枚举值时使用 plain
     if (attr.enumValues && attr.enumValues.length > 0) {
       return {
         kind: 'plain',
-        type: attr.enumValues.map(v => ({ name: v }))
+        type: 'enum'
       };
     }
 
-    // 函数类型使用表达式（事件处理器）
-    if (attr.type === 'function') {
-      return {
-        kind: 'expression',
-        type: []
-      };
-    }
-
-    // 对象和数组使用表达式
-    if (attr.type === 'object' || attr.type === 'array') {
-      return {
-        kind: 'expression',
-        type: []
-      };
-    }
-
-    // 默认使用 plain
     return {
       kind: 'plain',
-      type: []
+      type: this.typeName(attr.type)
     };
+  }
+
+  private typeName(type: WechatAttribute['type']): string {
+    switch (type) {
+      case 'array':
+        return 'any[]';
+      case 'function':
+        return 'function';
+      case 'object':
+        return 'object';
+      case 'boolean':
+      case 'number':
+      case 'string':
+        return type;
+      default:
+        return 'any';
+    }
   }
 
   private transformEvent(evt: { name: string; description: string }): ElementEvent {
     return {
       name: evt.name,
-      description: evt.description || undefined
+      description: evt.description || undefined,
+      value: {
+        kind: 'plain',
+        type: 'function'
+      }
     };
   }
 }
