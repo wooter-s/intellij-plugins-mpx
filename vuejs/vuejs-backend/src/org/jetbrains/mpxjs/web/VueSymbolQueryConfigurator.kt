@@ -77,6 +77,7 @@ import org.jetbrains.mpxjs.model.source.VueCompositionApp
 import org.jetbrains.mpxjs.model.source.VueSourceComponent
 import org.jetbrains.mpxjs.model.source.WATCH_PROP
 import org.jetbrains.mpxjs.web.scopes.VueAvailableSlotsScope
+import org.jetbrains.mpxjs.web.scopes.MpxCustomComponentAttributesScope
 import org.jetbrains.mpxjs.web.scopes.VueBindingShorthandScope
 import org.jetbrains.mpxjs.web.scopes.VueCodeModelSymbolScope
 import org.jetbrains.mpxjs.web.scopes.VueIncorrectlySelfReferredComponentFilteringScope
@@ -324,6 +325,7 @@ class VueSymbolQueryScopeContributor : PolySymbolQueryScopeContributor {
       val fileContext = location.containingFile?.originalFile ?: return emptyList()
 
       withTypeEvaluationLocation(fileContext) { addEntityContainers(location, fileContext, result) }
+      tag?.let(MpxCustomComponentAttributesScope::create)?.let(result::add)
       tag?.let { result.add(VueAvailableSlotsScope(it)) }
       tag?.takeIf { it.name == SLOT_TAG_NAME }?.let { result.add(VueSlotElementScope(it)) }
       attribute?.takeIf { it.valueElement == null }?.let { result.add(VueBindingShorthandScope(it)) }

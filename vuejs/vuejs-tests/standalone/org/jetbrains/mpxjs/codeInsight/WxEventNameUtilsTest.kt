@@ -216,6 +216,15 @@ class WxEventNameUtilsTest : TestCase() {
     assertNull(WxEventNameUtils.toMergedSyntax("bind"))
   }
 
+  fun testGetEventName() {
+    assertEquals("selectVehicle", WxEventNameUtils.getEventName("bind:selectVehicle"))
+    assertEquals("selectVehicle", WxEventNameUtils.getEventName("bindselectVehicle"))
+    assertEquals("resetLocation", WxEventNameUtils.getEventName("capture-catch:resetLocation"))
+    assertEquals("resetLocation", WxEventNameUtils.getEventName("mut-bindresetLocation"))
+    assertNull(WxEventNameUtils.getEventName("bind:"))
+    assertNull(WxEventNameUtils.getEventName("showPriceRule"))
+  }
+
   // ============ getAllVariants tests ============
 
   fun testGetAllVariants_mergedFirst() {

@@ -139,3 +139,33 @@ class CustomComponentAttributeDescriptor(private val element: JSProperty) : XmlA
         return false
     }
 }
+
+class CustomComponentEventAttributeDescriptor(
+    private val attributeName: String,
+    private val declarationElement: JSLiteralExpression,
+) : XmlAttributeDescriptor {
+
+    override fun getDefaultValue(): String? = null
+
+    override fun validateValue(context: XmlElement?, value: String?): String? = null
+
+    override fun getName(context: PsiElement?): String = name
+
+    override fun getName(): String = attributeName
+
+    override fun isRequired(): Boolean = false
+
+    override fun hasIdRefType(): Boolean = false
+
+    override fun init(element: PsiElement?) = Unit
+
+    override fun isFixed(): Boolean = false
+
+    override fun getDeclaration(): JSLiteralExpression = declarationElement
+
+    override fun isEnumerated(): Boolean = false
+
+    override fun getEnumeratedValues(): Array<String>? = null
+
+    override fun hasIdType(): Boolean = false
+}

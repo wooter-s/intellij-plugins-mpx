@@ -104,6 +104,21 @@ object WxEventNameUtils {
   }
 
   /**
+   * Extracts the event name from either supported attribute syntax.
+   */
+  fun getEventName(name: String): String? {
+    for ((merged, colon) in EVENT_PREFIXES) {
+      if (name.startsWith(colon)) {
+        return name.substring(colon.length).takeIf { it.isNotEmpty() }
+      }
+      if (name.startsWith(merged) && name.length > merged.length) {
+        return name.substring(merged.length)
+      }
+    }
+    return null
+  }
+
+  /**
    * Checks if two event attribute names are equivalent.
    *
    * @param name1 First attribute name

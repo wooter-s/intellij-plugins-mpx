@@ -73,16 +73,14 @@
 
 package org.jetbrains.mpxjs.lang.html.tag
 
-import com.intellij.lang.javascript.psi.JSEmbeddedContent
 import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.lang.javascript.psi.JSObjectLiteralExpression
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.PsiFileReference
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
-import org.jetbrains.mpxjs.index.findScriptTag
+import org.jetbrains.mpxjs.index.findModule
 import org.jetbrains.mpxjs.lang.html.VueFile
 
 object ComponentWxmlUtils {
@@ -105,7 +103,7 @@ object ComponentWxmlUtils {
 
     /**
      * 获取一个WXMLTag作为自定义组件的脚本元素
-     * 对于 .js 文件返回 JSFile，对于 .mpx 文件返回 JSEmbeddedContent
+     * 对于外置脚本返回 JSFile，对于内联脚本返回对应的 JSExecutionScope
      */
     fun findCustomComponentDefinitionScriptElement(xmlTag: XmlTag): PsiElement? {
         return findScriptElementFromFiles(this.findCustomComponentDefinitionFiles(xmlTag))
@@ -124,22 +122,17 @@ object ComponentWxmlUtils {
     }
 
     /**
-     * 从解析出的文件列表中获取脚本元素
-     * 对于 JSFile 直接返回，对于 VueFile 提取 <script> 中的 JSEmbeddedContent
+     * 从解析出的文件列表中获取脚本元素。
+     * 通过 findModule 统一支持内联 <script> 与 <script src="...">。
      */
     private fun findScriptElementFromFiles(files: List<PsiFile>?): PsiElement? {
         if (files == null) return null
 
-        // 首先尝试找到 JSFile
         files.find { it is JSFile }?.let { return it }
 
-        // 然后尝试从 VueFile 中提取 script 内容
         files.filterIsInstance<VueFile>().forEach { vueFile ->
-            // 尝试查找非 setup 的 script 标签（这是组件定义通常所在的位置）
-            val scriptTag = findScriptTag(vueFile, false) ?: findScriptTag(vueFile, true)
-            scriptTag?.let { tag ->
-                PsiTreeUtil.getChildOfType(tag, JSEmbeddedContent::class.java)?.let { return it }
-            }
+            findModule(vueFile, false)?.let { return it }
+            findModule(vueFile, true)?.let { return it }
         }
 
         return null

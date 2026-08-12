@@ -76,8 +76,17 @@ package org.jetbrains.mpxjs.lang.html.tag
 import com.intellij.lang.javascript.psi.*
 import com.intellij.lang.javascript.psi.impl.JSLiteralExpressionImpl
 import com.intellij.psi.PsiElement
+import com.intellij.psi.util.CachedValueProvider
+import com.intellij.psi.util.CachedValuesManager
+import com.intellij.psi.util.PsiModificationTracker
+import com.intellij.psi.util.PsiTreeUtil
 
 object ComponentJsUtils {
+
+    data class ComponentEvent(
+        val name: String,
+        val sources: List<JSLiteralExpression>,
+    )
 
     /**
      * 获取js文件或嵌入式脚本中的所有properties字段
@@ -92,23 +101,36 @@ object ComponentJsUtils {
     }
 
     /**
+     * 从组件配置中提取静态 triggerEvent('eventName') 调用。
+     * 同名事件只产生一个补全符号，但保留所有导航目标。
+     */
+    fun findTriggerEventItems(scriptElement: PsiElement): List<ComponentEvent> {
+        val manager = CachedValuesManager.getManager(scriptElement.project)
+        return manager.getCachedValue(
+            scriptElement,
+            manager.getKeyForClass(TriggerEventCache::class.java),
+            {
+                CachedValueProvider.Result.create(
+                    calculateTriggerEventItems(scriptElement),
+                    PsiModificationTracker.MODIFICATION_COUNT,
+                )
+            },
+            false,
+        )
+    }
+
+    /**
      * 找到Component API或Page API的方法调用
      * 支持: Component(), Page(), createComponent(), createPage()
      * 同时支持 JSFile 和 JSEmbeddedContent
      */
     fun findComponentOrPageCallExpression(scriptElement: PsiElement): JSCallExpression? {
-        return scriptElement.children.filterIsInstance(JSExpressionStatement::class.java).mapNotNull {
-            it.firstChild as? JSCallExpression
-        }.find { jsCallExpression ->
-            jsCallExpression.methodExpression.let {
-                it is JSReferenceExpression && (
-                    it.text == "Component" ||
-                    it.text == "Page" ||
-                    it.text == "createComponent" ||
-                    it.text == "createPage"
-                )
+        return PsiTreeUtil.findChildrenOfType(scriptElement, JSCallExpression::class.java)
+            .asSequence()
+            .sortedBy { it.textOffset }
+            .find { callExpression ->
+                (callExpression.methodExpression as? JSReferenceExpression)?.referenceName in COMPONENT_API_NAMES
             }
-        }
     }
 
     fun findCallExpressionFirstObjectArg(callExpression: JSCallExpression): JSObjectLiteralExpression? {
@@ -123,6 +145,27 @@ object ComponentJsUtils {
     private fun findComponentApiOptionProperties(scriptElement: PsiElement): Array<JSProperty>? {
         val callExpression = findComponentOrPageCallExpression(scriptElement) ?: return null
         return findCallExpressionFirstObjectArg(callExpression)?.properties
+    }
+
+    private fun calculateTriggerEventItems(scriptElement: PsiElement): List<ComponentEvent> {
+        val componentCall = findComponentOrPageCallExpression(scriptElement) ?: return emptyList()
+        val componentOptions = findCallExpressionFirstObjectArg(componentCall) ?: return emptyList()
+        val result = linkedMapOf<String, MutableList<JSLiteralExpression>>()
+
+        PsiTreeUtil.findChildrenOfType(componentOptions, JSCallExpression::class.java)
+            .asSequence()
+            .sortedBy { it.textOffset }
+            .forEach { callExpression ->
+                val reference = callExpression.methodExpression as? JSReferenceExpression ?: return@forEach
+                if (reference.referenceName != TRIGGER_EVENT_METHOD) return@forEach
+
+                val eventLiteral = callExpression.arguments.firstOrNull() as? JSLiteralExpression ?: return@forEach
+                if (!eventLiteral.isQuotedLiteral) return@forEach
+                val eventName = eventLiteral.stringValue?.takeIf { it.isNotBlank() } ?: return@forEach
+                result.getOrPut(eventName) { mutableListOf() }.add(eventLiteral)
+            }
+
+        return result.map { (name, sources) -> ComponentEvent(name, sources) }
     }
 
     /**
@@ -149,5 +192,16 @@ object ComponentJsUtils {
             (jsCallExpression.argumentList?.children?.find { it is JSObjectLiteralExpression } as? JSObjectLiteralExpression)
         }
     }
+
+    private class TriggerEventCache
+
+    private const val TRIGGER_EVENT_METHOD = "triggerEvent"
+
+    private val COMPONENT_API_NAMES = setOf(
+        "Component",
+        "Page",
+        "createComponent",
+        "createPage",
+    )
 
 }

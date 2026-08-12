@@ -78,6 +78,7 @@ import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.psi.PsiElement
 import com.intellij.polySymbols.PolySymbol
 import com.intellij.polySymbols.PolySymbolKind
+import com.intellij.polySymbols.html.HTML_ATTRIBUTES
 import com.intellij.polySymbols.html.NAMESPACE_HTML
 import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolDescriptor
 import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolInfo
@@ -86,6 +87,7 @@ import com.intellij.psi.xml.XmlTag
 import com.intellij.xml.XmlAttributeDescriptor
 import com.intellij.xml.XmlElementDescriptor
 import com.intellij.xml.impl.schema.AnyXmlAttributeDescriptor
+import org.jetbrains.mpxjs.codeInsight.WxEventNameUtils
 import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_ARGUMENT
 import org.jetbrains.mpxjs.web.VUE_DIRECTIVE_MODIFIERS
 import org.jetbrains.mpxjs.web.VUE_DIRECTIVES
@@ -151,6 +153,11 @@ class CustomComponentDescriptor(
     override fun getAttributeDescriptor(attributeName: String, context: XmlTag?): XmlAttributeDescriptor? {
         getCustomComponentAttributeDescriptors(this).find { it.name == attributeName }?.let { return it }
 
+        val eventName = WxEventNameUtils.getEventName(attributeName)
+        if (eventName != null) {
+            getCustomComponentEventAttributeDescriptor(attributeName, eventName)?.let { return it }
+        }
+
         val targetTag = context ?: tag
         if (isWeChatDirective(attributeName)) {
             resolveWebTypesDirectiveDescriptor(attributeName, targetTag)?.let { return it }
@@ -161,7 +168,8 @@ class CustomComponentDescriptor(
     }
 
     private fun isWeChatDirective(attributeName: String): Boolean {
-        return attributeName.startsWith("wx:")
+        return WxEventNameUtils.isWxEventAttribute(attributeName)
+            || attributeName.startsWith("wx:")
             || attributeName.startsWith("bind:")
             || attributeName.startsWith("mut-bind:")
             || attributeName.startsWith("catch:")
@@ -175,7 +183,7 @@ class CustomComponentDescriptor(
         attributeName: String,
         contextTag: XmlTag,
     ): XmlAttributeDescriptor? {
-        val executor = PolySymbolQueryExecutorFactory.create(contextTag, false)
+        val executor = PolySymbolQueryExecutorFactory.create(contextTag, true)
         for (candidateName in candidateDirectiveNames(attributeName)) {
             val symbol = WEB_TYPES_DIRECTIVE_KINDS
                 .asSequence()
@@ -229,6 +237,7 @@ class CustomComponentDescriptor(
 
     companion object {
         private val WEB_TYPES_DIRECTIVE_KINDS: List<PolySymbolKind> = listOf(
+            HTML_ATTRIBUTES,
             VUE_DIRECTIVES,
             VUE_GLOBAL_DIRECTIVES,
             VUE_SCRIPT_SETUP_LOCAL_DIRECTIVES,
@@ -251,6 +260,19 @@ class CustomComponentDescriptor(
         return properties?.map {
             CustomComponentAttributeDescriptor(it)
         }?.toTypedArray() ?: emptyArray()
+    }
+
+    private fun getCustomComponentEventAttributeDescriptor(
+        attributeName: String,
+        eventName: String,
+    ): CustomComponentEventAttributeDescriptor? {
+        val scriptElement = ComponentWxmlUtils.findCustomComponentDefinitionScriptElement(declaration)
+            ?: return null
+        val event = ComponentJsUtils.findTriggerEventItems(scriptElement).find { it.name == eventName }
+            ?: return null
+        return event.sources.firstOrNull()?.let {
+            CustomComponentEventAttributeDescriptor(attributeName, it)
+        }
     }
 
 }
