@@ -3,13 +3,36 @@ package org.jetbrains.mpxjs.lang
 
 import com.intellij.codeInspection.htmlInspections.HtmlUnknownAttributeInspection
 import com.intellij.codeInspection.htmlInspections.HtmlUnknownTagInspection
+import com.intellij.codeInspection.htmlInspections.RequiredAttributesInspection
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.platform.backend.documentation.DocumentationData
+import com.intellij.platform.backend.documentation.DocumentationTargetProvider
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.templateLanguages.MultipleLangCommentProvider
+import com.intellij.psi.xml.XmlTag
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import org.jetbrains.mpxjs.inspections.DuplicateTagInspection
 import org.jetbrains.mpxjs.inspections.MpxUnrecognizedAttributeInspection
+import org.jetbrains.mpxjs.lang.html.tag.CustomComponentDescriptor
 
 class MpxNativeTemplateHighlightingTest : BasePlatformTestCase() {
+
+  fun testNativeTextTagQuickDocumentation() {
+    myFixture.configureByText(
+      "native-text-documentation.mpx",
+      "<template><view><te<caret>xt>content</text></view></template>",
+    )
+
+    val documentation = DocumentationTargetProvider.EP_NAME.extensionList
+      .flatMap { it.documentationTargets(myFixture.file, myFixture.caretOffset) }
+      .mapNotNull { it.computeDocumentation() as? DocumentationData }
+
+    assertTrue("Expected Quick Documentation for the wx text tag", documentation.isNotEmpty())
+    assertTrue(
+      "Expected Quick Documentation to come from the wx native text metadata",
+      documentation.any { it.html.contains("基础库 1.0.0 开始支持") },
+    )
+  }
 
   fun testBlockAndWxsMetadataAreRecognized() {
     myFixture.addFileToProject("format.wxs", "module.exports = {}")
@@ -54,6 +77,108 @@ class MpxNativeTemplateHighlightingTest : BasePlatformTestCase() {
     assertNoNativeMetadataProblems()
   }
 
+  fun testNewNativeElementAttributesAreRecognized() {
+    enableNativeMetadataInspections()
+    myFixture.configureByText(
+      "new-native-elements.mpx",
+      """
+        <template>
+          <pan-gesture-handler
+            tag="drag"
+            worklet:ongesture="handleGesture"
+            worklet:should-response-on-move="shouldRespond"
+            simultaneous-handlers="{{handlers}}"
+          />
+          <selection disable-context-menu />
+          <official-account-publish />
+        </template>
+      """.trimIndent(),
+    )
+
+    assertNoNativeMetadataProblems()
+  }
+
+  fun testUnrecognizedAttributeInspectionUsesMpxDescriptor() {
+    myFixture.enableInspections(MpxUnrecognizedAttributeInspection::class.java)
+    myFixture.configureByText(
+      "invalid-native-attribute.mpx",
+      "<template><text not-a-text-property /></template>",
+    )
+
+    val problems = myFixture.doHighlighting().filter {
+      it.description.orEmpty().contains("not-a-text-property")
+    }
+    assertEquals("Expected one wx native attribute warning", 1, problems.size)
+  }
+
+  fun testNativeElementsDoNotRequireContextDependentAttributesGlobally() {
+    myFixture.enableInspections(RequiredAttributesInspection::class.java)
+    myFixture.configureByText(
+      "optional-native-attributes.mpx",
+      """
+        <template>
+          <text>车辆编号：</text>
+          <input />
+          <map />
+        </template>
+      """.trimIndent(),
+    )
+
+    val missingAttributes = myFixture.doHighlighting().filter {
+      it.description.orEmpty().contains("doesn't have required attribute")
+    }
+    assertTrue(
+      "Native component attributes must not be globally required: ${missingAttributes.map { it.description }}",
+      missingAttributes.isEmpty(),
+    )
+  }
+
+  fun testUnrecognizedAttributeInspectionIgnoresStandardHtmlAndRegisteredCustomComponents() {
+    myFixture.addFileToProject(
+      "components/vehicle-card/index.mpx",
+      """
+        <template><view /></template>
+        <script>createComponent({})</script>
+      """.trimIndent(),
+    )
+    myFixture.enableInspections(MpxUnrecognizedAttributeInspection::class.java)
+    myFixture.configureByText(
+      "inspection-boundaries.mpx",
+      """
+        <template>
+          <div arbitrary-html-attribute="value" />
+          <vehicle-reservation-card arbitrary-custom-attribute="value" />
+        </template>
+        <script name="json">
+        module.exports = {
+          usingComponents: {
+            "vehicle-reservation-card": "./components/vehicle-card/index.mpx"
+          }
+        }
+        </script>
+      """.trimIndent(),
+    )
+
+    val customTag = PsiTreeUtil.findChildrenOfType(myFixture.file, XmlTag::class.java)
+      .firstOrNull { it.name == "vehicle-reservation-card" }
+      ?: error("Expected the registered custom component tag")
+    assertTrue(
+      "Expected the registered tag to use CustomComponentDescriptor, got ${customTag.descriptor?.javaClass?.name}",
+      customTag.descriptor is CustomComponentDescriptor,
+    )
+
+    val boundaryProblems = myFixture.doHighlighting().filter {
+      val description = it.description.orEmpty()
+      "arbitrary-html-attribute" in description || "arbitrary-custom-attribute" in description
+    }
+    assertTrue(
+      "Standard HTML and registered custom components must not be inspected as native MPX elements: ${
+        boundaryProblems.map { it.description }
+      }",
+      boundaryProblems.isEmpty(),
+    )
+  }
+
   fun testNativeMapMustacheAttributesDoNotProduceSyntaxErrors() {
     myFixture.configureByText(
       "home-map.mpx",
@@ -92,7 +217,7 @@ class MpxNativeTemplateHighlightingTest : BasePlatformTestCase() {
 
     val errors = myFixture.doHighlighting().filter { it.severity == HighlightSeverity.ERROR }
     assertTrue(
-      "Expected MPX native attributes to parse without errors, but got: ${
+      "Expected wx native attributes to parse without errors, but got: ${
         errors.map {
           "${it.description} at ${it.startOffset}..${it.endOffset}: " +
           myFixture.file.text.substring(it.startOffset, it.endOffset)

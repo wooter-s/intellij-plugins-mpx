@@ -82,6 +82,10 @@ export const KNOWN_COMPONENTS = [
   'list-view', 'sticky-header', 'sticky-section', 'nested-scroll-body',
   'nested-scroll-header', 'draggable-sheet', 'grid-builder', 'list-builder',
   'snapshot', 'span', 'open-container',
+  'double-tap-gesture-handler', 'force-press-gesture-handler',
+  'horizontal-drag-gesture-handler', 'long-press-gesture-handler',
+  'pan-gesture-handler', 'scale-gesture-handler', 'tap-gesture-handler',
+  'vertical-drag-gesture-handler',
 
   // 基础内容
   'text', 'icon', 'progress', 'rich-text',
@@ -90,14 +94,14 @@ export const KNOWN_COMPONENTS = [
   'button', 'form', 'input', 'textarea', 'label',
   'checkbox', 'checkbox-group', 'radio', 'radio-group',
   'switch', 'slider', 'picker', 'picker-view', 'picker-view-column',
-  'editor', 'keyboard-accessory',
+  'editor', 'editor-portal', 'keyboard-accessory', 'selection',
 
   // 导航
   'navigator', 'functional-page-navigator',
 
   // 媒体组件
   'image', 'video', 'audio', 'camera', 'live-player', 'live-pusher',
-  'voip-room', 'lottie', 'channel-live', 'channel-video',
+  'voip-room', 'channel-live', 'channel-video',
 
   // 地图
   'map',
@@ -106,9 +110,12 @@ export const KNOWN_COMPONENTS = [
   'canvas',
 
   // 开放能力
-  'web-view', 'ad', 'ad-custom', 'official-account', 'open-data',
+  'web-view', 'ad', 'ad-custom', 'official-account', 'official-account-publish',
+  'open-data', 'open-data-item', 'open-data-list',
   'native-component', 'aria-component', 'store-product', 'store-home',
+  'store-coupon', 'store-gift'
 
-  // Skyline
-  'worklet-animation'
+  // `lottie` and `worklet-animation` are intentionally omitted: their
+  // component documentation URLs currently return 404. Historical support
+  // should use explicit static metadata instead of the live-doc extractor.
 ] as const;

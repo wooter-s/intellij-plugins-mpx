@@ -18,4 +18,5 @@ public final class VuejsIcons {
   /** 16x16 */ public static final @NotNull Icon TypeScriptVue = load("icons/TypeScriptVue.svg", 1640982108, 2);
   /** 16x16 */ public static final @NotNull Icon TypeScriptVueStatusBar = load("icons/TypeScriptVueStatusBar.svg", -1075058150, 2);
   /** 16x16 */ public static final @NotNull Icon Vue = load("icons/vue.svg", 1065828359, 0);
+  /** 16x16 */ public static final @NotNull Icon Wx = load("icons/wx.svg", 208525552, 0);
 }

@@ -5,13 +5,20 @@ import type {
   VueDirective,
   VueComponent,
   ElementAttribute,
-  VueFileTopElement
+  VueFileTopElement,
+  RequiredContext
 } from '../types/index.js';
 
 interface BuilderConfig {
   version: string;
   framework?: string;
   name?: string;
+  defaultIcon?: string;
+  requiredContext?: RequiredContext;
+}
+
+interface MergeOptions {
+  excludeElementNames?: ReadonlySet<string>;
 }
 
 export class WebTypesBuilder {
@@ -27,6 +34,7 @@ export class WebTypesBuilder {
     this.config = {
       framework: 'mpx',
       name: 'mpx',
+      defaultIcon: 'icons/mpx.svg',
       ...config
     };
   }
@@ -71,13 +79,15 @@ export class WebTypesBuilder {
   /**
    * 从现有 web-types 合并内容
    */
-  mergeExisting(existing: WebTypes): this {
+  mergeExisting(existing: WebTypes, options: MergeOptions = {}): this {
     const html = existing.contributions?.html;
 
     if (html?.elements) {
       // 只合并不在新数据中的元素
       const newNames = new Set(this.elements.map(e => e.name));
-      const toMerge = html.elements.filter(e => !newNames.has(e.name));
+      const toMerge = html.elements.filter(e =>
+        !newNames.has(e.name) && !options.excludeElementNames?.has(e.name)
+      );
       this.elements.push(...toMerge);
     }
 
@@ -131,12 +141,15 @@ export class WebTypesBuilder {
 
     const webTypes: WebTypes = {
       $schema: '../../../../community/platform/polySymbols/web-types-gen/resources/web-types.json',
-      framework: this.config.framework!,
+      ...(this.config.framework ? { framework: this.config.framework } : {}),
+      ...(this.config.requiredContext
+        ? { 'required-context': this.config.requiredContext }
+        : {}),
       name: this.config.name!,
       version: this.config.version,
       'js-types-syntax': 'typescript',
       'description-markup': 'markdown',
-      'default-icon': 'icons/mpx.svg',
+      'default-icon': this.config.defaultIcon!,
       contributions: {
         html: {}
       }

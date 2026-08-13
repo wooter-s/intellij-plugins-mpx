@@ -5,13 +5,19 @@
 
 export interface WebTypes {
   $schema: string;
-  framework: string;
+  framework?: string;
+  'required-context'?: RequiredContext;
   name: string;
   version: string;
   'js-types-syntax': string;
   'description-markup': string;
   'default-icon': string;
   contributions: Contributions;
+}
+
+export interface RequiredContext {
+  kind: string;
+  name: string;
 }
 
 export interface Contributions {

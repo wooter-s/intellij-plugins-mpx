@@ -8,7 +8,6 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.polySymbols.PolySymbolModifier
 import com.intellij.polySymbols.html.HTML_ATTRIBUTES
 import com.intellij.polySymbols.html.HTML_ELEMENTS
-import com.intellij.polySymbols.html.framework
 import com.intellij.polySymbols.html.elements.HtmlElementSymbolDescriptor
 import com.intellij.polySymbols.query.PolySymbolQueryExecutorFactory
 import com.intellij.psi.PsiElementVisitor
@@ -19,13 +18,14 @@ import com.intellij.psi.xml.XmlTag
 import org.jetbrains.mpxjs.VueBundle
 import org.jetbrains.mpxjs.codeInsight.attributes.VueAttributeNameParser
 import org.jetbrains.mpxjs.lang.html.isVueFile
-import org.jetbrains.mpxjs.web.VueFramework
+import org.jetbrains.mpxjs.web.isWxNativeSymbol
 
 /**
  * Inspection to detect unrecognized attributes on WeChat Mini-Program components.
  *
- * This inspection only checks WeChat mini-program built-in components (view, button, input, etc.)
- * and ignores standard HTML tags. It also skips wx: directives and common attributes.
+ * This inspection only checks elements resolved from the wx Web Types origin and ignores
+ * standard HTML tags and custom components. It also skips wx: directives and
+ * common attributes.
  */
 class MpxUnrecognizedAttributeInspection : LocalInspectionTool() {
 
@@ -47,51 +47,6 @@ class MpxUnrecognizedAttributeInspection : LocalInspectionTool() {
       "bind", "catch", "capture-bind", "capture-catch", "mut-bind"
     )
 
-    // Known WeChat mini-program component names
-    private val MINI_PROGRAM_COMPONENTS = setOf(
-      // View containers
-      "view", "scroll-view", "swiper", "swiper-item", "movable-area", "movable-view",
-      "cover-image", "cover-view", "page-container", "share-element", "root-portal",
-      "grid-view", "list-view", "sticky-header", "sticky-section", "nested-scroll-body",
-      "nested-scroll-header", "draggable-sheet", "grid-builder", "list-builder", "snapshot",
-
-      // Basic content
-      "icon", "progress", "rich-text", "text",
-
-      // Form components
-      "button", "checkbox", "checkbox-group", "editor", "form", "input", "keyboard-accessory",
-      "label", "picker", "picker-view", "picker-view-column", "radio", "radio-group",
-      "slider", "switch", "textarea",
-
-      // Navigator
-      "functional-page-navigator", "navigator",
-
-      // Media components
-      "audio", "camera", "image", "live-player", "live-pusher", "video", "voip-room",
-
-      // Map
-      "map",
-
-      // Canvas
-      "canvas",
-
-      // Open capabilities
-      "web-view", "ad", "ad-custom", "official-account", "open-data",
-
-      // Native components
-      "native-component",
-
-      // Aria
-      "aria-component",
-
-      // Navigation bar
-      "navigation-bar", "page-meta",
-
-      // Channel
-      "channel-live", "channel-video",
-
-      // Custom components (handled separately)
-    )
   }
 
   override fun buildVisitor(
@@ -101,7 +56,7 @@ class MpxUnrecognizedAttributeInspection : LocalInspectionTool() {
   ): PsiElementVisitor {
     return object : XmlElementVisitor() {
       override fun visitXmlAttribute(attribute: XmlAttribute) {
-        val tag = attribute.parent as? XmlTag ?: return
+        val tag = attribute.parent
         val attrName = attribute.name
 
         // Skip if attribute name is empty
@@ -169,23 +124,9 @@ class MpxUnrecognizedAttributeInspection : LocalInspectionTool() {
    * Check if the tag is a WeChat Mini-Program component
    */
   private fun isWeChatMiniProgramComponent(tag: XmlTag): Boolean {
-    val tagName = tag.name.lowercase()
-
-    // Check if it's a known mini-program component
-    if (tagName in MINI_PROGRAM_COMPONENTS) {
-      return true
-    }
-
-    // Check via descriptor if this is a component from web-types
     val descriptor = tag.descriptor
-    if (descriptor is HtmlElementSymbolDescriptor) {
-      // Check if the symbol comes from the Mpx framework.
-      if (descriptor.symbol?.framework == VueFramework.ID) {
-        return true
-      }
-    }
-
-    return false
+    return descriptor is HtmlElementSymbolDescriptor
+           && descriptor.symbol.isWxNativeSymbol()
   }
 
   /**

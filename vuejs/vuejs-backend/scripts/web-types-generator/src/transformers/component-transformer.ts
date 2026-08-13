@@ -40,9 +40,10 @@ export class ComponentTransformer {
       result.deprecated = true;
     }
 
-    if (attr.required) {
-      result.required = true;
-    }
+    // Do not map the documentation's `required` column to Web Types. Several
+    // rows are renderer-dependent or only describe a meaningful runtime value
+    // (for example text.overflow and input.placeholder). Web Types would treat
+    // them as globally required and report false-positive missing attributes.
 
     if (attr.defaultValue) {
       result.default = attr.defaultValue;

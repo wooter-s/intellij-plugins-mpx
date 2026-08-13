@@ -280,6 +280,7 @@
     <polySymbols.webTypes source="web-types/vue@3.2.0.web-types.json"/>
     <polySymbols.webTypes source="web-types/vue@3.3.0.web-types.json"/>
     <polySymbols.webTypes source="web-types/vue@3.4.0.web-types.json" enableByDefault="true"/>
+    <polySymbols.webTypes source="web-types/wx@0.0.0.web-types.json" enableByDefault="true"/>
     <polySymbols.webTypes source="web-types/vue@3.5.0.web-types.json"/>
     <polySymbols.webTypes source="web-types/vue@3.6.0.web-types.json"/>
     <polySymbols.webTypes source="web-types/vue-i18n@0.0.0.web-types.json"/>

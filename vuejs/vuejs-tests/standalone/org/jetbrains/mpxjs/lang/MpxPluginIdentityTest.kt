@@ -70,21 +70,43 @@ class MpxPluginIdentityTest : TestCase() {
 
     val properties = read("gradle.properties")
     assertTextContains(properties, "mpx.platformVersion=2026.2.1")
-    assertTextContains(properties, "mpx.pluginVersion=262.9437.145.02")
+    assertTextContains(properties, "mpx.pluginVersion=262.9437.145.03")
   }
 
-  fun testGeneratedWebTypesUseMpxFramework() {
-    val webTypes = read("vuejs-backend/resources/web-types/vue@3.4.0.web-types.json")
-    assertTextContains(webTypes, "\"framework\": \"mpx\"")
-    assertTextContains(webTypes, "\"name\": \"mpx\"")
-    assertTextContains(webTypes, "\"default-icon\": \"icons/mpx.svg\"")
-    assertTextContains(webTypes, "\"wx-directives\"")
-    assertTextContains(webTypes, "\"items\": \"/js/events\"")
-    assertTextContains(webTypes, "\"vue-file-top-elements\"")
-    listOf("block", "import", "include", "wxs", "qs", "page-meta", "navigation-bar").forEach {
-      assertTextContains(webTypes, "\"name\": \"$it\"")
+  fun testGeneratedWebTypesKeepMpxAndWxIdentitiesSeparate() {
+    val mpxWebTypes = read("vuejs-backend/resources/web-types/vue@3.4.0.web-types.json")
+    assertTextContains(mpxWebTypes, "\"framework\": \"mpx\"")
+    assertTextContains(mpxWebTypes, "\"name\": \"mpx\"")
+    assertTextContains(mpxWebTypes, "\"default-icon\": \"icons/mpx.svg\"")
+    assertTextContains(mpxWebTypes, "\"wx-directives\"")
+    assertTextContains(mpxWebTypes, "\"items\": \"/js/events\"")
+    assertTextContains(mpxWebTypes, "\"vue-file-top-elements\"")
+    assertTextContains(mpxWebTypes, "\"name\": \"qs\"")
+    assertFalse(mpxWebTypes.contains("\"name\": \"bind alias\""))
+
+    val wxWebTypes = read("vuejs-backend/resources/web-types/wx@0.0.0.web-types.json")
+    assertFalse(wxWebTypes.contains("\"framework\":"))
+    assertTextContains(wxWebTypes, "\"name\": \"wx\"")
+    assertTextContains(wxWebTypes, "\"version\": \"0.0.0\"")
+    assertTextContains(wxWebTypes, "\"kind\": \"framework\"")
+    assertTextContains(wxWebTypes, "\"name\": \"mpx\"")
+    assertTextContains(wxWebTypes, "\"default-icon\": \"icons/wx.svg\"")
+    listOf("block", "import", "include", "template", "wxs", "page-meta", "navigation-bar", "text", "view").forEach {
+      assertTextContains(wxWebTypes, "\"name\": \"$it\"")
     }
-    assertFalse(webTypes.contains("\"name\": \"bind alias\""))
+
+    val backendDescriptor = read("vuejs-backend/resources/intellij.mpxjs.backend.xml")
+    assertTextContains(
+      backendDescriptor,
+      "<polySymbols.webTypes source=\"web-types/wx@0.0.0.web-types.json\" enableByDefault=\"true\"/>",
+    )
+
+    val wxIcon = read("vuejs-common/resources/icons/wx.svg")
+    assertTextContains(wxIcon, "width=\"16\"")
+    assertTextContains(
+      read("vuejs-common/gen/org/jetbrains/mpxjs/VuejsIcons.java"),
+      "Icon Wx = load(\"icons/wx.svg\"",
+    )
   }
 
   fun testCreateActionUsesMpxTemplatesAndIsolatedPersistentIds() {

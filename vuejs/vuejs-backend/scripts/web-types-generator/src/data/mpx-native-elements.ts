@@ -26,7 +26,7 @@ const attribute = (
 const enumValues = (...names: string[]): AttributeValueOption[] =>
   names.map(name => ({ name }));
 
-export function getMpxNativeElements(): HtmlElement[] {
+export function getWechatNativeElements(): HtmlElement[] {
   return [
     {
       name: 'block',
@@ -56,15 +56,6 @@ export function getMpxNativeElements(): HtmlElement[] {
       attributes: [
         attribute('module', 'WXS 模块名称。'),
         attribute('src', '引入的 WXS 文件路径。')
-      ]
-    },
-    {
-      name: 'qs',
-      description: '在模板中声明或引入 QS 脚本模块。',
-      'doc-url': 'https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxs/',
-      attributes: [
-        attribute('module', 'QS 模块名称。'),
-        attribute('src', '引入的 QS 文件路径。')
       ]
     },
     {
@@ -116,13 +107,31 @@ export function getMpxNativeElements(): HtmlElement[] {
     },
     {
       name: 'template',
-      extension: true,
       description: '定义或使用可复用的 WXML 模板。',
       'doc-url': 'https://developers.weixin.qq.com/miniprogram/dev/reference/wxml/template.html',
       attributes: [
         attribute('name', '定义模板时使用的名称。'),
         attribute('is', '要使用的模板名称。'),
-        attribute('data', '传入模板的数据。', { type: 'any' })
+        attribute('data', '传入模板的数据。', { type: 'any' }),
+        {
+          name: 'scope',
+          deprecated: true,
+          value: { kind: 'expression' }
+        }
+      ]
+    }
+  ];
+}
+
+export function getMpxNativeElements(): HtmlElement[] {
+  return [
+    {
+      name: 'qs',
+      description: '在模板中声明或引入 QS 脚本模块。',
+      'doc-url': 'https://developers.weixin.qq.com/miniprogram/dev/framework/view/wxs/',
+      attributes: [
+        attribute('module', 'QS 模块名称。'),
+        attribute('src', '引入的 QS 文件路径。')
       ]
     }
   ];

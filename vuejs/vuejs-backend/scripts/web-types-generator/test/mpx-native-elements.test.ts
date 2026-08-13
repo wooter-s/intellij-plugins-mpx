@@ -2,16 +2,19 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { WebTypesBuilder } from '../src/builders/web-types-builder.js';
-import { getMpxNativeElements } from '../src/data/mpx-native-elements.js';
+import {
+  getMpxNativeElements,
+  getWechatNativeElements
+} from '../src/data/mpx-native-elements.js';
 import type { WebTypes } from '../src/types/index.js';
 
-test('MPX native elements expose the missing WXML tags and attributes', () => {
-  const elements = getMpxNativeElements();
+test('wx native elements expose the missing WXML tags and attributes', () => {
+  const elements = getWechatNativeElements();
   const byName = new Map(elements.map(element => [element.name, element]));
 
   assert.deepEqual(
     [...byName.keys()].sort(),
-    ['block', 'import', 'include', 'navigation-bar', 'page-meta', 'qs', 'template', 'wxs']
+    ['block', 'import', 'include', 'navigation-bar', 'page-meta', 'template', 'wxs']
   );
   assert.equal(byName.get('import')?.attributes?.find(attribute => attribute.name === 'src')?.required, true);
   assert.deepEqual(
@@ -20,11 +23,15 @@ test('MPX native elements expose the missing WXML tags and attributes', () => {
   );
   assert.deepEqual(
     byName.get('template')?.attributes?.map(attribute => attribute.name),
-    ['name', 'is', 'data']
+    ['name', 'is', 'data', 'scope']
   );
 });
 
-test('native template attributes extend the existing Vue template definition', () => {
+test('MPX-specific template elements only contain qs', () => {
+  assert.deepEqual(getMpxNativeElements().map(element => element.name), ['qs']);
+});
+
+test('native template keeps the compatible Vue scope attribute', () => {
   const existing: WebTypes = {
     $schema: 'test',
     framework: 'mpx',
@@ -57,16 +64,17 @@ test('native template attributes extend the existing Vue template definition', (
   };
 
   const webTypes = new WebTypesBuilder({ version: 'test' })
-    .mergeExisting(existing)
-    .addElements(getMpxNativeElements())
+    .mergeExisting(existing, { excludeElementNames: new Set(['template']) })
+    .addElements(getWechatNativeElements())
     .build();
   const templates = webTypes.contributions.html.elements
     ?.filter(element => element.name === 'template') ?? [];
 
   assert.equal(templates.length, 1);
+  assert.equal(templates[0].extension, undefined);
   assert.deepEqual(
     templates[0].attributes?.map(attribute => attribute.name),
-    ['data', 'is', 'name', 'scope']
+    ['name', 'is', 'data', 'scope']
   );
   assert.equal(
     templates[0]['doc-url'],

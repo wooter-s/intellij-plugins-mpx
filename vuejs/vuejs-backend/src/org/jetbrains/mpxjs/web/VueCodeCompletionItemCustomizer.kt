@@ -28,6 +28,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.contextOfType
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.asSafely
+import org.jetbrains.mpxjs.VuejsIcons
 import org.jetbrains.mpxjs.index.isScriptSetupTag
 import org.jetbrains.mpxjs.lang.html.isVueFileName
 import org.jetbrains.mpxjs.model.VueComponent
@@ -51,6 +52,12 @@ class VueCodeCompletionItemCustomizer :
           ?: item
         HTML_ELEMENTS ->
           item.takeIf { !shouldFilterOutLowerCaseScriptSetupIdentifier(it) }
+            ?.let {
+              if (it.symbol?.isWxNativeSymbol() == true)
+                it.withTypeText(WX_NATIVE_LIBRARY, true).withIcon(VuejsIcons.Wx)
+              else
+                it
+            }
         JS_SYMBOLS, JS_PROPERTIES ->
           item.let {
             val vueProximity = it.symbol?.get(VueProximityProperty)

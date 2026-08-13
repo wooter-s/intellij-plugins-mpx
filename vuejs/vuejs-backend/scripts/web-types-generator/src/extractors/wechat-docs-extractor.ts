@@ -4,7 +4,8 @@ import type {
   WechatComponent,
   WechatAttribute,
   WechatAttributeType,
-  WechatEvent
+  WechatEvent,
+  WebTypes
 } from '../types/index.js';
 import { KNOWN_COMPONENTS } from '../types/wechat.js';
 
@@ -58,6 +59,7 @@ export class WechatDocsExtractor {
       }
     }
 
+    assertAllComponentsExtracted(componentNames, components);
     logger.success(`Extracted ${components.length} components`);
     return components;
   }
@@ -76,14 +78,33 @@ export class WechatDocsExtractor {
 
   extractFromHtml(name: string, html: string, docUrl = `${BASE_URL}/${name}.html`): WechatComponent {
     const $ = load(html);
+    this.assertComponentDocument($, name);
     const { attributes, events } = this.extractProperties($, name);
+    const description = this.extractDescription($);
+    if (!description) {
+      throw new Error(`Invalid WeChat component document for ${name}: missing description`);
+    }
     return {
       name,
-      description: this.extractDescription($),
+      description,
       docUrl,
       attributes,
       events
     };
+  }
+
+  private assertComponentDocument($: CheerioAPI, name: string): void {
+    const $heading = $('h1').first();
+    const headingId = $heading.attr('id')?.trim();
+    const headingText = $heading.text().replace(/\s+/g, ' ').trim();
+    const matchesComponent = headingId === name
+      || headingText === name;
+
+    if (!matchesComponent) {
+      throw new Error(
+        `Invalid WeChat component document for ${name}: component heading not found`
+      );
+    }
   }
 
   private extractDescription($: CheerioAPI): string {
@@ -161,7 +182,10 @@ export class WechatDocsExtractor {
         const $descTd = $tr.children('td').eq(descIdx >= 0 ? descIdx : cells.length - 1);
         const enumValues = this.parseEnumValuesFromCell($descTd, $, typeStr, description);
 
-        if (type === 'function') {
+        // Worklet callbacks are declared as eventhandler in the docs, but are
+        // authored as direct `worklet:*` attributes rather than bind/catch
+        // events. Keep them in the element attribute contribution.
+        if (type === 'function' && !normalizedName.startsWith('worklet:')) {
           const eventName = this.extractEventName(normalizedName);
           if (eventName) {
             events.push({
@@ -379,5 +403,52 @@ export class WechatDocsExtractor {
       }
     }
     return [...byName.values()];
+  }
+}
+
+export function assertAllComponentsExtracted(
+  expectedNames: readonly string[],
+  components: readonly WechatComponent[]
+): void {
+  const extractedNames = new Set(components.map(component => component.name));
+  const missingNames = expectedNames.filter(name => !extractedNames.has(name));
+
+  if (missingNames.length > 0) {
+    throw new Error(
+      `Failed to extract expected WeChat components: ${missingNames.join(', ')}`
+    );
+  }
+}
+
+export function assertNoComponentMetadataRegression(
+  existingWebTypes: WebTypes | null,
+  components: readonly WechatComponent[]
+): void {
+  if (!existingWebTypes) return;
+
+  const existingByName = new Map(
+    (existingWebTypes.contributions.html.elements ?? [])
+      .map(element => [element.name, element] as const)
+  );
+  const regressions: string[] = [];
+
+  for (const component of components) {
+    const existing = existingByName.get(component.name);
+    if (!existing) continue;
+
+    const existingAttributeCount = existing.attributes?.length ?? 0;
+    const existingEventCount = existing.js?.events?.length ?? existing.events?.length ?? 0;
+    if (existingAttributeCount > 0 && component.attributes.length === 0) {
+      regressions.push(`${component.name} lost ${existingAttributeCount} attributes`);
+    }
+    if (existingEventCount > 0 && component.events.length === 0) {
+      regressions.push(`${component.name} lost ${existingEventCount} events`);
+    }
+  }
+
+  if (regressions.length > 0) {
+    throw new Error(
+      `Refusing to replace existing WeChat component metadata: ${regressions.join('; ')}`
+    );
   }
 }
