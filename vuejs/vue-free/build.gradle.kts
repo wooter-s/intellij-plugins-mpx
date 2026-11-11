@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
   intellijPlatform {
-    bundledPlugins("com.intellij.platform.images")
+    bundledPlugins("com.intellij.platform.images", "com.intellij.webstorm.customization")
     bundledModules("intellij.platform.trialPromotion.common")
   }
 

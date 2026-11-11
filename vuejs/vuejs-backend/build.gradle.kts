@@ -16,10 +16,14 @@ sourceSets {
 
 dependencies {
   intellijPlatform {
-    bundledPlugins("JavaScript", "com.intellij.css", "org.intellij.plugins.postcss", "com.intellij.modules.json")
+    bundledPlugins("JavaScript", "com.intellij.css", "org.intellij.plugins.postcss", "com.intellij.modules.json", "com.intellij.modules.xml", "intellij.webpack")
     bundledModules(
       "intellij.platform.backend",
       "intellij.spellchecker",
+      "intellij.platform.polySymbols.backend",
+      "intellij.xml.analysis",
+      "intellij.xml.analysis.impl",
+      "intellij.xml.impl",
       "intellij.libraries.commons.text",
     )
   }

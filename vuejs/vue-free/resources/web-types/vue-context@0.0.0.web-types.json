@@ -1,20 +1,19 @@
 {
   "$schema": "../../../../community/platform/polySymbols/web-types-gen/resources/web-types.json",
-  "name": "@vue@context",
-  "framework": "vue",
+  "name": "@mpx@context",
+  "framework": "mpx",
   "version": "0.0.0",
   "default-icon": "icons/vue.svg",
   "framework-config": {
     "enable-when": {
       "node-packages": [
-        "vue",
-        "@vue/cli"
+        "@mpxjs/core"
       ],
       "file-extensions": [
-        "vue"
+        "mpx"
       ],
       "ide-libraries": [
-        "vue"
+        "mpx"
       ]
     }
   }

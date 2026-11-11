@@ -1,14 +1,10 @@
 <idea-plugin>
-  <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
   <dependencies>
-    <plugin id="com.intellij.platform.images"/>
     <module name="intellij.libraries.fastutil"/>
-    <module name="intellij.libraries.opentelemetry"/>
     <module name="intellij.libraries.stream"/>
     <module name="intellij.platform.analysis"/>
     <module name="intellij.platform.backend.workspace"/>
     <module name="intellij.platform.core"/>
-    <module name="intellij.platform.core.impl"/>
     <module name="intellij.platform.core.ui"/>
     <module name="intellij.platform.editor.ui"/>
     <module name="intellij.platform.ide.impl"/>
@@ -16,11 +12,12 @@
     <module name="intellij.platform.polySymbols"/>
     <module name="intellij.platform.polySymbols.web"/>
     <module name="intellij.platform.projectModel"/>
-    <module name="intellij.platform.trialPromotion.common"/>
     <module name="intellij.platform.workspace.storage"/>
+    <plugin id="com.intellij.webstorm.customization"/>
+    <plugin id="com.intellij.modules.platform"/>
+    <plugin id="com.intellij.platform.images"/>
     <module name="intellij.mpxjs.common"/>
   </dependencies>
-  <!-- endregion -->
   <extensions defaultExtensionNs="com.intellij">
     <pluginWithFreeTierEditorNotificationProvider implementation="org.jetbrains.mpxjs.editor.VueFreeTierEditorNotificationProvider"/>
     <polySymbols.webTypes source="web-types/vue-context@0.0.0.web-types.json" enableByDefault="true"/>

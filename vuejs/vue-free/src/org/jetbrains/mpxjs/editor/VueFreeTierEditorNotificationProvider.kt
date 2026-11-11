@@ -13,7 +13,7 @@ internal class VueFreeTierEditorNotificationProvider : PluginWithFreeTierEditorN
 
   @Nls
   override fun getNotificationMessage(file: PsiFile): String? =
-    if (PolyContext.get(KIND_FRAMEWORK, file) == "vue" && isFileWithVueContent(file))
+    if (PolyContext.get(KIND_FRAMEWORK, file) == "mpx" && isFileWithVueContent(file))
       VueBundle.message("vue.free.tier.notification.message")
     else
       null
@@ -22,8 +22,8 @@ internal class VueFreeTierEditorNotificationProvider : PluginWithFreeTierEditorN
     (file.name.endsWith(".ts") &&
      vueImportRegex.containsMatchIn(PsiDocumentManager.getInstance(file.project).getDocument(file)?.charsSequence ?: ""))
     || file.name.endsWith(".html")
-    || file.name.endsWith(".vue")
+    || file.name.endsWith(".mpx")
 
 }
 
-private val vueImportRegex = Regex("'vue'|\"vue\"|\\.vue['\"]", RegexOption.MULTILINE)
+private val vueImportRegex = Regex("'@mpxjs/core'|\"@mpxjs/core\"|\\.mpx['\"]", RegexOption.MULTILINE)
