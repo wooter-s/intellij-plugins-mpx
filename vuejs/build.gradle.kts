@@ -22,7 +22,7 @@ repositories {
 intellijPlatform {
   pluginConfiguration {
     name = "Mpx.js"
-    version = "263.7307.01"
+    version = "263.7307.04"
     ideaVersion {
       sinceBuild = "263.7307.202"
       untilBuild = "263.*"

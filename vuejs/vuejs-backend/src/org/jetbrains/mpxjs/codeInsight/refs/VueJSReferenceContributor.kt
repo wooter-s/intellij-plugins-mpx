@@ -1,8 +1,6 @@
 // Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.mpxjs.codeInsight.refs
 
-import com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor
-import com.intellij.lang.javascript.frameworks.jsx.JSXReferenceContributor.createPathReferenceProvider
 import com.intellij.lang.javascript.patterns.JSPatterns
 import com.intellij.lang.javascript.psi.JSAssignmentExpression
 import com.intellij.lang.javascript.psi.JSDefinitionExpression
@@ -88,7 +86,7 @@ private fun createComponentNamePattern(): ElementPattern<out PsiElement> {
 
 private fun creatPathAttributeValuePattern() = JSPatterns.stringTemplate()
   .withAncestor(2, PlatformPatterns.psiElement(VueJSEmbeddedExpressionContent::class.java)
-    .withAncestor(2, PlatformPatterns.psiElement().withParent(JSXReferenceContributor.createPathAttributePattern(true))))
+    .withAncestor(2, PlatformPatterns.psiElement().withParent(createPathAttributePattern(true))))
   .and(FilterPattern(object : ElementFilter {
     override fun isAcceptable(element: Any?, context: PsiElement?): Boolean {
       if (element !is JSStringTemplateExpression) return false
