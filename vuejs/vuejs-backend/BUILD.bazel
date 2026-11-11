@@ -2,7 +2,7 @@ load("@community//build:compiler-options.bzl", "create_kotlinc_options")
 load("@community//platform/build-scripts/bazel-rules:content_module_jar.bzl", "content_module_jar")
 load("@rules_jvm//:jvm.bzl", "jvm_library", "resourcegroup")
 
-### auto-generated section `dev intellij.vuejs.backend` start
+### auto-generated section `dev intellij.mpxjs.backend` start
 content_module_jar(module = ":backend")
 
 filegroup(
@@ -15,9 +15,9 @@ filegroup(
     ),
     visibility = ["//visibility:public"],
 )
-### auto-generated section `dev intellij.vuejs.backend` end
+### auto-generated section `dev intellij.mpxjs.backend` end
 
-### auto-generated section `build intellij.vuejs.backend` start
+### auto-generated section `build intellij.mpxjs.backend` start
 create_kotlinc_options(
     name = "custom_backend",
     opt_in = [
@@ -51,7 +51,7 @@ jvm_library(
         allow_empty = True,
     ),
     kotlinc_opts = ":custom_backend",
-    module_name = "intellij.vuejs.backend",
+    module_name = "intellij.mpxjs.backend",
     resource_jars = [":backend_resources"],
     resource_strip_prefix = "resources",
     resources = glob(
@@ -142,7 +142,7 @@ jvm_library(
         allow_empty = True,
     ),
     kotlinc_opts = ":custom_backend",
-    module_name = "intellij.vuejs.backend",
+    module_name = "intellij.mpxjs.backend",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -219,15 +219,15 @@ jvm_library(
         "//plugins/JavaScriptLanguage/css/backend:javascript-backend-css_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.backend` end
+### auto-generated section `build intellij.mpxjs.backend` end
 
-### auto-generated section `iml intellij.vuejs.backend` start
+### auto-generated section `iml intellij.mpxjs.backend` start
 exports_files(
     [
-        "intellij.vuejs.backend.iml",
+        "intellij.mpxjs.backend.iml",
         "gen-resources/liveTemplates/Vue.xml",
-        "resources/intellij.vuejs.backend.xml",
+        "resources/intellij.mpxjs.backend.xml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.backend` end
+### auto-generated section `iml intellij.mpxjs.backend` end

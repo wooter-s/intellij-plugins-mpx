@@ -1,0 +1,157 @@
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.web.scopes
+
+import com.intellij.lang.javascript.psi.JSExpression
+import com.intellij.lang.javascript.psi.ecma6.TypeScriptTypeParameter
+import com.intellij.lang.javascript.psi.resolve.JSResolveUtil
+import com.intellij.lang.javascript.psi.types.JSStringLiteralTypeImpl
+import com.intellij.lang.javascript.psi.util.stubSafeAttributes
+import com.intellij.model.Pointer
+import com.intellij.openapi.project.Project
+import com.intellij.platform.backend.navigation.NavigationTarget
+import com.intellij.polySymbols.PolySymbol
+import com.intellij.polySymbols.PolySymbolKind
+import com.intellij.polySymbols.html.HTML_ATTRIBUTES
+import com.intellij.polySymbols.html.HTML_SLOTS
+import com.intellij.polySymbols.html.PolySymbolHtmlAttributeValue
+import com.intellij.polySymbols.html.PolySymbolHtmlAttributeValue.Kind.EXPRESSION
+import com.intellij.polySymbols.html.PolySymbolHtmlAttributeValue.Type.OF_MATCH
+import com.intellij.polySymbols.js.JS_PROPERTIES
+import com.intellij.polySymbols.patterns.PolySymbolPattern
+import com.intellij.polySymbols.patterns.polySymbolPattern
+import com.intellij.polySymbols.query.PolySymbolNameConversionRules
+import com.intellij.polySymbols.query.PolySymbolWithPattern
+import com.intellij.polySymbols.utils.PolySymbolScopeWithCache
+import com.intellij.psi.PsiElement
+import com.intellij.psi.createSmartPointer
+import com.intellij.psi.xml.XmlTag
+import com.intellij.util.asSafely
+import com.intellij.xml.util.HtmlUtil.SLOT_TAG_NAME
+import org.jetbrains.mpxjs.codeInsight.attributes.VueAttributeNameParser
+import org.jetbrains.mpxjs.codeInsight.findJSExpression
+import org.jetbrains.mpxjs.codeInsight.fromAsset
+import org.jetbrains.mpxjs.codeInsight.toAsset
+import org.jetbrains.mpxjs.model.DEFAULT_SLOT_NAME
+import org.jetbrains.mpxjs.model.SLOT_NAME_ATTRIBUTE
+import org.jetbrains.mpxjs.model.VueComponent
+import org.jetbrains.mpxjs.model.VueDelegatedContainer
+import org.jetbrains.mpxjs.model.VueModelManager
+import org.jetbrains.mpxjs.model.VueNamedComponent
+import org.jetbrains.mpxjs.model.VueTemplateSymbol
+import org.jetbrains.mpxjs.web.VUE_COMPONENTS
+import org.jetbrains.mpxjs.web.VUE_SPECIAL_PROPERTIES
+import org.jetbrains.mpxjs.web.getVueSymbolsCacheDependencies
+
+private const val SLOT_LOCAL_COMPONENT = "\$local"
+
+class VueSlotElementScope(tag: XmlTag) : PolySymbolScopeWithCache<XmlTag, Unit>(tag.project, tag, Unit) {
+
+  override fun provides(kind: PolySymbolKind): Boolean =
+    kind == HTML_ATTRIBUTES
+    || kind == VUE_COMPONENTS
+
+  override fun initialize(consumer: (PolySymbol) -> Unit, cacheDependencies: MutableSet<Any>) {
+    VueModelManager.findEnclosingContainer(dataHolder)
+      .asSafely<VueComponent>()
+      ?.let { SlotLocalComponent(it) }
+      ?.let(consumer)
+
+    consumer(VueSlotPropertiesSymbol(getSlotName()))
+
+    cacheDependencies.addAll(getVueSymbolsCacheDependencies(dataHolder.project))
+  }
+
+  private fun getSlotName(): String? {
+    for (attr in dataHolder.stubSafeAttributes) {
+      val info = VueAttributeNameParser.parse(attr.name, SLOT_TAG_NAME)
+
+      if (info.kind == VueAttributeNameParser.VueAttributeKind.SLOT_NAME) {
+        return attr.value
+      }
+      else if ((info as? VueAttributeNameParser.VueDirectiveInfo)?.directiveKind == VueAttributeNameParser.VueDirectiveKind.BIND
+               && info.arguments == SLOT_NAME_ATTRIBUTE) {
+        return attr.valueElement
+          ?.findJSExpression<JSExpression>()
+          ?.let { JSResolveUtil.getExpressionJSType(it)?.substitute() }
+          ?.asSafely<JSStringLiteralTypeImpl>()
+          ?.literal
+      }
+    }
+
+    return DEFAULT_SLOT_NAME
+  }
+
+  override fun createPointer(): Pointer<VueSlotElementScope> {
+    val componentPointer = dataHolder.createSmartPointer()
+    return Pointer {
+      componentPointer.dereference()?.let { VueSlotElementScope(it) }
+    }
+  }
+
+  private data class SlotLocalComponent(
+    override val delegate: VueComponent,
+  ) : VueDelegatedContainer<VueComponent>(), VueNamedComponent {
+    override val name: String get() = SLOT_LOCAL_COMPONENT
+
+    override val source: PsiElement?
+      get() = delegate.source
+
+    override val elementToImport: PsiElement?
+      get() = delegate.elementToImport
+
+    override val typeParameters: List<TypeScriptTypeParameter>
+      get() = emptyList()
+
+    override fun getNavigationTargets(project: Project): Collection<NavigationTarget> =
+      delegate.getNavigationTargets(project)
+
+    override fun createPointer(): Pointer<out VueNamedComponent> {
+      val delegatePtr = delegate.createPointer()
+      return Pointer {
+        delegatePtr.dereference()?.let { SlotLocalComponent(it) }
+      }
+    }
+  }
+
+  private class VueSlotPropertiesSymbol(slotName: String?) : PolySymbolWithPattern, VueTemplateSymbol {
+
+    override val kind: PolySymbolKind
+      get() = HTML_ATTRIBUTES
+
+    override val name: String
+      get() = "Vue Slot Properties"
+
+    override val attributeValue: PolySymbolHtmlAttributeValue =
+      PolySymbolHtmlAttributeValue.create(kind = EXPRESSION, type = OF_MATCH)
+
+    override val pattern: PolySymbolPattern = polySymbolPattern {
+      group {
+        symbols {
+          if (slotName != null) {
+            from(
+              kind = JS_PROPERTIES,
+              location = listOf(
+                VUE_COMPONENTS.withName(SLOT_LOCAL_COMPONENT),
+                HTML_SLOTS.withName(slotName),
+              ),
+            ) {
+              nameConversion(
+                PolySymbolNameConversionRules.create(JS_PROPERTIES) {
+                  listOf(fromAsset(it), toAsset(it))
+                }
+              )
+            }
+          }
+          else {
+            from(VUE_SPECIAL_PROPERTIES)
+          }
+        }
+        symbolReference()
+      }
+    }
+
+    override fun createPointer(): Pointer<out PolySymbol> =
+      Pointer.hardPointer(this)
+  }
+
+}

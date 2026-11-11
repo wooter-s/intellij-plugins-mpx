@@ -2,7 +2,7 @@ load("@community//build:compiler-options.bzl", "create_kotlinc_options")
 load("@community//build:tests-options.bzl", "jps_test")
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `build intellij.vuejs.tests` start
+### auto-generated section `build intellij.mpxjs.tests` start
 create_kotlinc_options(
     name = "custom_tests",
     opt_in = [
@@ -20,7 +20,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.tests",
+    module_name = "intellij.mpxjs.tests",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -50,7 +50,7 @@ jvm_library(
         allow_empty = True,
     ),
     kotlinc_opts = ":custom_tests",
-    module_name = "intellij.vuejs.tests",
+    module_name = "intellij.mpxjs.tests",
     resource_strip_prefix = "testData",
     resources = glob(
         ["testData/**/*"],
@@ -216,20 +216,20 @@ jvm_library(
         "@community//platform/lsp-impl:lsp-impl_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.tests` end
+### auto-generated section `build intellij.mpxjs.tests` end
 
-### auto-generated section `iml intellij.vuejs.tests` start
+### auto-generated section `iml intellij.mpxjs.tests` start
 exports_files(
     [
-        "intellij.vuejs.tests.iml",
+        "intellij.mpxjs.tests.iml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.tests` end
+### auto-generated section `iml intellij.mpxjs.tests` end
 
-### auto-generated section `test intellij.vuejs.tests` start
+### auto-generated section `test intellij.mpxjs.tests` start
 jps_test(
     name = "tests_test",
     runtime_deps = [":tests_test_lib"],
 )
-### auto-generated section `test intellij.vuejs.tests` end
+### auto-generated section `test intellij.mpxjs.tests` end

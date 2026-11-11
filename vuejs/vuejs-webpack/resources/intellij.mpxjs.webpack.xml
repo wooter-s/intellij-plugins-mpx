@@ -1,0 +1,15 @@
+<idea-plugin visibility="internal">
+  <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+  <dependencies>
+    <plugin id="intellij.webpack"/>
+    <module name="intellij.javascript.backend"/>
+    <module name="intellij.platform.core"/>
+    <module name="intellij.mpxjs.backend"/>
+    <module name="intellij.mpxjs.common"/>
+  </dependencies>
+  <!-- endregion -->
+  <extensions defaultExtensionNs="intellij.webpack">
+    <webpackLocator implementation="com.intellij.mpxjs.webpack.VueCliWebpackConfigLocator"/>
+    <webpackLocator implementation="com.intellij.mpxjs.webpack.NuxtWebpackConfigLocator"/>
+  </extensions>
+</idea-plugin>

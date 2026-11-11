@@ -33,9 +33,7 @@ sourceSets {
 dependencies {
   intellijPlatform {
     jetbrainsRuntime()
-    intellijIdeaUltimate(ext("platform.version")) {
-      useInstaller = false
-    }
+    local(providers.gradleProperty("localIdePath").getOrElse("/Applications/WebStorm.app"))
   }
 }
 

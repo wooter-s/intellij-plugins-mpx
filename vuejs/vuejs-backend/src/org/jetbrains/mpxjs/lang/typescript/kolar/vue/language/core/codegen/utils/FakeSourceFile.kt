@@ -1,0 +1,26 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.utils
+
+import com.intellij.lang.javascript.JSTokenTypes
+import com.intellij.lang.javascript.psi.JSElement
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiWhiteSpace
+import com.intellij.psi.impl.source.tree.LeafElement
+import com.intellij.psi.util.childrenSequence
+import com.intellij.psi.util.lastLeaf
+
+// manual
+typealias FakeSourceFile = JSElement
+
+val FakeSourceFile.statements: Sequence<PsiElement>
+  get() = childrenSequence
+    .filter { it !is LeafElement }
+    .filter { it !is PsiWhiteSpace }
+    .filter { it !is PsiComment }
+
+fun PsiElement.endsWithSemicolon(): Boolean {
+  val leaf = lastLeaf()
+  return leaf is LeafElement
+         && leaf.tokenType == JSTokenTypes.SEMICOLON
+}

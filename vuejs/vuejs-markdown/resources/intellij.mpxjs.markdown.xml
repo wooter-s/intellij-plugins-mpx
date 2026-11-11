@@ -1,0 +1,16 @@
+<idea-plugin>
+  <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+  <dependencies>
+    <module name="intellij.javascript.web"/>
+    <module name="intellij.markdown"/>
+    <module name="intellij.platform.analysis"/>
+    <module name="intellij.platform.core"/>
+    <module name="intellij.mpxjs.backend"/>
+    <module name="intellij.mpxjs.common"/>
+    <module name="intellij.xml.parser"/>
+  </dependencies>
+  <!-- endregion -->
+  <extensions defaultExtensionNs="org.intellij.markdown">
+    <fenceLanguageProvider implementation="com.intellij.mpxjs.markdown.VueCodeFenceLanguageProvider"/>
+  </extensions>
+</idea-plugin>

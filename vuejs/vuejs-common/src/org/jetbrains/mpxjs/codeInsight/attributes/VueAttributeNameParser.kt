@@ -1,0 +1,372 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.codeInsight.attributes
+
+import com.intellij.psi.xml.XmlTag
+import com.intellij.util.containers.MultiMap
+import com.intellij.xml.util.BasicHtmlUtil.ID_ATTRIBUTE_NAME
+import com.intellij.xml.util.BasicHtmlUtil.LANG_ATTRIBUTE_NAME
+import com.intellij.xml.util.BasicHtmlUtil.SCRIPT_TAG_NAME
+import com.intellij.xml.util.BasicHtmlUtil.SLOT_TAG_NAME
+import com.intellij.xml.util.BasicHtmlUtil.SRC_ATTRIBUTE_NAME
+import com.intellij.xml.util.BasicHtmlUtil.STYLE_TAG_NAME
+import com.intellij.xml.util.BasicHtmlUtil.TEMPLATE_TAG_NAME
+import org.jetbrains.mpxjs.codeInsight.ATTR_ARGUMENT_PREFIX
+import org.jetbrains.mpxjs.codeInsight.ATTR_DIRECTIVE_PREFIX
+import org.jetbrains.mpxjs.codeInsight.ATTR_EVENT_SHORTHAND
+import org.jetbrains.mpxjs.codeInsight.ATTR_MODIFIER_PREFIX
+import org.jetbrains.mpxjs.codeInsight.ATTR_SLOT_SHORTHAND
+import org.jetbrains.mpxjs.codeInsight.GENERIC_ATTRIBUTE_NAME
+import org.jetbrains.mpxjs.codeInsight.MODULE_ATTRIBUTE_NAME
+import org.jetbrains.mpxjs.codeInsight.REF_ATTRIBUTE_NAME
+import org.jetbrains.mpxjs.codeInsight.SETUP_ATTRIBUTE_NAME
+import org.jetbrains.mpxjs.codeInsight.VAPOR_ATTRIBUTE_NAME
+import org.jetbrains.mpxjs.model.DEPRECATED_SLOT_ATTRIBUTE
+import org.jetbrains.mpxjs.model.SLOT_NAME_ATTRIBUTE
+import java.util.Locale
+
+class VueAttributeNameParser private constructor() {
+  companion object {
+    fun parse(attributeName: CharSequence, context: String? = null, isTopLevel: Boolean = false): VueAttributeInfo {
+      return parse(attributeName) { it.isValidIn(context, isTopLevel) }
+    }
+
+    fun parse(attributeName: CharSequence, context: XmlTag): VueAttributeInfo {
+      return parse(attributeName) { it.isValidIn(context) }
+    }
+
+    private fun parse(attributeName: CharSequence, isValid: (VueAttributeKind) -> Boolean): VueAttributeInfo {
+      if (attributeName.length == 0) {
+        return VueAttributeInfo("", VueAttributeKind.PLAIN)
+      }
+
+      val name: String
+      val kind: VueDirectiveKind
+      var paramsPos: Int
+      var isShorthand = false
+      if (attributeName.startsWith(ATTR_EVENT_SHORTHAND)) {
+        name = "on"
+        kind = VueDirectiveKind.ON
+        paramsPos = 0
+        isShorthand = true
+      }
+      else if (attributeName.startsWith(ATTR_ARGUMENT_PREFIX)) {
+        name = "bind"
+        kind = VueDirectiveKind.BIND
+        paramsPos = 0
+        isShorthand = true
+      }
+      else if (attributeName.startsWith(ATTR_SLOT_SHORTHAND)) {
+        name = "slot"
+        kind = VueDirectiveKind.SLOT
+        paramsPos = 0
+        isShorthand = true
+      }
+      else if (attributeName.startsWith(ATTR_DIRECTIVE_PREFIX) && attributeName.length > 2) {
+        var nameEnd = attributeName.indexOfFirst { it == ATTR_MODIFIER_PREFIX || it == ATTR_ARGUMENT_PREFIX }
+        if (nameEnd < 0) {
+          nameEnd = attributeName.length
+        }
+        name = attributeName.substring(2, nameEnd)
+        kind = directiveKindMap[name] ?: VueDirectiveKind.CUSTOM
+        paramsPos = nameEnd
+      }
+      // WeChat Mini Program event directives
+      // Supports both colon syntax (bind:tap) and no-colon syntax (bindtap)
+      else if (isWeChatEventDirective(attributeName)) {
+        val colonIndex = attributeName.indexOf(':')
+        val prefix: String
+        val eventName: String
+        if (colonIndex > 0) {
+          // Colon syntax: bind:tap, catch:touchmove
+          prefix = attributeName.substring(0, colonIndex)
+          eventName = attributeName.substring(colonIndex + 1)
+        }
+        else {
+          // No-colon syntax: bindtap, catchtouchmove
+          val result = parseWeChatDirectiveWithoutColon(attributeName)
+          prefix = result.first
+          eventName = result.second
+        }
+        // Treat as ON directive (event handler) - value should be injected as JavaScript
+        return VueDirectiveInfo(prefix, VueDirectiveKind.ON, eventName, isShorthand = false)
+      }
+      else {
+        var nameEnd = attributeName.indexOf(ATTR_MODIFIER_PREFIX)
+        if (nameEnd < 0) {
+          nameEnd = attributeName.length
+        }
+        name = attributeName.substring(0, nameEnd)
+        val attributeKind = attributeKindMap.get(name).find(isValid) ?: VueAttributeKind.PLAIN
+        return VueAttributeInfo(name, attributeKind, parseModifiers(attributeName, nameEnd))
+      }
+      if (paramsPos >= attributeName.length
+          || (attributeName[paramsPos] != ATTR_EVENT_SHORTHAND
+              && attributeName[paramsPos] != ATTR_ARGUMENT_PREFIX
+              && attributeName[paramsPos] != ATTR_SLOT_SHORTHAND
+              && attributeName[paramsPos] != ATTR_MODIFIER_PREFIX)) {
+        return VueDirectiveInfo(name, kind, isShorthand = isShorthand)
+      }
+
+      val arguments: String?
+      if (attributeName[paramsPos] == ATTR_MODIFIER_PREFIX) {
+        return VueDirectiveInfo(name, kind, null, isShorthand, parseModifiers(attributeName, paramsPos))
+      }
+      else {
+        paramsPos++
+      }
+      val lastBracket = attributeName.lastIndexOf(']')
+      if (lastBracket >= paramsPos && attributeName[paramsPos] == '[') {
+        arguments = attributeName.substring(paramsPos, lastBracket + 1)
+        paramsPos = lastBracket + 1
+      }
+      else {
+        val firstDot = attributeName.indexOf(ATTR_MODIFIER_PREFIX, paramsPos)
+        if (firstDot > 0) {
+          arguments = attributeName.substring(paramsPos, firstDot)
+          paramsPos = firstDot
+        }
+        else {
+          arguments = attributeName.substring(paramsPos)
+          paramsPos = attributeName.length
+        }
+      }
+      return VueDirectiveInfo(name, kind, arguments, isShorthand, parseModifiers(attributeName, paramsPos))
+    }
+
+    private fun parseModifiers(modifiers: CharSequence, startPos: Int): Set<String> {
+      if (startPos >= modifiers.length || modifiers[startPos] != ATTR_MODIFIER_PREFIX) {
+        return emptySet()
+      }
+      val result = mutableSetOf<String>()
+      var currentIndex = startPos
+      var prevDot = startPos
+      while (++currentIndex < modifiers.length) {
+        if (modifiers[currentIndex] == ATTR_MODIFIER_PREFIX) {
+          if (prevDot < currentIndex) {
+            result.add(modifiers.substring(prevDot + 1, currentIndex))
+          }
+          prevDot = currentIndex
+        }
+      }
+      if (prevDot < modifiers.length) {
+        result.add(modifiers.substring(prevDot + 1))
+      }
+      return result
+    }
+
+    private val attributeKindMap: MultiMap<String, VueAttributeKind> = MultiMap()
+
+    private val directiveKindMap: Map<String, VueDirectiveKind> =
+      buildMap {
+        for (directive in VueDirectiveKind.entries) {
+          val name = directive.directiveName
+                     ?: continue
+
+          put(name, directive)
+        }
+      }
+
+    init {
+      VueAttributeKind.entries.asSequence()
+        .filter { it.attributeName != null }
+        .forEach {
+          attributeKindMap.putValue(it.attributeName, it)
+        }
+    }
+
+    /**
+     * Check if the attribute name is a WeChat Mini Program event directive.
+     * These directives should have their values injected as JavaScript.
+     * Supports both colon syntax (bind:tap) and no-colon syntax (bindtap).
+     */
+    private fun isWeChatEventDirective(attributeName: CharSequence): Boolean {
+      // Colon syntax: bind:tap, catch:touchmove, etc.
+      if (attributeName.startsWith("bind:")
+          || attributeName.startsWith("catch:")
+          || attributeName.startsWith("mut-bind:")
+          || attributeName.startsWith("capture-bind:")
+          || attributeName.startsWith("capture-catch:")
+          || attributeName.startsWith("mark:")
+          || attributeName.startsWith("model:")) {
+        return true
+      }
+      // No-colon syntax: bindtap, catchtouchmove, etc.
+      // Must have additional characters after the prefix (the event name)
+      val len = attributeName.length
+      return (attributeName.startsWith("capture-catch") && len > 13)
+             || (attributeName.startsWith("capture-bind") && len > 12)
+             || (attributeName.startsWith("mut-bind") && len > 8)
+             || (attributeName.startsWith("catch") && len > 5)
+             || (attributeName.startsWith("bind") && len > 4)
+             || (attributeName.startsWith("model") && len > 5)
+             || (attributeName.startsWith("mark") && len > 4)
+    }
+
+    /**
+     * Parse WeChat directive without colon syntax (e.g., bindtap -> Pair("bind", "tap"))
+     */
+    private fun parseWeChatDirectiveWithoutColon(attributeName: CharSequence): Pair<String, String> {
+      val name = attributeName.toString()
+      return when {
+        name.startsWith("capture-catch") -> Pair("capture-catch", name.substring(13))
+        name.startsWith("capture-bind") -> Pair("capture-bind", name.substring(12))
+        name.startsWith("mut-bind") -> Pair("mut-bind", name.substring(8))
+        name.startsWith("catch") -> Pair("catch", name.substring(5))
+        name.startsWith("bind") -> Pair("bind", name.substring(4))
+        name.startsWith("model") -> Pair("model", name.substring(5))
+        name.startsWith("mark") -> Pair("mark", name.substring(4))
+        else -> Pair(name, "")
+      }
+    }
+  }
+
+  open class VueAttributeInfo
+  internal constructor(
+    val name: String,
+    val kind: VueAttributeKind,
+    val modifiers: Set<String> = emptySet(),
+  ) {
+
+    open val requiresValue: Boolean get() = kind.requiresValue && modifiers.isEmpty()
+
+    open val injectJS: Boolean get() = kind.injectJS
+
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (javaClass != other?.javaClass) return false
+
+      other as VueAttributeInfo
+
+      return name == other.name
+             && kind === other.kind
+             && modifiers == other.modifiers
+    }
+
+    override fun hashCode(): Int {
+      var result = name.hashCode()
+      result = 31 * result + kind.hashCode()
+      result = 31 * result + modifiers.hashCode()
+      return result
+    }
+
+    override fun toString(): String {
+      return "$name [$kind, modifiers=$modifiers]"
+    }
+  }
+
+  class VueDirectiveInfo internal constructor(
+    name: String,
+    val directiveKind: VueDirectiveKind,
+    val arguments: String? = null,
+    val isShorthand: Boolean = false,
+    modifiers: Set<String> = emptySet(),
+  ) : VueAttributeInfo(
+    name = name,
+    kind = VueAttributeKind.DIRECTIVE,
+    modifiers = modifiers,
+  ) {
+    override val requiresValue: Boolean
+      get() {
+        return directiveKind.requiresValue && modifiers.isEmpty()
+      }
+
+    override val injectJS: Boolean get() = directiveKind.injectJS
+
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (javaClass != other?.javaClass) return false
+      if (!super.equals(other)) return false
+
+      other as VueDirectiveInfo
+
+      return directiveKind === other.directiveKind
+             && arguments == other.arguments
+    }
+
+    override fun hashCode(): Int {
+      var result = super.hashCode()
+      result = 31 * result + directiveKind.hashCode()
+      result = 31 * result + arguments.hashCode()
+      return result
+    }
+
+    override fun toString(): String {
+      return "$name [$kind, args=$arguments, isShorthand=$isShorthand, modifiers=$modifiers]"
+    }
+
+  }
+
+  enum class VueAttributeKind(
+    val attributeName: String?,
+    val injectJS: Boolean = false,
+    val requiresValue: Boolean = true,
+    val deprecated: Boolean = false,
+    val requiresTag: String? = null,
+    val onlyTopLevelTag: Boolean = true,
+  ) {
+    PLAIN(null),
+    DIRECTIVE(null),
+    SLOT(DEPRECATED_SLOT_ATTRIBUTE, deprecated = true),
+    REF(REF_ATTRIBUTE_NAME),
+    IS("is"),
+    KEY("key"),
+    SCOPE("scope", injectJS = true, deprecated = true, requiresTag = TEMPLATE_TAG_NAME, onlyTopLevelTag = false),
+    SLOT_SCOPE("slot-scope", injectJS = true, deprecated = true),
+    SLOT_NAME(SLOT_NAME_ATTRIBUTE, injectJS = false, requiresTag = SLOT_TAG_NAME, onlyTopLevelTag = false),
+    STYLE_SCOPED("scoped", requiresValue = false, requiresTag = STYLE_TAG_NAME),
+    STYLE_MODULE(MODULE_ATTRIBUTE_NAME, requiresValue = false, requiresTag = STYLE_TAG_NAME),
+    STYLE_SRC(SRC_ATTRIBUTE_NAME, requiresTag = STYLE_TAG_NAME),
+    STYLE_LANG(LANG_ATTRIBUTE_NAME, requiresTag = STYLE_TAG_NAME),
+    TEMPLATE_FUNCTIONAL("functional", requiresValue = false, requiresTag = TEMPLATE_TAG_NAME),
+    TEMPLATE_SRC(SRC_ATTRIBUTE_NAME, requiresTag = TEMPLATE_TAG_NAME),
+    TEMPLATE_LANG(LANG_ATTRIBUTE_NAME, requiresTag = TEMPLATE_TAG_NAME),
+    SCRIPT_ID(ID_ATTRIBUTE_NAME, requiresTag = SCRIPT_TAG_NAME, onlyTopLevelTag = false),
+    SCRIPT_SRC(SRC_ATTRIBUTE_NAME, requiresTag = SCRIPT_TAG_NAME),
+    SCRIPT_LANG(LANG_ATTRIBUTE_NAME, requiresTag = SCRIPT_TAG_NAME),
+    SCRIPT_SETUP(SETUP_ATTRIBUTE_NAME, injectJS = false, requiresValue = false, requiresTag = SCRIPT_TAG_NAME),
+    SCRIPT_VAPOR(VAPOR_ATTRIBUTE_NAME, injectJS = false, requiresValue = false, requiresTag = SCRIPT_TAG_NAME),
+    SCRIPT_GENERIC(GENERIC_ATTRIBUTE_NAME, injectJS = true, requiresValue = true, requiresTag = SCRIPT_TAG_NAME,
+                   onlyTopLevelTag = false)
+    ;
+
+    fun isValidIn(context: String?, isTopLevel: Boolean): Boolean {
+      return requiresTag == null
+             || ((!onlyTopLevelTag || isTopLevel)
+                 && context?.lowercase(Locale.US) == requiresTag)
+    }
+
+    fun isValidIn(context: XmlTag): Boolean {
+      return isValidIn(context.name, context.parentTag == null)
+    }
+  }
+
+  enum class VueDirectiveKind(
+    private val hasName: Boolean = true,
+    val injectJS: Boolean = true,
+    val requiresValue: Boolean = true,
+  ) {
+    CUSTOM(hasName = false, requiresValue = false),
+    BIND,
+    ON,
+    CLOAK(injectJS = false, requiresValue = false),
+    ELSE(injectJS = false, requiresValue = false),
+    ELSE_IF,
+    FOR,
+    HTML,
+    IF,
+    MODEL,
+    ONCE(injectJS = false, requiresValue = false),
+    PRE(injectJS = false, requiresValue = false),
+    SHOW,
+    SLOT(requiresValue = false),
+    TEXT,
+
+    ;
+
+    val directiveName: String?
+      get() = if (hasName) {
+        name.lowercase(Locale.US).replace('_', '-')
+      }
+      else null
+  }
+}

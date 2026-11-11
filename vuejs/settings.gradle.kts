@@ -24,3 +24,4 @@ include(":vuejs-markdown")
 include(":vuejs-prettier")
 include(":vuejs-copyright")
 include(":vuejs-eslint")
+rootProject.name = "mpx"

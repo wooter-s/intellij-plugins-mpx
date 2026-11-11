@@ -1,5 +1,5 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
-package com.intellij.vuejs.eslint
+package com.intellij.mpxjs.eslint
 
 import com.intellij.json.psi.JsonNumberLiteral
 import com.intellij.json.psi.JsonObject
@@ -14,8 +14,8 @@ import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.psi.formatter.xml.HtmlCodeStyleSettings
 import com.intellij.util.asSafely
 import com.intellij.xml.util.HtmlUtil
-import org.jetbrains.vuejs.lang.html.VueLanguage
-import org.jetbrains.vuejs.lang.html.psi.formatter.VueCodeStyleSettings
+import org.jetbrains.mpxjs.lang.html.VueLanguage
+import org.jetbrains.mpxjs.lang.html.psi.formatter.VueCodeStyleSettings
 
 class VueEslintRuleMappersFactory : EslintRuleMappersFactory {
 

@@ -1,3 +1,4 @@
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
@@ -20,16 +21,19 @@ repositories {
 
 intellijPlatform {
   pluginConfiguration {
-    name = "Vue.js"
+    name = "Mpx.js"
+    version = "263.7307.01"
+    ideaVersion {
+      sinceBuild = "263.7307.202"
+      untilBuild = "263.*"
+    }
   }
 }
 
 dependencies {
   intellijPlatform {
     jetbrainsRuntime()
-    intellijIdeaUltimate(ext("platform.version")) {
-      useInstaller = false
-    }
+    local(providers.gradleProperty("localIdePath").getOrElse("/Applications/WebStorm.app"))
     // Bundled IDEA plugins on the test/sandbox classpath. JavaScript and postcss back the Vue
     // plugin itself; the rest are only exercised by vuejs-tests.
     bundledPlugins(
@@ -78,6 +82,14 @@ kotlin {
 }
 
 tasks {
+  withType<PrepareSandboxTask>().configureEach {
+    from("vuejs-backend/vue-language-tools") {
+      into(pluginName.map { "$it/vue-language-tools" })
+    }
+    from("vuejs-backend/vue-service") {
+      into(pluginName.map { "$it/vue-service" })
+    }
+  }
   wrapper {
     // Vue-local override of the shared gradle.version (8.14.3): plugin 2.16.0 requires Gradle 9.0+.
     gradleVersion = "9.5.1"

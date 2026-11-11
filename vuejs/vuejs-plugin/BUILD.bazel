@@ -1,19 +1,19 @@
 load("@jps_dynamic_deps_ultimate//:targets.bzl", "dev_dist_plugin")
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `dev intellij.vuejs.plugin` start
+### auto-generated section `dev intellij.mpxjs.plugin` start
 dev_dist_plugin(
     content_modules = [
         # do not sort,
-        "intellij.vuejs.prettier",
-        "intellij.vuejs.copyright",
-        "intellij.vuejs.debugger",
-        "intellij.vuejs.markdown",
-        "intellij.vuejs.free",
-        "intellij.vuejs.common",
-        "intellij.vuejs.backend",
-        "intellij.vuejs.eslint",
-        "intellij.vuejs.webpack",
+        "intellij.mpxjs.prettier",
+        "intellij.mpxjs.copyright",
+        "intellij.mpxjs.debugger",
+        "intellij.mpxjs.markdown",
+        "intellij.mpxjs.free",
+        "intellij.mpxjs.common",
+        "intellij.mpxjs.backend",
+        "intellij.mpxjs.eslint",
+        "intellij.mpxjs.webpack",
     ],
     descriptor = "resources/META-INF/plugin.xml",
     file_prefixes = {
@@ -25,31 +25,31 @@ dev_dist_plugin(
         "vue-service": "//contrib/vuejs/vuejs-backend:dev_dist_resources",
     },
     jars = {
-        "lib/vuejs-plugin.jar": ["intellij.vuejs.plugin"],
+        "lib/vuejs-plugin.jar": ["intellij.mpxjs.plugin"],
     },
-    main_module = "intellij.vuejs.plugin",
+    main_module = "intellij.mpxjs.plugin",
     mode_refused_content_modules = {
         "frontend": [
-            "intellij.vuejs.prettier",
-            "intellij.vuejs.debugger",
-            "intellij.vuejs.markdown",
-            "intellij.vuejs.free",
-            "intellij.vuejs.backend",
-            "intellij.vuejs.eslint",
-            "intellij.vuejs.webpack",
+            "intellij.mpxjs.prettier",
+            "intellij.mpxjs.debugger",
+            "intellij.mpxjs.markdown",
+            "intellij.mpxjs.free",
+            "intellij.mpxjs.backend",
+            "intellij.mpxjs.eslint",
+            "intellij.mpxjs.webpack",
         ],
     },
 )
-### auto-generated section `dev intellij.vuejs.plugin` end
+### auto-generated section `dev intellij.mpxjs.plugin` end
 
-### auto-generated section `build intellij.vuejs.plugin` start
+### auto-generated section `build intellij.mpxjs.plugin` start
 jvm_library(
     name = "plugin",
     srcs = glob(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.plugin",
+    module_name = "intellij.mpxjs.plugin",
     resource_strip_prefix = "resources",
     resources = glob(
         ["resources/**/*"],
@@ -76,7 +76,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.plugin",
+    module_name = "intellij.mpxjs.plugin",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -91,14 +91,14 @@ jvm_library(
         "//plugins/JavaScriptLanguage/plugin:plugin_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.plugin` end
+### auto-generated section `build intellij.mpxjs.plugin` end
 
-### auto-generated section `iml intellij.vuejs.plugin` start
+### auto-generated section `iml intellij.mpxjs.plugin` start
 exports_files(
     [
-        "intellij.vuejs.plugin.iml",
+        "intellij.mpxjs.plugin.iml",
         "resources/META-INF/plugin.xml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.plugin` end
+### auto-generated section `iml intellij.mpxjs.plugin` end

@@ -1,0 +1,50 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.libraries.nuxt
+
+import com.intellij.javascript.testFramework.web.checkJsFileUsages
+import com.intellij.lang.javascript.JSTestUtils.runInBackgroundReadActionAndWait
+import com.intellij.lang.javascript.config.graph.JSGraphBuildExecutor
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import org.jetbrains.mpxjs.lang.VueTestModule
+import org.jetbrains.mpxjs.lang.configureVueDependencies
+import org.jetbrains.mpxjs.lang.getVueTestDataPath
+
+class NuxtFindUsagesTest : BasePlatformTestCase() {
+  override fun getTestDataPath(): String = getVueTestDataPath() + "/libraries/nuxt/findUsages"
+
+  override fun tearDown() {
+    try {
+      JSGraphBuildExecutor.getService(project).finishAllTasks()
+    }
+    catch (e: Throwable) {
+      addSuppressedException(e)
+    }
+    finally {
+      super.tearDown()
+    }
+  }
+
+  fun testScriptSetupComponentFileAllScope() {
+    doTest("components/AppAlert.vue", GlobalSearchScope.everythingScope(project))
+  }
+
+  fun testScriptSetupComponentFileProjectScope() {
+    doTest("components/AppAlert.vue")
+  }
+
+  fun testDefaultExportComponentFile() {
+    doTest("components/AppAlert.vue")
+  }
+
+  private fun doTest(component: String, scope: GlobalSearchScope = GlobalSearchScope.projectScope(project)) {
+    val testName = getTestName(true)
+    myFixture.copyDirectoryToProject(testName, ".")
+    myFixture.configureVueDependencies(VueTestModule.VUE_3_2_2, VueTestModule.NUXT_2_15_6)
+
+    myFixture.configureFromTempProjectFile(component)
+    runInBackgroundReadActionAndWait {
+      myFixture.checkJsFileUsages(testName, scope = scope)
+    }
+  }
+}

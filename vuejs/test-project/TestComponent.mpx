@@ -1,0 +1,93 @@
+<template>
+  <view class="container">
+    <view class="title-container">
+      <view class="title">{{ templateContent.title }}</view>
+      <view class="desc">{{ templateContent.desc }}</view>
+    </view>
+    <adaptive-image
+      wx:if="{{ templateContent.imgUrl }}"
+      custom-class="icon"
+      src="{{ templateContent.imgUrl }}"/>
+    <view
+      wx:if="{{ !templateContent.imgUrl && templateContent.btnText }}"
+      class="icon"
+    >
+      <cube-button
+        data-traceId="operation_propagandaButton"
+        data-traceName="宣教按钮"
+        outline
+        inline
+        bindtap="handleTap"
+        class="btn exposure"
+      >
+        <view class="btn-title btn-bold-title-grey">
+          {{ templateContent.btnText }}
+        </view>
+      </cube-button>
+    </view>
+  </view>
+</template>
+
+<script lang="ts">
+import {
+  computed,
+  onShow,
+  createComponent
+} from '@mpxjs/core'
+
+createComponent({
+  properties: {
+    progaganda: {
+      type: Object,
+      value: {
+        feedback: {
+          templateKey: '',
+          templateContent: {
+            title: '',
+            desc: '',
+            icon: '',
+            url: '',
+          },
+        }
+      }
+    }
+  },
+  setup (props) {
+    const templateContent = computed(() => {
+      return props.progaganda?.feedback?.templateContent || {}
+    })
+
+    const handleTap = () => {
+      const { url } = templateContent.value
+      if (url) {
+        console.log('navigate to', url)
+      }
+    }
+
+    onShow(() => {
+      console.log('component shown')
+    })
+    return {
+      templateContent,
+      handleTap,
+    }
+  },
+})
+</script>
+
+<style lang="stylus">
+.container
+  display flex
+  flex-basis row
+  background #FFFFFF
+</style>
+
+<script name='json'>
+module.exports = {
+  component: true,
+  usingComponents: {
+    "cube-button": "@qx-components/button",
+    "adaptive-image": "./adaptive-image.mpx"
+  }
+}
+</script>

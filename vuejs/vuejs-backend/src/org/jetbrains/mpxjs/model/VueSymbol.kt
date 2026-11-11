@@ -1,0 +1,50 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.model
+
+import com.intellij.lang.javascript.psi.JSType
+import com.intellij.platform.backend.documentation.DocumentationTarget
+import com.intellij.polySymbols.PolySymbol
+import com.intellij.polySymbols.PolySymbol.DocHideIconProperty
+import com.intellij.polySymbols.documentation.PolySymbolDocumentationTarget
+import com.intellij.polySymbols.framework.FrameworkId
+import com.intellij.polySymbols.html.HtmlFrameworkSymbol
+import com.intellij.polySymbols.js.JsSymbolKindProperty
+import com.intellij.polySymbols.js.JsSymbolSymbolKind
+import com.intellij.polySymbols.js.types.JSTypeProperty
+import com.intellij.polySymbols.js.types.TypeScriptSymbolTypeSupport
+import com.intellij.polySymbols.utils.PolySymbolTypeSupport
+import com.intellij.polySymbols.utils.PolySymbolTypeSupport.TypeSupportProperty
+import com.intellij.psi.PsiElement
+import org.jetbrains.mpxjs.VuejsIcons
+import org.jetbrains.mpxjs.codeInsight.getLibraryNameForDocumentationOf
+import org.jetbrains.mpxjs.web.VueFramework
+import javax.swing.Icon
+
+interface VueSymbol : HtmlFrameworkSymbol, VueElement {
+
+  @PolySymbol.Property(JSTypeProperty::class)
+  val type: JSType? get() = null
+
+  override val framework: FrameworkId
+    get() = VueFramework.ID
+
+  override val icon: Icon?
+    get() = VuejsIcons.Vue
+
+  @PolySymbol.Property(JsSymbolKindProperty::class)
+  val jsKind: JsSymbolSymbolKind
+    get() = JsSymbolSymbolKind.Property
+
+  @PolySymbol.Property(DocHideIconProperty::class)
+  val docHideIcon: Boolean
+    get() = true
+
+  @PolySymbol.Property(TypeSupportProperty::class)
+  val typeSupport: PolySymbolTypeSupport
+    get() = TypeScriptSymbolTypeSupport.default
+
+  override fun getDocumentationTarget(location: PsiElement?): DocumentationTarget? =
+    PolySymbolDocumentationTarget.create(this, location) { symbol, _ ->
+      library(getLibraryNameForDocumentationOf(symbol.psiContext))
+    }
+}

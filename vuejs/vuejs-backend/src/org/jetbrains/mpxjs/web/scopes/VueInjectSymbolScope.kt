@@ -1,0 +1,67 @@
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.web.scopes
+
+import com.intellij.model.Pointer
+import com.intellij.polySymbols.PolySymbol
+import com.intellij.polySymbols.PolySymbolKind
+import com.intellij.polySymbols.PolySymbolQualifiedName
+import com.intellij.polySymbols.completion.PolySymbolCodeCompletionItem
+import com.intellij.polySymbols.js.JS_PROPERTIES
+import com.intellij.polySymbols.js.JS_STRING_LITERALS
+import com.intellij.polySymbols.query.PolySymbolCodeCompletionQueryParams
+import com.intellij.polySymbols.query.PolySymbolQueryStack
+import com.intellij.polySymbols.utils.PolySymbolScopeWithCache
+import com.intellij.polySymbols.utils.ReferencingPolySymbol
+import com.intellij.util.asSafely
+import org.jetbrains.mpxjs.model.VueProvide
+import org.jetbrains.mpxjs.model.provides
+import org.jetbrains.mpxjs.model.source.VueSourceComponent
+import org.jetbrains.mpxjs.web.VUE_PROVIDES
+import org.jetbrains.mpxjs.web.getVueSymbolsCacheDependencies
+
+class VueInjectSymbolScope(private val enclosingComponent: VueSourceComponent<*>) :
+  PolySymbolScopeWithCache<VueSourceComponent<*>, Unit>(enclosingComponent.source.project, enclosingComponent, Unit) {
+
+  override fun provides(kind: PolySymbolKind): Boolean =
+    kind == VUE_PROVIDES
+    || kind == JS_STRING_LITERALS
+    || kind == JS_PROPERTIES
+
+  override fun initialize(consumer: (PolySymbol) -> Unit, cacheDependencies: MutableSet<Any>) {
+    enclosingComponent.global.provides.forEach(consumer)
+
+    consumer(vueInjectStringSymbol)
+    consumer(vueInjectPropertySymbol)
+
+    cacheDependencies.addAll(getVueSymbolsCacheDependencies(enclosingComponent.source.project))
+  }
+
+  override fun getCodeCompletions(
+    qualifiedName: PolySymbolQualifiedName,
+    params: PolySymbolCodeCompletionQueryParams,
+    stack: PolySymbolQueryStack,
+  ): List<PolySymbolCodeCompletionItem> =
+    super.getCodeCompletions(qualifiedName, params, stack).filter {
+      it.symbol.asSafely<VueProvide>()?.injectionKey == null
+    }
+
+  override fun createPointer(): Pointer<VueInjectSymbolScope> {
+    val componentPointer = enclosingComponent.createPointer()
+    return Pointer {
+      componentPointer.dereference()?.let { VueInjectSymbolScope(it) }
+    }
+  }
+
+  private val vueInjectStringSymbol = ReferencingPolySymbol.create(
+    JS_STRING_LITERALS,
+    "Vue Inject String",
+    VUE_PROVIDES
+  )
+
+  private val vueInjectPropertySymbol = ReferencingPolySymbol.create(
+    JS_PROPERTIES,
+    "Vue Inject Property",
+    VUE_PROVIDES
+  )
+
+}

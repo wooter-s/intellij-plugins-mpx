@@ -59533,7 +59533,7 @@ var require_compilerOptions = /* @__PURE__ */ __commonJSMin(((exports) => {
 			target,
 			lib,
 			typesRoot,
-			extensions: [".vue"],
+			extensions:[".mpx"],
 			vitePressExtensions: [],
 			petiteVueExtensions: [],
 			jsxSlots: false,

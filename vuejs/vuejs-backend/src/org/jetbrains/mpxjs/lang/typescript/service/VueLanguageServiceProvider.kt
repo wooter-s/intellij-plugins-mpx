@@ -1,0 +1,48 @@
+// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package org.jetbrains.mpxjs.lang.typescript.service
+
+import com.intellij.lang.typescript.compiler.TypeScriptService
+import com.intellij.lang.typescript.compiler.languageService.TypeScriptLanguageServiceUtil
+import com.intellij.lang.typescript.languageService.TypeScriptServiceProvider
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.mpxjs.lang.html.isVueFile
+import org.jetbrains.mpxjs.lang.typescript.service.plugin.VuePluginTypeScriptService
+
+internal class VueLanguageServiceProvider(project: Project) : TypeScriptServiceProvider() {
+  private val tsPluginService by lazy(LazyThreadSafetyMode.PUBLICATION) { project.service<VueTypeScriptPluginServiceWrapper>() }
+
+  override val allServices: List<TypeScriptService>
+    get() {
+      return tsPluginService.services
+    }
+
+  override fun isHighlightingCandidate(file: VirtualFile): Boolean {
+    return TypeScriptLanguageServiceUtil.isJavaScriptOrTypeScriptFileType(file.fileType)
+           || file.isVueFile
+  }
+}
+
+@Service(Service.Level.PROJECT)
+internal class VueTypeScriptPluginServiceWrapper(project: Project) : Disposable {
+  var services: List<VuePluginTypeScriptService> =
+    getServices(project)
+    private set
+
+  private fun getServices(project: Project): List<VuePluginTypeScriptService> {
+    return VueServiceRuntime.ALL.map {
+      VuePluginTypeScriptService(project, it)
+    }
+  }
+
+  fun findService(runtime: VueServiceRuntime): VuePluginTypeScriptService? =
+    services.firstOrNull { it.runtime == runtime }
+
+  override fun dispose() {
+    services.forEach(Disposer::dispose)
+  }
+}

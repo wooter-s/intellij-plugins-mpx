@@ -1,0 +1,70 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.utils
+
+import com.intellij.lang.javascript.psi.JSParameter
+import com.intellij.lang.javascript.psi.impl.JSChangeUtil.createJSContentFromText
+import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiWhiteSpace
+import com.intellij.psi.impl.source.tree.LeafElement
+import com.intellij.psi.util.childrenSequence
+import com.intellij.psi.util.endOffset
+import com.intellij.psi.util.startOffset
+import com.intellij.util.containers.sequenceOfNotNull
+import org.jetbrains.mpxjs.lang.expr.VueJSLanguage
+import org.jetbrains.mpxjs.lang.typescript.kolar.muggle.string.DataSegment
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.Code
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.IRScriptBlock
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.VueCodeInformation
+
+const val newLine: String = "\n"
+const val endOfLine: String = ";\n"
+val identifierRE: Regex = Regex("^[a-zA-Z_\$][0-9a-zA-Z_\$]*\$")
+
+fun getTypeScriptAST(
+  text: String,
+  project: Project,
+): FakeSourceFile =
+  createJSContentFromText(project, text, VueJSLanguage)
+
+fun generateSfcBlockSection(
+  block: IRScriptBlock,
+  start: Int,
+  end: Int,
+  features: VueCodeInformation,
+): Sequence<Code> = sequence {
+  val text = block.content.substring(start, end)
+  yield(DataSegment(
+    text = text,
+    source = block.name,
+    sourceOffset = start,
+    data = features,
+  ))
+}
+
+fun forEachNode(
+  node: PsiElement,
+): Sequence<PsiElement> =
+  node.childrenSequence
+    .filter { it !is LeafElement }
+    .filter { it !is PsiWhiteSpace }
+    .filter { it !is PsiComment }
+    .plus(nameIdentifiers(node))
+
+private fun nameIdentifiers(
+  node: PsiElement,
+): Sequence<PsiElement> = when {
+  node is JSParameter
+    -> sequenceOfNotNull(node.nameIdentifier)
+
+  else -> emptySequence()
+}
+
+fun typeScriptFileStart(
+  node: PsiElement,
+): Int =
+  if (forEachNode(node).none())
+    node.endOffset
+  else
+    node.startOffset

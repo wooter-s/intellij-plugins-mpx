@@ -1,0 +1,16 @@
+<idea-plugin>
+  <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+  <dependencies>
+    <plugin id="intellij.prettierJS"/>
+    <module name="intellij.javascript.web"/>
+    <module name="intellij.libraries.jetbrains.annotations"/>
+    <module name="intellij.platform.codeStyle"/>
+    <module name="intellij.platform.core"/>
+    <module name="intellij.mpxjs.backend"/>
+    <module name="intellij.xml.parser"/>
+  </dependencies>
+  <!-- endregion -->
+  <extensions defaultExtensionNs="com.intellij">
+    <prettierjs.codeStyleInstaller implementation="com.intellij.mpxjs.prettier.VuePrettierCodeStyleInstaller"/>
+  </extensions>
+</idea-plugin>

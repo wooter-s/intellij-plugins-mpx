@@ -6,3 +6,9 @@
 .kotlin
 build
 /work
+
+# Local build caches and generated web-types dependencies
+/.gradle-user-home/
+/resources/idea.log
+/vuejs-backend/scripts/web-types-generator/node_modules/
+/vuejs-backend/scripts/web-types-generator/.cache/

@@ -1,0 +1,89 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs
+
+import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.polySymbols.testFramework.PolySymbolsTestConfigurator
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import kotlinx.serialization.json.Json
+import org.jetbrains.mpxjs.VueTsConfig.CompilerOptions
+import org.jetbrains.mpxjs.config.VueCompilerOptions
+import org.junit.jupiter.api.assertNull
+
+data class VueTsConfigFile(
+  val types: List<String> = emptyList(),
+  val vueCompilerOptions: VueCompilerOptions? = null,
+  val enabled: Boolean = true,
+  // TODO: remove after migration on TsType
+  val checkUsage: Boolean = enabled,
+) : PolySymbolsTestConfigurator {
+
+  override fun configure(
+    fixture: CodeInsightTestFixture,
+  ) {
+    if (!enabled)
+      return
+
+    assertNull(fixture.tempDirFixture.getFile(FILE_NAME))
+    assertNull(fixture.tempDirFixture.getFile("tsconfig.base.json"))
+
+    val content = tsconfigContent(
+      types = types,
+      vueCompilerOptions = vueCompilerOptions,
+    )
+
+    fixture.configureByText(FILE_NAME, content)
+  }
+
+  override fun beforeDirectoryComparison(
+    fixture: CodeInsightTestFixture,
+    resultsDir: VirtualFile,
+    goldDir: VirtualFile,
+  ) {
+    if (!enabled)
+      return
+
+    WriteAction.run<Throwable> {
+      fixture.tempDirFixture
+        .getFile(FILE_NAME)
+        ?.delete(Any())
+    }
+  }
+
+  companion object {
+    const val FILE_NAME: String = "tsconfig.json"
+
+    val DEFAULT_TSCONFIG_CONTENT: String =
+      tsconfigContent(
+        types = emptyList(),
+        vueCompilerOptions = null,
+      )
+
+    private fun tsconfigContent(
+      types: List<String>,
+      vueCompilerOptions: VueCompilerOptions?,
+    ): String {
+      val config = VueTsConfig(
+        extends = "@vue/tsconfig/tsconfig.dom.json",
+        include = listOf(
+          "**/*.ts",
+          "**/*.tsx",
+          "**/*.vue",
+        ),
+        compilerOptions = CompilerOptions(
+          types = types,
+
+          // Extra safety for array and object lookups, but may have false positives.
+          noUncheckedIndexedAccess = true,
+
+          // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
+          // Specified here to keep it out of the root directory.
+          tsBuildInfoFile = "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+        ),
+        vueCompilerOptions = vueCompilerOptions,
+      )
+
+      return Json.encodeToString(config)
+    }
+  }
+}

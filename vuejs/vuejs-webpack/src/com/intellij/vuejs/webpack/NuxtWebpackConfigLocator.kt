@@ -1,5 +1,5 @@
 // Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
-package com.intellij.vuejs.webpack
+package com.intellij.mpxjs.webpack
 
 import com.intellij.javascript.nodejs.NodeModuleSearchUtil
 import com.intellij.javascript.nodejs.PackageJsonData
@@ -9,7 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiUtilCore
 import com.intellij.webpack.WebpackConfigLocator
-import org.jetbrains.vuejs.libraries.nuxt.NUXT_PKG
+import org.jetbrains.mpxjs.libraries.nuxt.NUXT_PKG
 
 class NuxtWebpackConfigLocator : WebpackConfigLocator {
   override fun detectConfig(project: Project, context: PsiElement): VirtualFile? {

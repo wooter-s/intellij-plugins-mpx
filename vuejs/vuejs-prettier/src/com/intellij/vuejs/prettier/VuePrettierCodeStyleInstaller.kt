@@ -1,5 +1,5 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.vuejs.prettier
+package com.intellij.mpxjs.prettier
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
@@ -9,9 +9,11 @@ import com.intellij.prettierjs.codeStyle.PrettierCodeStyleInstaller.applyCommonP
 import com.intellij.prettierjs.codeStyle.PrettierCodeStyleInstaller.commonPrettierSettingsApplied
 import com.intellij.psi.codeStyle.CodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
+import com.intellij.lang.Language
 import org.jetbrains.annotations.NotNull
-import org.jetbrains.vuejs.lang.html.VueLanguage
-import org.jetbrains.vuejs.lang.html.psi.formatter.VueCodeStyleSettings
+import org.jetbrains.mpxjs.lang.html.psi.formatter.VueCodeStyleSettings
+
+private const val MPX_LANGUAGE_ID = "Mpx"
 
 internal class VuePrettierCodeStyleInstaller : PrettierCodeStyleInstaller {
   override fun install(project: Project, config: PrettierConfig, settings: CodeStyleSettings) {
@@ -36,10 +38,13 @@ internal class VuePrettierCodeStyleInstaller : PrettierCodeStyleInstaller {
       it.INTERPOLATION_NEW_LINE_BEFORE_END_DELIMITER = false
       it.INTERPOLATION_WRAP = CommonCodeStyleSettings.DO_NOT_WRAP
     }
-    applyCommonPrettierSettings(config, settings, VueLanguage)
+    findMpxLanguage()?.let { language ->
+      applyCommonPrettierSettings(config, settings, language)
+    }
   }
 
   override fun isInstalled(project: Project, config: PrettierConfig, settings: CodeStyleSettings): Boolean {
+    val language = findMpxLanguage() ?: return false
     return settings.getCustomSettings(VueCodeStyleSettings::class.java)
              .let {
                it.UNIFORM_INDENT
@@ -59,7 +64,7 @@ internal class VuePrettierCodeStyleInstaller : PrettierCodeStyleInstaller {
                    && tags.contains("template")
                  }
              }
-           && commonPrettierSettingsApplied(config, settings, VueLanguage)
+           && commonPrettierSettingsApplied(config, settings, language)
   }
 
   private fun getIndentChildrenOfTopLevelSequence(settings: @NotNull VueCodeStyleSettings): Sequence<String> {
@@ -68,4 +73,6 @@ internal class VuePrettierCodeStyleInstaller : PrettierCodeStyleInstaller {
       .asSequence()
       .map { StringUtil.toLowerCase(it.trim()) }
   }
+
+  private fun findMpxLanguage(): Language? = Language.findLanguageByID(MPX_LANGUAGE_ID)
 }

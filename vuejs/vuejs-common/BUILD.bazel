@@ -1,11 +1,11 @@
 load("@community//platform/build-scripts/bazel-rules:content_module_jar.bzl", "content_module_jar")
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
-### auto-generated section `dev intellij.vuejs.common` start
+### auto-generated section `dev intellij.mpxjs.common` start
 content_module_jar(module = ":common")
-### auto-generated section `dev intellij.vuejs.common` end
+### auto-generated section `dev intellij.mpxjs.common` end
 
-### auto-generated section `build intellij.vuejs.common` start
+### auto-generated section `build intellij.mpxjs.common` start
 jvm_library(
     name = "common",
     srcs = glob(
@@ -18,7 +18,7 @@ jvm_library(
         ],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.common",
+    module_name = "intellij.mpxjs.common",
     resource_strip_prefix = "resources",
     resources = glob(
         ["resources/**/*"],
@@ -53,7 +53,7 @@ jvm_library(
         [],
         allow_empty = True,
     ),
-    module_name = "intellij.vuejs.common",
+    module_name = "intellij.mpxjs.common",
     visibility = ["//visibility:public"],
     runtime_deps = [
         # do not sort,
@@ -76,14 +76,14 @@ jvm_library(
         "//plugins/css:css_test_lib",
     ],
 )
-### auto-generated section `build intellij.vuejs.common` end
+### auto-generated section `build intellij.mpxjs.common` end
 
-### auto-generated section `iml intellij.vuejs.common` start
+### auto-generated section `iml intellij.mpxjs.common` start
 exports_files(
     [
-        "intellij.vuejs.common.iml",
-        "resources/intellij.vuejs.common.xml",
+        "intellij.mpxjs.common.iml",
+        "resources/intellij.mpxjs.common.xml",
     ],
     visibility = ["//visibility:public"],
 )
-### auto-generated section `iml intellij.vuejs.common` end
+### auto-generated section `iml intellij.mpxjs.common` end

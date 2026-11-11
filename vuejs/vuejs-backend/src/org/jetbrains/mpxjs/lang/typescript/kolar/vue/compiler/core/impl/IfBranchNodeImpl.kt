@@ -1,0 +1,22 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.lang.typescript.kolar.vue.compiler.core.impl
+
+import com.intellij.psi.xml.XmlTag
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.compiler.core.ExpressionNode
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.compiler.core.IfBranchNode
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.compiler.core.Node
+
+class IfBranchNodeImpl(
+  tag: XmlTag,
+  directiveName: String,
+) : NodeImpl(tag),
+    IfBranchNode {
+  override val condition: ExpressionNode? by lazy {
+    // TODO: support compound expressions
+    tag.getAttribute(directiveName)
+      ?.valueElement
+      ?.let(::XmlValueExpressionNodeImpl)
+  }
+
+  override val children: List<Node> by children(tag, ParentScope.IF)
+}

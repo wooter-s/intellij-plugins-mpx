@@ -1,0 +1,63 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.template
+
+import org.jetbrains.mpxjs.lang.typescript.kolar.js.generator.yield
+import org.jetbrains.mpxjs.lang.typescript.kolar.muggle.string.DataSegment
+import org.jetbrains.mpxjs.lang.typescript.kolar.muggle.string.Source
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.Code
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.VueCodeInformation
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.names
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.utils.Boundary
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.utils.generateCamelized
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.utils.generateStringLiteralKey
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.codegen.utils.identifierRE
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.language.core.yield
+import org.jetbrains.mpxjs.lang.typescript.kolar.vue.shared.camelize
+
+fun generateObjectProperty(
+  options: TemplateCodegenOptions,
+  ctx: TemplateCodegenContext,
+  code: String,
+  offset: Int,
+  features: VueCodeInformation,
+  shouldCamelize: Boolean = false,
+  shouldBeConstant: Boolean = false,
+): Sequence<Code> = sequence {
+  if (code.startsWith("[") && code.endsWith("]")) {
+    if (shouldBeConstant) {
+      yieldAll(generateInterpolation(
+        options,
+        ctx,
+        options.template,
+        features,
+        code.substring(1, code.length - 1),
+        offset + 1,
+        "[${names.tryAsConstant}(",
+        ")]",
+      ))
+    }
+    else {
+      yieldAll(generateInterpolation(options, ctx, options.template, features, code, offset))
+    }
+  }
+  else if (shouldCamelize) {
+    if (identifierRE.matches(camelize(code))) {
+      yieldAll(generateCamelized(code, Source("template"), offset, features))
+    }
+    else {
+      val boundary = yield(Boundary.start(Source("template"), offset, features))
+      yield("'")
+      yieldAll(generateCamelized(code, Source("template"), offset, boundary.features))
+      yield("'")
+      yield(boundary.end(offset + code.length))
+    }
+  }
+  else {
+    if (identifierRE.matches(code)) {
+      yield(DataSegment(text = code, source = Source("template"), sourceOffset = offset, data = features))
+    }
+    else {
+      yieldAll(generateStringLiteralKey(code, offset, features))
+    }
+  }
+}

@@ -1,0 +1,107 @@
+// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+package org.jetbrains.mpxjs.model.source
+
+import com.intellij.lang.javascript.JSElementTypes
+import com.intellij.lang.javascript.evaluation.JSCodeBasedTypeFactory
+import com.intellij.lang.javascript.psi.JSCallExpression
+import com.intellij.lang.javascript.psi.JSFunction
+import com.intellij.lang.javascript.psi.JSObjectLiteralExpression
+import com.intellij.lang.javascript.psi.JSType
+import com.intellij.lang.javascript.psi.resolve.JSEvaluateContext
+import com.intellij.lang.javascript.psi.types.JSAsyncReturnType
+import com.intellij.lang.javascript.psi.types.JSGenericTypeImpl
+import com.intellij.lang.javascript.psi.types.JSTypeImpl
+import com.intellij.lang.javascript.psi.types.evaluable.JSReturnedExpressionType
+import com.intellij.lang.javascript.psi.util.JSStubBasedPsiTreeUtil
+import com.intellij.psi.tree.TokenSet
+import com.intellij.psi.util.CachedValueProvider
+import com.intellij.psi.util.CachedValuesManager
+import com.intellij.util.asSafely
+import org.jetbrains.mpxjs.codeInsight.resolveElementTo
+import org.jetbrains.mpxjs.index.getFunctionNameFromVueIndex
+import org.jetbrains.mpxjs.model.VueComputedProperty
+import org.jetbrains.mpxjs.model.VueDataProperty
+import org.jetbrains.mpxjs.model.VueInject
+import org.jetbrains.mpxjs.model.VueMethod
+import org.jetbrains.mpxjs.model.VueProvide
+import org.jetbrains.mpxjs.model.VueSymbol
+import org.jetbrains.mpxjs.model.analyzeInject
+import org.jetbrains.mpxjs.model.analyzeProvide
+import org.jetbrains.mpxjs.model.source.VueContainerInfoProvider.VueContainerInfo
+import org.jetbrains.mpxjs.web.getVueSymbolsCacheDependencies
+
+class VueCompositionInfoProvider : VueContainerInfoProvider {
+
+  override fun getInfo(descriptor: EntityContainerInfoProvider.EntityDescriptor): VueContainerInfo? {
+    // Use initializer instead of source - initializer is guaranteed to be JSObjectLiteralExpression or JSFile
+    // For createComponent({...}) calls, source might be JSCallExpression but initializer contains the object literal
+    val objLiteral = descriptor.initializer?.asSafely<JSObjectLiteralExpression>()
+                     ?: descriptor.source.asSafely<JSObjectLiteralExpression>()
+    return objLiteral?.let { VueCompositionInfo(it) }
+  }
+
+  class VueCompositionInfo(val initializer: JSObjectLiteralExpression) : VueContainerInfo {
+
+    override val computed: List<VueComputedProperty>
+      get() = rawBindings.filterIsInstance<VueComputedProperty>()
+
+    override val data: List<VueDataProperty>
+      get() = rawBindings.filterIsInstance<VueDataProperty>()
+
+    override val methods: List<VueMethod>
+      get() = rawBindings.filterIsInstance<VueMethod>()
+
+    override val provides: List<VueProvide>
+      get() = methodCalls.filterIsInstance<VueProvide>()
+
+    override val injects: List<VueInject>
+      get() = methodCalls.filterIsInstance<VueInject>()
+
+    private val rawBindings: List<VueSymbol>
+      get() = CachedValuesManager.getCachedValue(initializer) {
+        CachedValueProvider.Result.create(VueCompositionInfoHelper.createRawBindings(
+          initializer, initializer, ::getSetupFunctionType
+        ), getVueSymbolsCacheDependencies(initializer.project))
+      }
+
+    private val methodCalls: List<VueSymbol>
+      get() = CachedValuesManager.getCachedValue(initializer) {
+        CachedValueProvider.Result.create(getSetupCalls(initializer),
+                                          getVueSymbolsCacheDependencies(initializer.project))
+      }
+
+    private fun getSetupCalls(initializer: JSObjectLiteralExpression): List<VueSymbol> =
+      resolveElementTo(initializer.findProperty(SETUP_METHOD), JSFunction::class)
+        ?.let { JSStubBasedPsiTreeUtil.findDescendants<JSCallExpression>(it, TokenSet.create(JSElementTypes.CALL_EXPRESSION)) }
+        ?.mapNotNull {
+          when (getFunctionNameFromVueIndex(it)) {
+            PROVIDE_FUN -> analyzeProvide(it)
+            INJECT_FUN -> analyzeInject(it)
+            else -> null
+          }
+        }
+      ?: emptyList()
+
+    override fun equals(other: Any?): Boolean =
+      (other as? VueCompositionInfo)?.initializer == initializer
+
+    override fun hashCode(): Int = initializer.hashCode()
+  }
+}
+
+private fun getSetupFunctionType(initializer: JSObjectLiteralExpression): JSType? =
+  resolveElementTo(initializer.findProperty(SETUP_METHOD), JSFunction::class)
+    ?.returnType
+    ?.let { returnType ->
+      (returnType as? JSAsyncReturnType)
+        ?.substitute()
+        ?.asSafely<JSGenericTypeImpl>()
+        ?.takeIf { (it.type as? JSTypeImpl)?.typeText == "Promise" }
+        ?.arguments
+        ?.getOrNull(0)
+      ?: (returnType as? JSReturnedExpressionType)?.findAssociatedExpression()?.let {
+        JSCodeBasedTypeFactory.getPsiBasedType(it, JSEvaluateContext(it.containingFile))
+      }
+      ?: returnType
+    }
+

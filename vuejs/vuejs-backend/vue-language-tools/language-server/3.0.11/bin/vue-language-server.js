@@ -60020,7 +60020,7 @@ var require_compilerOptions = /* @__PURE__ */ __commonJSMin(((exports) => {
 			target,
 			lib,
 			globalTypesPath: shared_1.NOOP,
-			extensions: [".vue"],
+			extensions:[".mpx"],
 			vitePressExtensions: [],
 			petiteVueExtensions: [],
 			jsxSlots: false,

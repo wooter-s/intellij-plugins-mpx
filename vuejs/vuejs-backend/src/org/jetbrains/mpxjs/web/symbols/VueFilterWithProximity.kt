@@ -1,0 +1,117 @@
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.mpxjs.web.symbols
+
+import com.intellij.model.Pointer
+import com.intellij.model.Symbol
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.NlsSafe
+import com.intellij.platform.backend.navigation.NavigationTarget
+import com.intellij.polySymbols.PolySymbol
+import com.intellij.polySymbols.PolySymbolKind
+import com.intellij.polySymbols.PolySymbolProperty
+import com.intellij.polySymbols.refactoring.PolySymbolRenameTarget
+import com.intellij.polySymbols.search.PolySymbolSearchTarget
+import com.intellij.polySymbols.search.PsiLinkedPolySymbol
+import com.intellij.psi.PsiElement
+import org.jetbrains.mpxjs.model.VueEntitiesContainer
+import org.jetbrains.mpxjs.model.VueFilter
+import org.jetbrains.mpxjs.model.VueModelVisitor
+import org.jetbrains.mpxjs.web.VueProximityProperty
+import org.jetbrains.mpxjs.web.asPolySymbolPriority
+
+internal open class VueFilterWithProximity private constructor(
+  val delegate: VueFilter,
+  @PolySymbol.Property(VueProximityProperty::class)
+  val vueProximity: VueModelVisitor.Proximity,
+) : VueFilter {
+
+  override val name: @NlsSafe String
+    get() = delegate.name
+
+  override val priority: PolySymbol.Priority
+    get() = vueProximity.asPolySymbolPriority()
+
+  override val source: PsiElement
+    get() = delegate.source
+
+  override val parents: List<VueEntitiesContainer>
+    get() = delegate.parents
+
+  override val kind: PolySymbolKind
+    get() = delegate.kind
+
+  override fun <T : Any> get(property: PolySymbolProperty<T>): T? =
+    super.get(property) ?: delegate[property]
+
+  override val searchTarget: PolySymbolSearchTarget
+    get() = delegate.searchTarget
+
+  override val renameTarget: PolySymbolRenameTarget?
+    get() = delegate.renameTarget
+
+  override fun getNavigationTargets(project: Project): Collection<NavigationTarget> =
+    delegate.getNavigationTargets(project)
+
+  override fun isEquivalentTo(symbol: Symbol): Boolean =
+    if (symbol is VueFilterWithProximity)
+      delegate.isEquivalentTo(symbol.delegate)
+    else
+      super.isEquivalentTo(symbol)
+      || delegate.isEquivalentTo(symbol)
+
+  override fun createPointer(): Pointer<out VueFilterWithProximity> {
+    val delegatePtr = delegate.createPointer()
+    val vueProximity = vueProximity
+    return Pointer {
+      delegatePtr.dereference()?.let { VueFilterWithProximity(it, vueProximity) }
+    }
+  }
+
+  companion object {
+    fun create(delegate: VueFilter, proximity: VueModelVisitor.Proximity?): VueFilter =
+      when {
+        proximity == null -> delegate
+        delegate is PsiLinkedPolySymbol -> VuePsiLinkedFilterWithProximity(delegate, proximity)
+        else -> VueFilterWithProximity(delegate, proximity)
+      }
+  }
+
+  private class VuePsiLinkedFilterWithProximity(
+    delegate: VueFilter,
+    proximity: VueModelVisitor.Proximity,
+  ) : VueFilterWithProximity(delegate, proximity), PsiLinkedPolySymbol {
+
+    override val linkedElement: PsiElement
+      get() = delegate.source
+
+    override fun getNavigationTargets(project: Project): Collection<NavigationTarget> =
+      delegate.getNavigationTargets(project)
+
+    override fun isEquivalentTo(symbol: Symbol): Boolean =
+      super<PsiLinkedPolySymbol>.isEquivalentTo(symbol)
+      || super<VueFilterWithProximity>.isEquivalentTo(symbol)
+
+    override fun equals(other: Any?): Boolean =
+      other === this
+      || other is VuePsiLinkedFilterWithProximity
+      && other.delegate == delegate
+      && other.vueProximity == vueProximity
+
+    override fun hashCode(): Int {
+      var result = delegate.hashCode()
+      result = 31 * result + vueProximity.hashCode()
+      return result
+    }
+
+    override fun createPointer(): Pointer<VuePsiLinkedFilterWithProximity> {
+      val delegatePtr = delegate.createPointer()
+      val vueProximity = vueProximity
+      return Pointer {
+        delegatePtr.dereference()?.let { VuePsiLinkedFilterWithProximity(it, vueProximity) }
+      }
+    }
+
+  }
+
+
+}
