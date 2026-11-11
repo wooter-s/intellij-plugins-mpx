@@ -9,6 +9,7 @@ apply(from = "../contrib-configuration/common.gradle.kts")
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm")
+  id("org.jetbrains.kotlin.plugin.serialization")
   id("org.jetbrains.intellij.platform")
 }
 
@@ -22,7 +23,7 @@ repositories {
 intellijPlatform {
   pluginConfiguration {
     name = "Mpx.js"
-    version = "263.7307.04"
+    version = "263.7307.05"
     ideaVersion {
       sinceBuild = "263.7307.202"
       untilBuild = "263.*"

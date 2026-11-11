@@ -10,6 +10,7 @@ pluginManagement {
 
     // remove when common settings bumped
     id("org.jetbrains.kotlin.jvm") version "2.3.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21"
     id("org.jetbrains.intellij.platform") version "2.16.0"
     id("org.jetbrains.intellij.platform.settings") version "2.16.0"
   }
