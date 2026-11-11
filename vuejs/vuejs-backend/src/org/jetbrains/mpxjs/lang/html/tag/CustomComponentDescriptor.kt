@@ -77,7 +77,7 @@ import com.intellij.lang.javascript.psi.JSLiteralExpression
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.psi.PsiElement
 import com.intellij.polySymbols.PolySymbol
-import com.intellij.polySymbols.PolySymbolQualifiedKind
+import com.intellij.polySymbols.PolySymbolKind
 import com.intellij.polySymbols.html.NAMESPACE_HTML
 import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolDescriptor
 import com.intellij.polySymbols.html.attributes.HtmlAttributeSymbolInfo
@@ -228,15 +228,15 @@ class CustomComponentDescriptor(
         }.distinct()
 
     companion object {
-        private val WEB_TYPES_DIRECTIVE_KINDS: List<PolySymbolQualifiedKind> = listOf(
+        private val WEB_TYPES_DIRECTIVE_KINDS: List<PolySymbolKind> = listOf(
             VUE_DIRECTIVES,
             VUE_GLOBAL_DIRECTIVES,
             VUE_SCRIPT_SETUP_LOCAL_DIRECTIVES,
             VUE_MODEL,
             VUE_DIRECTIVE_ARGUMENT,
             VUE_DIRECTIVE_MODIFIERS,
-            PolySymbolQualifiedKind[NAMESPACE_HTML, "wx-directives"],
-            PolySymbolQualifiedKind[NAMESPACE_HTML, "bind-directives"],
+            PolySymbolKind[NAMESPACE_HTML, "wx-directives"],
+            PolySymbolKind[NAMESPACE_HTML, "bind-directives"],
         )
     }
 

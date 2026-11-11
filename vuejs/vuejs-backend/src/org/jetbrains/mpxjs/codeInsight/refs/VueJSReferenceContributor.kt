@@ -26,6 +26,8 @@ import com.intellij.patterns.ElementPattern
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.ElementManipulators
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.PsiElementResolveResult
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceContributor

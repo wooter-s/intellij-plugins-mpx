@@ -40,6 +40,7 @@ dependencies {
 kotlin {
   jvmToolchain(25)
   compilerOptions {
+    optIn.add("kotlin.contracts.ExperimentalContracts")
     jvmTarget.set(JvmTarget.JVM_25)
     @Suppress("UNCHECKED_CAST")
     freeCompilerArgs.addAll(rootProject.extensions["kotlin.freeCompilerArgs"] as List<String>)

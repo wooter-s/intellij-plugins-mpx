@@ -143,7 +143,7 @@ private object VueWxEventAttributeNameConversionRulesProvider :
   override fun createPointer(): Pointer<out PolySymbolNameConversionRulesProvider> =
     Pointer.hardPointer(this)
 
-  override fun getModificationCount(): Long = 0
+  override val modificationTracker: ModificationTracker = ModificationTracker.NEVER_CHANGED
 
   private val wxEventConverter = PolySymbolNameConverter { name ->
     if (WxEventNameUtils.isWxEventAttribute(name)) {
@@ -153,16 +153,16 @@ private object VueWxEventAttributeNameConversionRulesProvider :
     }
   }
 
-  override val canonicalNames: Map<PolySymbolQualifiedKind, PolySymbolNameConverter> =
+  override val canonicalNames: Map<PolySymbolKind, PolySymbolNameConverter> =
     mapOf(HTML_ATTRIBUTES to wxEventConverter)
 
-  override val renames: Map<PolySymbolQualifiedKind, PolySymbolNameConverter>
+  override val renames: Map<PolySymbolKind, PolySymbolNameConverter>
     get() = canonicalNames
 
-  override val matchNames: Map<PolySymbolQualifiedKind, PolySymbolNameConverter>
+  override val matchNames: Map<PolySymbolKind, PolySymbolNameConverter>
     get() = canonicalNames
 
-  override val completionVariants: Map<PolySymbolQualifiedKind, PolySymbolNameConverter>
+  override val completionVariants: Map<PolySymbolKind, PolySymbolNameConverter>
     get() = canonicalNames
 }
 

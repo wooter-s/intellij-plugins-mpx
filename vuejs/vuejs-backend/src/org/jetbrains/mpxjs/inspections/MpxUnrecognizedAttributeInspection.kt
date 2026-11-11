@@ -5,6 +5,7 @@ import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.LocalInspectionToolSession
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.polySymbols.webTypes.WebTypesSymbol
 import com.intellij.polySymbols.PolySymbolModifier
 import com.intellij.polySymbols.html.HTML_ATTRIBUTES
 import com.intellij.polySymbols.html.HTML_ELEMENTS
@@ -180,8 +181,8 @@ class MpxUnrecognizedAttributeInspection : LocalInspectionTool() {
     if (descriptor is HtmlElementSymbolDescriptor) {
       val symbol = descriptor.symbol
       // Check if the symbol comes from mpx framework
-      val origin = symbol?.origin
-      if (origin?.framework == VueFramework.ID) {
+      val framework = (symbol as? WebTypesSymbol)?.origin?.framework
+      if (framework == VueFramework.ID) {
         return true
       }
     }

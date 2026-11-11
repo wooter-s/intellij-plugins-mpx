@@ -1,6 +1,9 @@
 // Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.mpxjs.index
 
+import org.jetbrains.mpxjs.model.source.CREATE_COMPONENT_FUN
+import org.jetbrains.mpxjs.model.source.CREATE_PAGE_FUN
+
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ecmascript6.psi.ES6ExportDefaultAssignment
 import com.intellij.lang.ecmascript6.psi.ES6ImportExportDeclaration
